@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
+import BASE_URL from '../utils/api';
 const STATUS_OPTIONS = ['New', 'In Progress', 'Followed Up', 'Converted', 'Not Interested'];
 
 const LeadTable = ({ leads, setLeads }) => {
@@ -17,7 +17,7 @@ const LeadTable = ({ leads, setLeads }) => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/users', {
+        const response = await axios.get(`${BASE_URL}/api/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(response.data);
@@ -54,7 +54,7 @@ const LeadTable = ({ leads, setLeads }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/leads/forward',
+        `${BASE_URL}/api/leads/forward`,
         { leadId, userId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -84,13 +84,11 @@ const LeadTable = ({ leads, setLeads }) => {
 
       const formattedDate = new Date(date).toISOString();
 
-      // Make the POST request to add a follow-up
       await axios.post(
-        'http://localhost:5000/api/leads/followup',
+        `${BASE_URL}/api/leads/followup`,
         { leadId, followUp: { date: formattedDate, notes } },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       toast.success('Follow-up added successfully');
 
       // Update the leads state with the new follow-up
@@ -122,10 +120,11 @@ const LeadTable = ({ leads, setLeads }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `http://localhost:5000/api/leads/${leadId}/status`,
+        `${BASE_URL}/api/leads/${leadId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
 
       const updatedLead = response.data.lead;
 

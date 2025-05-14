@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import BASE_URL from '../utils/api'; // Adjust path if needed
+import BASE_URL from '../utils/api'; 
 
 const LeadForm = ({ onLeadCreated, closeModal }) => {
   const [leadDetails, setLeadDetails] = useState({
