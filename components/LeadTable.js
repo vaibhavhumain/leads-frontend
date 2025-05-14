@@ -152,58 +152,68 @@ const LeadTable = ({ leads, setLeads }) => {
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg shadow">
-      <table className="min-w-full border border-gray-300 bg-white text-sm">
-        <thead className="bg-gray-100 text-gray-700 text-left">
-          <tr>
-            <th className="p-3 border">Lead Name</th>
-            <th className="p-3 border">Created By</th>
-            <th className="p-3 border">Follow-Ups</th>
-            <th className="p-3 border">Status</th>
-            <th className="p-3 border">Forwarded To</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((lead, idx) => (
-            <tr
-              key={lead._id}
-              className={`border ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition`}
-            >
-              <td className="p-3 border">
-                <div className="text-lg font-bold text-gray-800">
-                  {lead.leadDetails?.name || 'N/A'}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {lead.leadDetails?.phone || ''}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {lead.leadDetails?.company || ''}
-                </div>
-              </td>
-              <td className="p-3 border text-gray-600">{lead.createdBy?.name || 'N/A'}</td>
-              <td className="p-3 border">
-                <button
-                  onClick={() => toggleDropdown(lead._id)}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded shadow"
-                >
-                  {dropdownVisible[lead._id] ? 'Hide Follow-Ups' : 'Show Follow-Ups'}
-                </button>
-                {dropdownVisible[lead._id] && lead.followUps?.length > 0 && (
-                  <ul className="list-disc ml-5 text-xs text-gray-700 space-y-1 mt-2">
-                    {lead.followUps.map((f, i) => (
-                      <li key={i}>
-                        <strong className="text-blue-600">{formatDateTime(f.date)}</strong>: {f.notes}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {dropdownVisible[lead._id] && lead.followUps?.length === 0 && (
-                  <p className="text-sm text-gray-500 mt-2">No follow-ups</p>
-                )}
+  <div className="w-full overflow-x-auto rounded-xl shadow-lg bg-white max-w-full sm:px-2">
+    <table className="min-w-full text-sm border-separate border-spacing-y-2 table-auto">
+      <thead className="bg-gray-200 text-gray-800 text-left">
+        <tr>
+          <th className="p-3 sm:p-4">Lead Name</th>
+          <th className="p-3 sm:p-4">Phone</th>
+          <th className="p-3 sm:p-4">Created By</th>
+          <th className="p-3 sm:p-4">Follow-Ups</th>
+          <th className="p-3 sm:p-4">Status</th>
+          <th className="p-3 sm:p-4">Forwarded To</th>
+        </tr>
+      </thead>
+      <tbody>
+        {leads.map((lead, idx) => (
+          <tr
+            key={lead._id}
+            className={`rounded-xl ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow transition`}
+          >
+            {/* Lead Name */}
+            <td className="p-3 sm:p-4 align-top break-words">
+              <div className="font-semibold text-base text-gray-900">
+                {lead.leadDetails?.name || 'N/A'}
+              </div>
+              <div className="text-sm text-gray-600">{lead.leadDetails?.company || ''}</div>
+            </td>
+
+            {/* Phone */}
+            <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+              {lead.leadDetails?.phone || 'N/A'}
+            </td>
+
+            {/* Created By */}
+            <td className="p-3 sm:p-4 align-top text-gray-700 break-words">
+              {lead.createdBy?.name || 'N/A'}
+            </td>
+
+            {/* Follow-Ups */}
+            <td className="p-3 sm:p-4">
+              <button
+                onClick={() => toggleDropdown(lead._id)}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded-md text-xs font-semibold"
+              >
+                {dropdownVisible[lead._id] ? 'Hide Follow-Ups' : 'Show Follow-Ups'}
+              </button>
+
+              {dropdownVisible[lead._id] && (
                 <div className="mt-2 space-y-2">
+                  {lead.followUps?.length > 0 ? (
+                    <ul className="text-xs text-gray-700 space-y-1">
+                      {lead.followUps.map((f, i) => (
+                        <li key={i}>
+                          <span className="font-medium text-blue-600">{formatDateTime(f.date)}</span>: {f.notes}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-gray-500">No follow-ups</p>
+                  )}
+
                   <input
                     type="date"
-                    className="border rounded px-2 py-1 w-full focus:ring-2 focus:ring-yellow-300"
+                    className="w-full border px-2 py-1 rounded text-xs"
                     value={followUpInputs[lead._id]?.date || ''}
                     onChange={(e) =>
                       setFollowUpInputs({
@@ -218,7 +228,7 @@ const LeadTable = ({ leads, setLeads }) => {
                   <textarea
                     rows={2}
                     placeholder="Follow-up notes"
-                    className="border rounded px-2 py-1 w-full focus:ring-2 focus:ring-yellow-300"
+                    className="w-full border px-2 py-1 rounded text-xs"
                     value={followUpInputs[lead._id]?.notes || ''}
                     onChange={(e) =>
                       setFollowUpInputs({
@@ -232,70 +242,72 @@ const LeadTable = ({ leads, setLeads }) => {
                   />
                   <button
                     onClick={() => handleFollowUp(lead._id)}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded py-1 shadow"
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded-md py-1 text-xs font-semibold"
                   >
                     Add Follow-Up
                   </button>
                 </div>
-              </td>
+              )}
+            </td>
 
-              <td className="p-3 border">
-                <div className="mb-1 text-sm font-semibold text-blue-700">
-                  {lead.status || 'Not Updated'}
-                </div>
-                <select
-                  className="border rounded px-2 py-1 w-full focus:ring-2 focus:ring-blue-300"
-                  value={statusUpdates[lead._id] || ''}
-                  onChange={(e) =>
-                    setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
-                  }
-                >
-                  <option value="">Update Status</option>
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => handleStatusUpdate(lead._id)}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2 py-1 rounded shadow"
-                >
-                  Update
-                </button>
-              </td>
+            {/* Status */}
+            <td className="p-3 sm:p-4">
+              <div className="text-sm font-semibold text-blue-700 mb-1">
+                {lead.status || 'Not Updated'}
+              </div>
+              <select
+                className="w-full text-xs border px-2 py-1 rounded"
+                value={statusUpdates[lead._id] || ''}
+                onChange={(e) =>
+                  setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
+                }
+              >
+                <option value="">Update Status</option>
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => handleStatusUpdate(lead._id)}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2 py-1 rounded-md text-xs font-semibold"
+              >
+                Update
+              </button>
+            </td>
 
-              <td className="p-3 border space-y-2">
-                <select
-                  value={selectedUser[lead._id] || ''}
-                  onChange={(e) =>
-                    setSelectedUser({
-                      ...selectedUser,
-                      [lead._id]: e.target.value,
-                    })
-                  }
-                  className="border rounded px-2 py-1 w-full focus:ring-2 focus:ring-green-300"
-                >
-                  <option value="">Select user</option>
-                  {users.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.name} ({user.role})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => handleForwardLead(lead._id)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-1 rounded shadow"
-                >
-                  Forward
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
+            {/* Forwarded To */}
+            <td className="p-3 sm:p-4 space-y-2">
+              <select
+                className="w-full text-xs border px-2 py-1 rounded"
+                value={selectedUser[lead._id] || ''}
+                onChange={(e) =>
+                  setSelectedUser({
+                    ...selectedUser,
+                    [lead._id]: e.target.value,
+                  })
+                }
+              >
+                <option value="">Select user</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name} ({user.role})
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => handleForwardLead(lead._id)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-1 rounded-md text-xs font-semibold"
+              >
+                Forward
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+}
 export default LeadTable;

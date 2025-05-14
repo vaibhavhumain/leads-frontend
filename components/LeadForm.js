@@ -73,12 +73,12 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
         </div>
 
         <div>
-          <label className="block font-medium">Email:</label>
+          <label className="block font-medium">Phone:</label>
           <input
-            type="email"
-            name="email"
+            type="phone"
+            name="phone"
             className="w-full p-2 border rounded"
-            value={leadDetails.email}
+            value={leadDetails.phone}
             onChange={handleChange}
             disabled={loading}
           />
