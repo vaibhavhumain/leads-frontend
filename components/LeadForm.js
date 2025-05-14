@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import BASE_URL from '../utils/api'; 
+import BASE_URL from '../utils/api';
 
 const LeadForm = ({ onLeadCreated, closeModal }) => {
   const [leadDetails, setLeadDetails] = useState({
     name: '',
+    phone: '',
     company: '',
     email: '',
   });
@@ -54,17 +55,22 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
   };
 
   return (
-    <div className="p-4 bg-gray-100 rounded shadow">
-      <h2 className="text-2xl font-semibold mb-4">Create New Lead</h2>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Lead</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <p className="text-red-500 text-sm mb-4 text-center bg-red-100 px-3 py-2 rounded">
+          {error}
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block font-medium">Name:</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
           <input
             type="text"
             name="name"
-            className="w-full p-2 border rounded"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={leadDetails.name}
             onChange={handleChange}
             required
@@ -73,11 +79,11 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
         </div>
 
         <div>
-          <label className="block font-medium">Phone:</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
           <input
-            type="phone"
+            type="tel"
             name="phone"
-            className="w-full p-2 border rounded"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={leadDetails.phone}
             onChange={handleChange}
             disabled={loading}
@@ -85,11 +91,11 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
         </div>
 
         <div>
-          <label className="block font-medium">Company:</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
           <input
             type="text"
             name="company"
-            className="w-full p-2 border rounded"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={leadDetails.company}
             onChange={handleChange}
             disabled={loading}
@@ -98,7 +104,11 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
 
         <button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className={`w-full py-2 px-4 text-white rounded-lg transition duration-300 ${
+            loading
+              ? 'bg-blue-300 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
           disabled={loading}
         >
           {loading ? 'Creating...' : 'Create Lead'}
