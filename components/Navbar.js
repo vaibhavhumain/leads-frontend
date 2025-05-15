@@ -1,18 +1,21 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { jwtDecode } from 'jwt-decode'; 
+import BASE_URL from '../utils/api';
 
 const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
+  
+useEffect(() => {
   const token = localStorage.getItem('token');
   if (token) {
-    fetch('http://localhost:5000/api/users/me', {
-      headers: { Authorization: `Bearer ${token}` },
+    fetch(`${BASE_URL}/api/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     })
       .then(res => {
         if (!res.ok) throw new Error('Unauthorized');
@@ -23,7 +26,7 @@ const Navbar = () => {
         setIsAuthenticated(true);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Failed to fetch user:', err);
         setIsAuthenticated(false);
       });
   }
