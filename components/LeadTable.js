@@ -11,25 +11,35 @@ const LeadTable = ({ leads, setLeads }) => {
   const [followUpInputs, setFollowUpInputs] = useState({});
   const [statusUpdates, setStatusUpdates] = useState({});
   const [dropdownVisible, setDropdownVisible] = useState({});
+const [loggedInUser, setLoggedInUser] = useState(null);
 
   // Fetch users
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${BASE_URL}/api/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsers(response.data);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError('Error fetching users');
-        toast.error('Failed to fetch users');
-      }
-    };
+ useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
 
-    fetchUsers();
-  }, []);
+      // Get logged-in user
+      const meRes = await axios.get(`${BASE_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLoggedInUser(meRes.data);
+
+      // Get all users
+      const allUsersRes = await axios.get(`${BASE_URL}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(allUsersRes.data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Error fetching users');
+      toast.error('Failed to fetch users');
+    }
+  };
+
+  fetchUsers();
+}, []);
+
 
   // Format date to a readable format
   const formatDateTime = (isoString) => {
@@ -254,19 +264,25 @@ const LeadTable = ({ leads, setLeads }) => {
                 {lead.status || 'Not Updated'}
               </div>
               <select
-                className="w-full text-xs border px-2 py-1 rounded"
-                value={statusUpdates[lead._id] || ''}
-                onChange={(e) =>
-                  setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
-                }
-              >
-                <option value="">Update Status</option>
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+  className="w-full text-xs border px-2 py-1 rounded"
+  value={selectedUser[lead._id] || ''}
+  onChange={(e) =>
+    setSelectedUser({
+      ...selectedUser,
+      [lead._id]: e.target.value,
+    })
+  }
+>
+  <option value="">Select user</option>
+  {users
+    .filter((user) => user._id !== loggedInUser?._id) // <-- Exclude self
+    .map((user) => (
+      <option key={user._id} value={user._id}>
+        {user.name} ({user.role})
+      </option>
+    ))}
+</select>
+
               <button
                 onClick={() => handleStatusUpdate(lead._id)}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2 py-1 rounded-md text-xs font-semibold"
@@ -278,22 +294,25 @@ const LeadTable = ({ leads, setLeads }) => {
             {/* Forwarded To */}
             <td className="p-3 sm:p-4 space-y-2">
               <select
-                className="w-full text-xs border px-2 py-1 rounded"
-                value={selectedUser[lead._id] || ''}
-                onChange={(e) =>
-                  setSelectedUser({
-                    ...selectedUser,
-                    [lead._id]: e.target.value,
-                  })
-                }
-              >
-                <option value="">Select user</option>
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.name} ({user.role})
-                  </option>
-                ))}
-              </select>
+  className="w-full text-xs border px-2 py-1 rounded"
+  value={selectedUser[lead._id] || ''}
+  onChange={(e) =>
+    setSelectedUser({
+      ...selectedUser,
+      [lead._id]: e.target.value,
+    })
+  }
+>
+  <option value="">Select user</option>
+  {users
+    .filter((user) => loggedInUser && String(user._id) !== String(loggedInUser._id))
+    .map((user) => (
+      <option key={user._id} value={user._id}>
+        {user.name} ({user.role})
+      </option>
+    ))}
+</select>
+
               <button
                 onClick={() => handleForwardLead(lead._id)}
                 className="w-full bg-green-600 hover:bg-green-700 text-white py-1 rounded-md text-xs font-semibold"
