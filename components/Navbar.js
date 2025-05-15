@@ -54,7 +54,7 @@ useEffect(() => {
               <Link href="/profile" legacyBehavior>
                 <a>Profile</a>
               </Link>
-              <button onClick={handleLogout} className="hover:underline">
+              <button onClick={handleLogout} className="hover:underline bg-red-500 text-white px-4 py-2 rounded">
                 Logout
               </button>
             </>

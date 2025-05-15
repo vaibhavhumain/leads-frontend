@@ -83,81 +83,97 @@ const [loggedInUser, setLoggedInUser] = useState(null);
 
   // Add a follow-up note and date for a lead
   const handleFollowUp = async (leadId) => {
-    const { date, notes } = followUpInputs[leadId] || {};
+  const { date, notes } = followUpInputs[leadId] || {};
 
-    if (!date || !notes) {
-      toast.error('Please enter both date and notes');
+  if (!date || !notes) {
+    toast.error('Please enter both date and notes');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('You must be logged in to add a follow-up');
       return;
     }
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('You must be logged in to add a follow-up');
-        return;
-      }
+    const formattedDate = new Date(date).toISOString();
 
-      const formattedDate = new Date(date).toISOString();
+    await axios.post(
+      `${BASE_URL}/api/leads/followup`,
+      { leadId, followUp: { date: formattedDate, notes } },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      await axios.post(
-        `${BASE_URL}/api/leads/followup`,
-        { leadId, followUp: { date: formattedDate, notes } },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success('Follow-up added successfully');
+    toast.success('Follow-up added successfully');
 
-      // Update the leads state with the new follow-up
-      setLeads((prevLeads) =>
-        prevLeads.map((lead) =>
-          lead._id === leadId
-            ? {
-                ...lead,
-                followUps: [...lead.followUps, { date: formattedDate, notes }],
-              }
-            : lead
-        )
-      );
-    } catch (err) {
-      console.error('Error adding follow-up:', err.response ? err.response.data : err.message);
-      setError('Error adding follow-up');
-      toast.error(err.response ? err.response.data.message : 'Failed to add follow-up');
-    }
-  };
+    // ✅ Update leads state
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              followUps: [...lead.followUps, { date: formattedDate, notes }],
+            }
+          : lead
+      )
+    );
+
+    // ✅ Clear input values
+    setFollowUpInputs((prevInputs) => ({
+      ...prevInputs,
+      [leadId]: { date: '', notes: '' },
+    }));
+  } catch (err) {
+    console.error('Error adding follow-up:', err.response ? err.response.data : err.message);
+    setError('Error adding follow-up');
+    toast.error(err.response ? err.response.data.message : 'Failed to add follow-up');
+  }
+};
 
   // Update status of a lead
   const handleStatusUpdate = async (leadId) => {
-    const status = statusUpdates[leadId];
-    if (!status) {
-      toast.error('Please select a status');
-      return;
-    }
+  const token = localStorage.getItem('token');
+  const status = statusUpdates[leadId] || '';
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(
-        `${BASE_URL}/api/leads/${leadId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  if (!status) {
+    toast.warning('Please select a status');
+    return;
+  }
 
+  try {
+    const toastId = toast.loading('Updating lead...');
 
-      const updatedLead = response.data.lead;
+    await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/status`,
+      { status },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setLeads((prevLeads) =>
-        prevLeads.map((lead) =>
-          lead._id === leadId ? { ...lead, status: updatedLead.status } : lead
-        )
-      );
+    toast.update(toastId, {
+      render: 'Lead updated successfully ✅',
+      type: 'success',
+      isLoading: false,
+      autoClose: 3000,
+    });
 
-      setStatusUpdates((prev) => ({ ...prev, [leadId]: '' }));
+    // ✅ Update local lead list
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead._id === leadId ? { ...lead, status } : lead
+      )
+    );
 
-      toast.success('Lead status updated successfully');
-    } catch (err) {
-      console.error('Status update error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Error updating status');
-      toast.error(err.response?.data?.message || 'Failed to update status');
-    }
-  };
+    // ✅ Clear the select field for that lead
+    setStatusUpdates((prev) => ({
+      ...prev,
+      [leadId]: '',
+    }));
+  } catch (err) {
+    console.error('Error updating lead:', err);
+    toast.error('Failed to update lead');
+  }
+};
 
   const toggleDropdown = (leadId) => {
     setDropdownVisible((prev) => ({
@@ -180,151 +196,173 @@ const [loggedInUser, setLoggedInUser] = useState(null);
         </tr>
       </thead>
       <tbody>
-        {leads.map((lead, idx) => (
-          <tr
-            key={lead._id}
-            className={`rounded-xl ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow transition`}
+  {leads.map((lead, idx) => {
+    const isFrozenByCreator =
+      lead.createdBy?._id === loggedInUser?._id && lead.forwardedTo?.user?._id;
+
+    return (
+      <tr
+        key={lead._id}
+        className={`rounded-xl ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow transition`}
+      >
+        {/* Lead Name */}
+        <td className="p-3 sm:p-4 align-top break-words">
+          <div className="font-semibold text-base text-gray-900">
+            {lead.leadDetails?.name || 'N/A'}
+            {isFrozenByCreator && (
+              <span className="text-xs font-semibold text-red-600 ml-2">🔒 Forwarded</span>
+            )}
+          </div>
+          <div className="text-sm text-gray-600">{lead.leadDetails?.company || ''}</div>
+        </td>
+
+        {/* Phone */}
+        <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+          {lead.leadDetails?.phone || 'N/A'}
+        </td>
+
+        {/* Created By */}
+        <td className="p-3 sm:p-4 align-top text-gray-700 break-words">
+          {lead.createdBy?.name || 'N/A'}
+        </td>
+
+        {/* Follow-Ups */}
+        <td className="p-3 sm:p-4">
+          <button
+            onClick={() => toggleDropdown(lead._id)}
+            className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded-md text-xs font-semibold ${
+              isFrozenByCreator ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isFrozenByCreator}
           >
-            {/* Lead Name */}
-            <td className="p-3 sm:p-4 align-top break-words">
-              <div className="font-semibold text-base text-gray-900">
-                {lead.leadDetails?.name || 'N/A'}
-              </div>
-              <div className="text-sm text-gray-600">{lead.leadDetails?.company || ''}</div>
-            </td>
+            {dropdownVisible[lead._id] ? 'Hide Follow-Ups' : 'Show Follow-Ups'}
+          </button>
 
-            {/* Phone */}
-            <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-              {lead.leadDetails?.phone || 'N/A'}
-            </td>
-
-            {/* Created By */}
-            <td className="p-3 sm:p-4 align-top text-gray-700 break-words">
-              {lead.createdBy?.name || 'N/A'}
-            </td>
-
-            {/* Follow-Ups */}
-            <td className="p-3 sm:p-4">
-              <button
-                onClick={() => toggleDropdown(lead._id)}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded-md text-xs font-semibold"
-              >
-                {dropdownVisible[lead._id] ? 'Hide Follow-Ups' : 'Show Follow-Ups'}
-              </button>
-
-              {dropdownVisible[lead._id] && (
-                <div className="mt-2 space-y-2">
-                  {lead.followUps?.length > 0 ? (
-                    <ul className="text-xs text-gray-700 space-y-1">
-                      {lead.followUps.map((f, i) => (
-                        <li key={i}>
-                          <span className="font-medium text-blue-600">{formatDateTime(f.date)}</span>: {f.notes}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-xs text-gray-500">No follow-ups</p>
-                  )}
-
-                  <input
-                    type="date"
-                    className="w-full border px-2 py-1 rounded text-xs"
-                    value={followUpInputs[lead._id]?.date || ''}
-                    onChange={(e) =>
-                      setFollowUpInputs({
-                        ...followUpInputs,
-                        [lead._id]: {
-                          ...followUpInputs[lead._id],
-                          date: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                  <textarea
-                    rows={2}
-                    placeholder="Follow-up notes"
-                    className="w-full border px-2 py-1 rounded text-xs"
-                    value={followUpInputs[lead._id]?.notes || ''}
-                    onChange={(e) =>
-                      setFollowUpInputs({
-                        ...followUpInputs,
-                        [lead._id]: {
-                          ...followUpInputs[lead._id],
-                          notes: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                  <button
-                    onClick={() => handleFollowUp(lead._id)}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded-md py-1 text-xs font-semibold"
-                  >
-                    Add Follow-Up
-                  </button>
-                </div>
+          {dropdownVisible[lead._id] && !isFrozenByCreator && (
+            <div className="mt-2 space-y-2">
+              {lead.followUps?.length > 0 ? (
+                <ul className="text-xs text-gray-700 space-y-1">
+                  {lead.followUps.map((f, i) => (
+                    <li key={i}>
+                      <span className="font-medium text-blue-600">{formatDateTime(f.date)}</span>: {f.notes}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-gray-500">No follow-ups</p>
               )}
-            </td>
 
-           {/* Status */}
-<td className="p-3 sm:p-4">
-  <div className="text-sm font-semibold text-blue-700 mb-1">
-    {lead.status || 'Not Updated'}
-  </div>
-  <select
-    className="w-full text-xs border px-2 py-1 rounded"
-    value={statusUpdates[lead._id] || ''}
-    onChange={(e) =>
-      setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
-    }
-  >
-    <option value="">Update Status</option>
-    {STATUS_OPTIONS.map((option) => (
-      <option key={option} value={option}>
-        {option}
-      </option>
-    ))}
-  </select>
-  <button
-    onClick={() => handleStatusUpdate(lead._id)}
-    className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2 py-1 rounded-md text-xs font-semibold"
-  >
-    Update
-  </button>
-</td>
-
-
-            {/* Forwarded To */}
-            <td className="p-3 sm:p-4 space-y-2">
-              <select
-  className="w-full text-xs border px-2 py-1 rounded"
-  value={selectedUser[lead._id] || ''}
-  onChange={(e) =>
-    setSelectedUser({
-      ...selectedUser,
-      [lead._id]: e.target.value,
-    })
-  }
->
-  <option value="">Select user</option>
-  {users
-    .filter((user) => loggedInUser && String(user._id) !== String(loggedInUser._id))
-    .map((user) => (
-      <option key={user._id} value={user._id}>
-        {user.name} ({user.role})
-      </option>
-    ))}
-</select>
-
+              <input
+                type="date"
+                className="w-full border px-2 py-1 rounded text-xs"
+                value={followUpInputs[lead._id]?.date || ''}
+                onChange={(e) =>
+                  setFollowUpInputs({
+                    ...followUpInputs,
+                    [lead._id]: {
+                      ...followUpInputs[lead._id],
+                      date: e.target.value,
+                    },
+                  })
+                }
+              />
+              <textarea
+                rows={2}
+                placeholder="Follow-up notes"
+                className="w-full border px-2 py-1 rounded text-xs"
+                value={followUpInputs[lead._id]?.notes || ''}
+                onChange={(e) =>
+                  setFollowUpInputs({
+                    ...followUpInputs,
+                    [lead._id]: {
+                      ...followUpInputs[lead._id],
+                      notes: e.target.value,
+                    },
+                  })
+                }
+              />
               <button
-                onClick={() => handleForwardLead(lead._id)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-1 rounded-md text-xs font-semibold"
+                onClick={() => handleFollowUp(lead._id)}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded-md py-1 text-xs font-semibold"
               >
-                Forward
+                Add Follow-Up
               </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
+            </div>
+          )}
+        </td>
+
+        {/* Status */}
+        <td className="p-3 sm:p-4">
+          <div className="text-sm font-semibold text-blue-700 mb-1">
+            {lead.status || 'Not Updated'}
+          </div>
+          <select
+            className="w-full text-xs border px-2 py-1 rounded"
+            value={statusUpdates[lead._id] || ''}
+            onChange={(e) =>
+              setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
+            }
+            disabled={isFrozenByCreator}
+          >
+            <option value="">Update Status</option>
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => handleStatusUpdate(lead._id)}
+            disabled={isFrozenByCreator}
+            className={`w-full mt-2 py-1 rounded-md text-xs font-semibold text-white ${
+              isFrozenByCreator
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+          >
+            Update
+          </button>
+        </td>
+
+        {/* Forwarded To */}
+        <td className="p-3 sm:p-4 space-y-2">
+          <select
+            className="w-full text-xs border px-2 py-1 rounded"
+            value={selectedUser[lead._id] || ''}
+            onChange={(e) =>
+              setSelectedUser({
+                ...selectedUser,
+                [lead._id]: e.target.value,
+              })
+            }
+            disabled={isFrozenByCreator}
+          >
+            <option value="">Select user</option>
+            {users
+              .filter((user) => loggedInUser && String(user._id) !== String(loggedInUser._id))
+              .map((user) => (
+                <option key={user._id} value={user._id}>
+                  {user.name} ({user.role})
+                </option>
+              ))}
+          </select>
+
+          <button
+            onClick={() => handleForwardLead(lead._id)}
+            disabled={isFrozenByCreator}
+            className={`w-full py-1 rounded-md text-xs font-semibold text-white ${
+              isFrozenByCreator
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            Forward
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
     </table>
   </div>
 );
