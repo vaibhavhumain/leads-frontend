@@ -33,7 +33,8 @@ const ProfilePage = () => {
       }
 
       try {
-        const response = await axios.get(`${BASE_URL}/api/users/profile/me`, {
+        const response = await axios.get(`${BASE_URL}/api/users/me`, {
+
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(response.data);

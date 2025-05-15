@@ -53,26 +53,33 @@ const [loggedInUser, setLoggedInUser] = useState(null);
 
   // Forward lead to selected user
   const handleForwardLead = async (leadId) => {
-    const userId = selectedUser[leadId];
-    if (!userId) {
-      toast.error('Please select a user to forward the lead');
-      return;
-    }
+  const userId = selectedUser[leadId];
 
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${BASE_URL}/api/leads/forward`,
-        { leadId, userId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success('Lead forwarded and email sent!');
-    } catch (err) {
-      console.error('Error forwarding lead:', err);
-      setError('Error forwarding lead');
-      toast.error('Failed to forward lead');
-    }
-  };
+  if (!userId) {
+    toast.error('Please select a user to forward the lead');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await axios.post(
+      `${BASE_URL}/api/leads/forward`,
+      { leadId, userId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    toast.success('Lead forwarded successfully!');
+    console.log('✅ Forward lead response:', response.data);
+  } catch (err) {
+    console.error('❌ Error forwarding lead:', {
+      message: err.message,
+      response: err.response?.data,
+    });
+    setError('Error forwarding lead');
+    toast.error(err.response?.data?.message || 'Failed to forward lead');
+  }
+};
 
   // Add a follow-up note and date for a lead
   const handleFollowUp = async (leadId) => {
@@ -258,38 +265,33 @@ const [loggedInUser, setLoggedInUser] = useState(null);
               )}
             </td>
 
-            {/* Status */}
-            <td className="p-3 sm:p-4">
-              <div className="text-sm font-semibold text-blue-700 mb-1">
-                {lead.status || 'Not Updated'}
-              </div>
-              <select
-  className="w-full text-xs border px-2 py-1 rounded"
-  value={selectedUser[lead._id] || ''}
-  onChange={(e) =>
-    setSelectedUser({
-      ...selectedUser,
-      [lead._id]: e.target.value,
-    })
-  }
->
-  <option value="">Select user</option>
-  {users
-    .filter((user) => user._id !== loggedInUser?._id) // <-- Exclude self
-    .map((user) => (
-      <option key={user._id} value={user._id}>
-        {user.name} ({user.role})
+           {/* Status */}
+<td className="p-3 sm:p-4">
+  <div className="text-sm font-semibold text-blue-700 mb-1">
+    {lead.status || 'Not Updated'}
+  </div>
+  <select
+    className="w-full text-xs border px-2 py-1 rounded"
+    value={statusUpdates[lead._id] || ''}
+    onChange={(e) =>
+      setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
+    }
+  >
+    <option value="">Update Status</option>
+    {STATUS_OPTIONS.map((option) => (
+      <option key={option} value={option}>
+        {option}
       </option>
     ))}
-</select>
+  </select>
+  <button
+    onClick={() => handleStatusUpdate(lead._id)}
+    className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2 py-1 rounded-md text-xs font-semibold"
+  >
+    Update
+  </button>
+</td>
 
-              <button
-                onClick={() => handleStatusUpdate(lead._id)}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white mt-2 py-1 rounded-md text-xs font-semibold"
-              >
-                Update
-              </button>
-            </td>
 
             {/* Forwarded To */}
             <td className="p-3 sm:p-4 space-y-2">
