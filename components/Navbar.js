@@ -1,15 +1,34 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { jwtDecode } from 'jwt-decode'; 
 
 const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState('');
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
+  const token = localStorage.getItem('token');
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Unauthorized');
+        return res.json();
+      })
+      .then(data => {
+        setUserName(data.name || 'User');
+        setIsAuthenticated(true);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsAuthenticated(false);
+      });
+  }
+}, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -22,9 +41,10 @@ const Navbar = () => {
         <Link href="/" legacyBehavior>
           <a className="text-xl font-bold">Leads Portal</a>
         </Link>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 items-center">
           {isAuthenticated ? (
             <>
+              <span className="font-semibold">Welcome, {userName}</span>
               <Link href="/dashboard" legacyBehavior>
                 <a>Dashboard</a>
               </Link>

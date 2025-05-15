@@ -56,7 +56,7 @@ const LeadTable = ({ leads, setLeads }) => {
         { leadId, userId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('Lead forwarded successfully');
+      toast.success('Lead forwarded and email sent!');
     } catch (err) {
       console.error('Error forwarding lead:', err);
       setError('Error forwarding lead');
