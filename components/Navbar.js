@@ -7,6 +7,16 @@ const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
   const router = useRouter();
+  const emojis = [
+  '😄', '😁', '😎', '🤩', '🥳', '😇', '😊', '🙌', '👋', '👍',
+  '🔥', '🚀', '✨', '🎯', '🏆', '🌟', '🌈', '💫', '💡', '📈',
+  '📊', '🧠', '💪', '🤝', '👨‍💻', '👩‍💻', '🧑‍💻', '🛠️', '🧰', '🧭',
+  '🎓', '🎉', '🎁', '📣', '📌', '🗂️', '💼', '🚌', '🚍', '🕶️',
+  '🏁', '🔑', '⚡', '📍', '📝', '🧾', '🕹️', '🛎️', '🪄', '🏅',
+  '😎', '🚀', '🎉', '🌟', '🔥', '👋', '💼', '🚌', '😁', '✨','🕺🏾'
+];
+  const [randomEmoji, setRandomEmoji] = useState('');
+
 
   
 useEffect(() => {
@@ -24,6 +34,7 @@ useEffect(() => {
       .then(data => {
         setUserName(data.name || 'User');
         setIsAuthenticated(true);
+        setRandomEmoji(emojis[Math.floor(Math.random() * emojis.length)]);
       })
       .catch(err => {
         console.error('Failed to fetch user:', err);
@@ -47,7 +58,7 @@ useEffect(() => {
         <div className="flex space-x-4 items-center">
           {isAuthenticated ? (
             <>
-              <span className="font-semibold">Welcome, {userName}</span>
+             <span className="font-semibold">Welcome, {userName} {randomEmoji}</span>
               <Link href="/dashboard" legacyBehavior>
                 <a>Dashboard</a>
               </Link>

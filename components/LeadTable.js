@@ -181,6 +181,18 @@ const [loggedInUser, setLoggedInUser] = useState(null);
       [leadId]: !prev[leadId],
     }));
   };
+  const generateWhatsAppLink = (lead) => {
+  const message = `*Lead Details*\n
+Name: ${lead.leadDetails?.name || 'N/A'}
+Phone: ${lead.leadDetails?.phone || 'N/A'}
+Company: ${lead.leadDetails?.company || 'N/A'}
+Status: ${lead.status || 'Not Updated'}
+Created By: ${lead.createdBy?.name || 'N/A'}
+Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f.notes}`).join('\n')}`;
+
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+};
+
 
   return (
   <div className="w-full overflow-x-auto rounded-xl shadow-lg bg-white max-w-full sm:px-2">
@@ -198,7 +210,9 @@ const [loggedInUser, setLoggedInUser] = useState(null);
       <tbody>
   {leads.map((lead, idx) => {
     const isFrozenByCreator =
-      lead.createdBy?._id === loggedInUser?._id && lead.forwardedTo?.user?._id;
+  lead.createdBy?._id === loggedInUser?._id &&
+  lead.forwardedTo?.user?._id &&
+  lead.isFrozen;
 
     return (
       <tr
@@ -358,6 +372,18 @@ const [loggedInUser, setLoggedInUser] = useState(null);
           >
             Forward
           </button>
+          <a
+  href={generateWhatsAppLink(lead)}
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <button
+    className="w-full bg-green-500 hover:bg-green-600 text-white py-1 text-xs font-semibold rounded-md mt-1"
+  >
+    WhatsApp Lead
+  </button>
+</a>
+
         </td>
       </tr>
     );
