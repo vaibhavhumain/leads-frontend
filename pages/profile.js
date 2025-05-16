@@ -15,13 +15,7 @@ const ProfilePage = () => {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const router = useRouter();
 
-  const statusOptions = [
-    'New',
-    'In Progress',
-    'Followed Up',
-    'Converted',
-    'Not Interested',
-  ];
+  const statusOptions = ['Hot', 'Warm', 'Cold'];
 
   useEffect(() => {
     const fetchUser = async () => {

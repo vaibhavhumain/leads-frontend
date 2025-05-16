@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import BASE_URL from '../utils/api';
-const STATUS_OPTIONS = ['New', 'In Progress', 'Followed Up', 'Converted', 'Not Interested'];
+const STATUS_OPTIONS = ['Hot','Warm','Cold'];
 
 const LeadTable = ({ leads, setLeads }) => {
   const [users, setUsers] = useState([]);
@@ -11,7 +11,11 @@ const LeadTable = ({ leads, setLeads }) => {
   const [followUpInputs, setFollowUpInputs] = useState({});
   const [statusUpdates, setStatusUpdates] = useState({});
   const [dropdownVisible, setDropdownVisible] = useState({});
-const [loggedInUser, setLoggedInUser] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [connectionStatusUpdates, setConnectionStatusUpdates] = useState({});
+  const [remarksDropdownVisible, setRemarksDropdownVisible] = useState({});
+
+
 
   // Fetch users
  useEffect(() => {
@@ -71,6 +75,12 @@ const [loggedInUser, setLoggedInUser] = useState(null);
 
     toast.success('Lead forwarded successfully!');
     console.log('✅ Forward lead response:', response.data);
+
+    setSelectedUser((prev) => ({
+      ...prev,
+      [leadId]: '',
+    }));
+
   } catch (err) {
     console.error('❌ Error forwarding lead:', {
       message: err.message,
@@ -80,6 +90,7 @@ const [loggedInUser, setLoggedInUser] = useState(null);
     toast.error(err.response?.data?.message || 'Failed to forward lead');
   }
 };
+
 
   // Add a follow-up note and date for a lead
   const handleFollowUp = async (leadId) => {
@@ -175,12 +186,61 @@ const [loggedInUser, setLoggedInUser] = useState(null);
   }
 };
 
+const handleConnectionStatusUpdate = async (leadId) => {
+  const token = localStorage.getItem('token');
+  const connectionStatus = connectionStatusUpdates[leadId];
+
+  if (!connectionStatus) {
+    toast.warning('Please select a connection status');
+    return;
+  }
+
+  try {
+    const toastId = toast.loading('Updating connection status...');
+
+    await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/connection-status`,
+      { connectionStatus },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    toast.update(toastId, {
+      render: 'Connection status updated ✅',
+      type: 'success',
+      isLoading: false,
+      autoClose: 3000,
+    });
+
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead._id === leadId ? { ...lead, connectionStatus } : lead
+      )
+    );
+
+    setConnectionStatusUpdates((prev) => ({
+      ...prev,
+      [leadId]: '',
+    }));
+  } catch (err) {
+    console.error('Error updating connection status:', err);
+    toast.error('Failed to update connection status');
+  }
+};
+
+
   const toggleDropdown = (leadId) => {
     setDropdownVisible((prev) => ({
       ...prev,
       [leadId]: !prev[leadId],
     }));
   };
+  const toggleRemarksDropdown = (leadId) => {
+  setRemarksDropdownVisible((prev) => ({
+    ...prev,
+    [leadId]: !prev[leadId],
+  }));
+};
+
   const generateWhatsAppLink = (lead) => {
   const message = `*Lead Details*\n
 Name: ${lead.leadDetails?.name || 'N/A'}
@@ -202,9 +262,11 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
           <th className="p-3 sm:p-4">Lead Name</th>
           <th className="p-3 sm:p-4">Phone</th>
           <th className="p-3 sm:p-4">Created By</th>
-          <th className="p-3 sm:p-4">Follow-Ups</th>
           <th className="p-3 sm:p-4">Status</th>
+          <th className="p-3 sm:p-4">Follow-Ups</th>
+          <th className="p-3 sm:p-4">Lead Status</th>
           <th className="p-3 sm:p-4">Forwarded To</th>
+          <th className="p-3 sm:p-4">Next Action Plan</th>
         </tr>
       </thead>
       <tbody>
@@ -239,6 +301,47 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
         <td className="p-3 sm:p-4 align-top text-gray-700 break-words">
           {lead.createdBy?.name || 'N/A'}
         </td>
+        {/* Connection Status */}
+<td className="p-3 sm:p-4 align-top">
+  {/* Show current or updated connection status */}
+  <div className="text-sm font-semibold mb-1">
+    <span className={`
+      ${lead.connectionStatus === 'Connected' ? 'text-green-600' : 'text-red-600'}
+    `}>
+      {lead.connectionStatus || 'Not Connected'}
+    </span>
+  </div>
+
+  {/* Dropdown to change connection status */}
+  <select
+    className="w-full text-xs border px-2 py-1 rounded"
+    value={connectionStatusUpdates[lead._id] || ''}
+    onChange={(e) =>
+      setConnectionStatusUpdates((prev) => ({
+        ...prev,
+        [lead._id]: e.target.value,
+      }))
+    }
+    disabled={isFrozenByCreator}
+  >
+    <option value="">Update Connection</option>
+    <option value="Connected">Connected</option>
+    <option value="Not Connected">Not Connected</option>
+  </select>
+
+  <button
+    onClick={() => handleConnectionStatusUpdate(lead._id)}
+    disabled={isFrozenByCreator}
+    className={`w-full mt-1 py-1 rounded-md text-xs font-semibold text-white ${
+      isFrozenByCreator
+        ? 'bg-gray-400 cursor-not-allowed'
+        : 'bg-purple-600 hover:bg-purple-700'
+    }`}
+  >
+    Update
+  </button>
+</td>
+
 
         {/* Follow-Ups */}
         <td className="p-3 sm:p-4">
@@ -385,7 +488,43 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
 </a>
 
         </td>
+        {/* Next Action Plan - Full Remark History */}
+<td className="p-3 sm:p-4 align-top text-xs text-gray-800 whitespace-pre-line">
+  <button
+    onClick={() => toggleRemarksDropdown(lead._id)}
+    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-1 rounded-md text-xs font-semibold"
+  >
+    {remarksDropdownVisible[lead._id] ? 'Hide Remarks' : 'Show Remarks'}
+  </button>
+
+  {remarksDropdownVisible[lead._id] && (
+    <div className="mt-2">
+      {lead.remarksHistory && lead.remarksHistory.length > 0 ? (
+        <ul className="space-y-1">
+          {lead.remarksHistory.map((r, index) => (
+            <li key={index} className="border-b pb-1">
+              <div>
+                <span className="text-blue-600 font-medium">
+                  {formatDateTime(r.date)}:
+                </span>{' '}
+                {r.remarks}
+              </div>
+              <div className="mt-1 text-[11px] text-gray-500 italic">
+                — Updated by: {r.updatedBy?.name || 'Unknown'}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-500 mt-2">No remarks yet</p>
+      )}
+    </div>
+  )}
+</td>
+
+
       </tr>
+      
     );
   })}
 </tbody>
