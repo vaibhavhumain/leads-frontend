@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BASE_URL from '../utils/api'; 
+import { HomeIcon } from '@heroicons/react/24/solid';
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
@@ -136,12 +137,14 @@ const toggleDropdown = (leadId) => {
           My Profile
         </motion.h1>
 
+        {/* Dashboard Button with Icon */}
         <motion.button
           onClick={() => router.push('/dashboard')}
-          className="mb-6 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm shadow-md"
+          className="mb-6 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm shadow-md"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
+          <HomeIcon className="w-5 h-5" />
           Go to Dashboard
         </motion.button>
 
