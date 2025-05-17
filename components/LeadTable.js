@@ -56,7 +56,7 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
   };
 
   // Forward lead to selected user
-  const handleForwardLead = async (leadId) => {
+ const handleForwardLead = async (leadId) => {
   const userId = selectedUser[leadId];
 
   if (!userId) {
@@ -74,13 +74,29 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
     );
 
     toast.success('Lead forwarded successfully!');
-    console.log('✅ Forward lead response:', response.data);
 
+    // ✅ Clear dropdown
     setSelectedUser((prev) => ({
       ...prev,
       [leadId]: '',
     }));
 
+    // ✅ Freeze the lead locally by updating the state
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              isFrozen: true,
+              forwardedTo: {
+                ...lead.forwardedTo,
+                user: users.find((u) => u._id === userId),
+                forwardedAt: new Date().toISOString(),
+              },
+            }
+          : lead
+      )
+    );
   } catch (err) {
     console.error('❌ Error forwarding lead:', {
       message: err.message,
@@ -168,14 +184,22 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
       autoClose: 3000,
     });
 
-    // ✅ Update local lead list
     setLeads((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead._id === leadId ? { ...lead, status } : lead
-      )
+      prevLeads.map((lead) => {
+        const wasForwardedToMe =
+          lead.forwardedTo?.user?._id === loggedInUser?._id;
+
+        return lead._id === leadId
+          ? {
+              ...lead,
+              status,
+              // If I am the forwarded user and I updated it, unfreeze it for the creator
+              isFrozen: wasForwardedToMe ? false : lead.isFrozen,
+            }
+          : lead;
+      })
     );
 
-    // ✅ Clear the select field for that lead
     setStatusUpdates((prev) => ({
       ...prev,
       [leadId]: '',
@@ -185,6 +209,7 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
     toast.error('Failed to update lead');
   }
 };
+
 
 const handleConnectionStatusUpdate = async (leadId) => {
   const token = localStorage.getItem('token');
