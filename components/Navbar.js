@@ -7,6 +7,7 @@ import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ArrowLeftOnRectangleIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/solid';
 
 const Navbar = () => {
@@ -59,36 +60,50 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-600 px-4 py-3 text-white shadow-md">
+    <nav className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-white shadow-lg">
       <div className="container mx-auto flex justify-between items-center">
+        {/* Logo/Title */}
         <Link href="/" legacyBehavior>
-          <a className="text-xl font-bold tracking-wide">Leads Portal</a>
+          <a className="flex items-center gap-2 text-xl font-bold tracking-wide">
+            <BriefcaseIcon className="w-6 h-6" />
+            Leads Portal
+          </a>
         </Link>
 
-        <div className="flex space-x-6 items-center text-sm font-medium">
+        {/* Nav Links */}
+        <div className="flex items-center gap-5 text-sm font-medium">
           {isAuthenticated ? (
             <>
-              <span className="hidden sm:inline-block font-semibold">
-                Welcome, {userName} {randomEmoji}
-              </span>
+              {/* Avatar + Name */}
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white text-blue-700 font-bold flex items-center justify-center">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span>
+                  {userName} {randomEmoji}
+                </span>
+              </div>
 
+              {/* Dashboard */}
               <Link href="/dashboard" legacyBehavior>
-                <a className="flex items-center gap-1 hover:text-yellow-200">
+                <a className="flex items-center gap-1 hover:bg-yellow-700 px-3 py-1 rounded transition">
                   <HomeIcon className="w-5 h-5" />
                   <span className="hidden sm:inline">Dashboard</span>
                 </a>
               </Link>
 
+              {/* Profile */}
               <Link href="/profile" legacyBehavior>
-                <a className="flex items-center gap-1 hover:text-yellow-200">
+                <a className="flex items-center gap-1 hover:bg-blue-700 px-3 py-1 rounded transition">
                   <UserCircleIcon className="w-5 h-5" />
                   <span className="hidden sm:inline">Profile</span>
                 </a>
               </Link>
 
+              {/* Logout */}
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition"
               >
                 <ArrowRightOnRectangleIcon className="w-5 h-5" />
                 <span className="hidden sm:inline">Logout</span>
@@ -96,15 +111,17 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              {/* Register */}
               <Link href="/register" legacyBehavior>
-                <a className="flex items-center gap-1 hover:text-yellow-200">
+                <a className="flex items-center gap-1 hover:bg-blue-700 px-3 py-1 rounded transition">
                   <UserCircleIcon className="w-5 h-5" />
                   Register
                 </a>
               </Link>
 
+              {/* Login */}
               <Link href="/login" legacyBehavior>
-                <a className="flex items-center gap-1 hover:text-yellow-200">
+                <a className="flex items-center gap-1 hover:bg-blue-700 px-3 py-1 rounded transition">
                   <ArrowLeftOnRectangleIcon className="w-5 h-5" />
                   Login
                 </a>
