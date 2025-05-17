@@ -8,6 +8,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,6 +17,7 @@ const Login = () => {
     try {
       const response = await axios.post(`${BASE_URL}/api/auth/login`, { email, password });
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('loginTime', new Date().toISOString());
       router.push('/dashboard');
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');

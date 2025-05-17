@@ -4,50 +4,75 @@ import LeadTable from '../components/LeadTable';
 import Navbar from '@/components/Navbar';
 import ProtectedRoute from '../components/ProtectedRoute';
 import LeadForm from '../components/LeadForm';
-import { motion } from 'framer-motion';
+import { FiSearch } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 import BASE_URL from '../utils/api';
 
 const Dashboard = () => {
-  const [leads, setLeads] = useState([]);
+  const [myLeads, setMyLeads] = useState([]); // Only self-created
+  const [allLeads, setAllLeads] = useState([]); // All for search
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [loginDuration, setLoginDuration] = useState('');
+
 
   const formRef = useRef(null);
 
   useEffect(() => {
-    const fetchLeads = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('Unauthorized: Please log in.');
-          setLoading(false);
-          return;
-        }
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-       const response = await axios.get(`${BASE_URL}/api/leads`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
+      const [mine, all] = await Promise.all([
+        axios.get(`${BASE_URL}/api/leads/my-leads`, { headers }),
+        axios.get(`${BASE_URL}/api/leads/all`, { headers }),
+      ]);
+
+      setMyLeads(mine.data);
+      setAllLeads(all.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error fetching leads');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchLeads();
+
+  const interval = setInterval(() => {
+  const loginTimeString = localStorage.getItem('loginTime');
+  if (loginTimeString) {
+    const loginTime = new Date(loginTimeString);
+    const now = new Date();
+    const diff = now - loginTime; // in milliseconds
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    let duration = '';
+    if (hours > 0) duration += `${hours}h `;
+    if (minutes > 0 || hours > 0) duration += `${minutes}m `;
+    duration += `${seconds}s`;
+
+    setLoginDuration(duration.trim());
+  }
+}, 1000);
 
 
-        if (response.data.length === 0) {
-          setError('No leads found.');
-        } else {
-          setLeads(response.data);
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || 'Error fetching leads');
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchLeads();
-  }, []);
+  return () => clearInterval(interval);
+}, []);
+
 
   const handleLeadCreated = (newLead) => {
-    setLeads((prevLeads) => [...prevLeads, newLead]);
+    setMyLeads((prev) => [...prev, newLead]);
+    setAllLeads((prev) => [...prev, newLead]);
     setIsLeadFormOpen(false);
   };
 
@@ -58,32 +83,109 @@ const Dashboard = () => {
     }, 100);
   };
 
+  const filteredLeads = searchTerm.trim()
+  ? myLeads.filter((lead) =>
+      lead.leadDetails?.phone?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  : myLeads;
+
+
   return (
     <ProtectedRoute>
       <Navbar />
-      <motion.div
-        className="container mx-auto p-4"
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <motion.h1
-          className="text-3xl font-bold mb-4"
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          Dashboard
-        </motion.h1>
 
-        <motion.button
-          className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
-          onClick={handleOpenLeadForm}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Click to create Lead
-        </motion.button>
+      <motion.div
+  className="container mx-auto p-4"
+  initial={{ opacity: 0, y: 40 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.6 }}
+>
+  <div className="relative flex justify-center items-center mb-6">
+    <motion.h1
+      className="text-4xl font-extrabold text-green-500"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+    >
+      Dashboard
+    </motion.h1>
+
+    {/* Timer absolutely positioned to right */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.4 }}
+      className="absolute right-0 bg-green-100 text-green-700 px-4 py-1 rounded-full shadow text-sm font-medium"
+    >
+      ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
+    </motion.div>
+  </div>
+
+
+
+        {/* Search Bar */}
+        <div className="mb-4 flex items-center space-x-3">
+          <motion.button
+            onClick={() => setSearchVisible((prev) => !prev)}
+            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 shadow"
+            whileTap={{ scale: 0.95 }}
+          >
+            <FiSearch size={18} />
+          </motion.button>
+
+          {!searchVisible && (
+            <span className="ml-4 text-sm text-gray-700 font-medium">
+              Search Leads
+            </span>
+          )}
+
+          <AnimatePresence>
+            {searchVisible && (
+              <motion.input
+                key="search-input"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: '16rem', opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                type="text"
+                autoFocus
+                placeholder="Search by phone number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-4 py-2 border rounded shadow-sm text-sm focus:ring w-64 origin-left"
+              />
+            )}
+          </AnimatePresence>
+
+          {searchVisible && searchTerm && (
+            <motion.button
+              onClick={() => setSearchTerm('')}
+              whileTap={{ scale: 0.9 }}
+              className="text-gray-500 hover:text-red-500 text-xs transition"
+            >
+              Clear
+            </motion.button>
+          )}
+        </div>
+
+        {/* Count */}
+        {!loading && !error && (
+          <p className="text-sm text-gray-700 mb-4 flex items-center space-x-2">
+          </p>
+        )}
+
+        {/* Table */}
+        {!loading && !error && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="bg-white rounded-lg shadow-md p-4 overflow-auto">
+              <LeadTable leads={filteredLeads} setLeads={setMyLeads} searchTerm={searchTerm} />
+            </div>
+          </motion.div>
+        )}
 
         {loading && (
           <motion.p
@@ -104,16 +206,6 @@ const Dashboard = () => {
           </motion.p>
         )}
 
-        {!loading && !error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <LeadTable leads={leads} setLeads={setLeads} />
-          </motion.div>
-        )}
-
         {isLeadFormOpen && (
           <motion.div
             ref={formRef}
@@ -127,6 +219,18 @@ const Dashboard = () => {
             />
           </motion.div>
         )}
+
+        <motion.button
+          onClick={handleOpenLeadForm}
+          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-full shadow-lg z-50 text-sm font-semibold"
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          + New Lead
+        </motion.button>
       </motion.div>
     </ProtectedRoute>
   );

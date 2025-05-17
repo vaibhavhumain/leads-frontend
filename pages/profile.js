@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -14,9 +13,10 @@ const ProfilePage = () => {
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const router = useRouter();
+  const [dropdownVisible, setDropdownVisible] = useState({});
 
   const statusOptions = ['Hot', 'Warm', 'Cold'];
-
+  
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem('token');
@@ -43,26 +43,33 @@ const ProfilePage = () => {
   }, [router]);
 
   useEffect(() => {
-    const fetchForwardedLeads = async () => {
-      const token = localStorage.getItem('token');
-      try {
-        const response = await axios.get(
-          `${BASE_URL}/api/leads/forwarded-to-me`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setForwardedLeads(response.data);
-      } catch (err) {
-        console.error('Error fetching forwarded leads:', err);
-        toast.error('Failed to load leads');
-      } finally {
-        setLoadingLeads(false);
-      }
-    };
+  const fetchForwardedLeads = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/leads/forwarded-to-me`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const sortedLeads = response.data.sort((a, b) => {
+        const dateA = new Date(a.forwardedTo?.forwardedAt || a.updatedAt || a.createdAt);
+        const dateB = new Date(b.forwardedTo?.forwardedAt || b.updatedAt || b.createdAt);
+        return dateB - dateA;
+      });
 
-    fetchForwardedLeads();
-  }, []);
+      setForwardedLeads(sortedLeads);
+    } catch (err) {
+      console.error('Error fetching forwarded leads:', err);
+      toast.error('Failed to load leads');
+    } finally {
+      setLoadingLeads(false);
+    }
+  };
+
+  fetchForwardedLeads();
+}, []);
+
 
   const handleStatusUpdate = async (e, leadId) => {
   e.preventDefault();
@@ -95,26 +102,31 @@ const ProfilePage = () => {
   }
 };
 
-
+const toggleDropdown = (leadId) => {
+  setDropdownVisible((prev) => ({
+    ...prev,
+    [leadId]: !prev[leadId],
+  }));
+};
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-200">
       <ToastContainer />
 
-      {/* Background Circles */}
+      {/* Background */}
       <motion.div
-        className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-purple-300 opacity-30 rounded-full filter blur-3xl animate-pulse z-0"
+        className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-purple-300 opacity-30 rounded-full blur-3xl z-0"
         animate={{ y: [0, 50, 0], x: [0, 50, 0] }}
         transition={{ duration: 10, repeat: Infinity }}
       />
       <motion.div
-        className="absolute bottom-[-150px] right-[-150px] w-[350px] h-[350px] bg-blue-300 opacity-20 rounded-full filter blur-3xl animate-ping z-0"
+        className="absolute bottom-[-150px] right-[-150px] w-[350px] h-[350px] bg-blue-300 opacity-20 rounded-full blur-3xl z-0"
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 12, repeat: Infinity }}
       />
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-4xl mx-auto p-6">
+      <div className="relative z-10 w-full px-6 py-10">
         <motion.h1
           className="text-4xl font-bold mb-6 text-center text-indigo-700"
           initial={{ opacity: 0, y: -30 }}
@@ -126,7 +138,7 @@ const ProfilePage = () => {
 
         <motion.button
           onClick={() => router.push('/dashboard')}
-          className="mb-4 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm shadow-md"
+          className="mb-6 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm shadow-md"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -173,96 +185,119 @@ const ProfilePage = () => {
             No leads forwarded to you yet.
           </motion.p>
         ) : (
-          <div className="overflow-x-auto bg-white rounded-lg shadow">
-  <table className="min-w-full text-sm text-left text-gray-700">
-    <thead className="bg-indigo-200 text-indigo-800">
-      <tr>
-        <th className="px-4 py-3">Lead Name</th>
-        <th className="px-4 py-3">Created By</th>
-        <th className="px-4 py-3">Status</th>
-        <th className="px-4 py-3">Remarks</th>
-        <th className="px-4 py-3">Date</th>
-        <th className="px-4 py-3">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {forwardedLeads.map((lead) => (
-        <tr key={lead._id} className="border-t">
-          <td className="px-4 py-2">{lead.leadDetails?.name}</td>
-          <td className="px-4 py-2">{lead.createdBy?.name}</td>
-          <td className="px-4 py-2">
-            <select
-              value={statusUpdates[lead._id]?.status || ''}
-              onChange={(e) =>
-                setStatusUpdates({
-                  ...statusUpdates,
-                  [lead._id]: {
-                    ...statusUpdates[lead._id],
-                    status: e.target.value,
-                  },
-                })
-              }
-              className="p-1 border rounded"
-            >
-              <option value="" disabled>
-                Select
-              </option>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </td>
-          <td className="px-4 py-2">
-            <textarea
-              rows={1}
-              value={statusUpdates[lead._id]?.remarks || ''}
-              onChange={(e) =>
-                setStatusUpdates({
-                  ...statusUpdates,
-                  [lead._id]: {
-                    ...statusUpdates[lead._id],
-                    remarks: e.target.value,
-                  },
-                })
-              }
-              className="w-full p-1 border rounded"
-            />
-          </td>
-          <td className="px-4 py-2">
-            <input
-              type="date"
-              value={statusUpdates[lead._id]?.date || ''}
-              onChange={(e) =>
-                setStatusUpdates({
-                  ...statusUpdates,
-                  [lead._id]: {
-                    ...statusUpdates[lead._id],
-                    date: e.target.value,
-                  },
-                })
-              }
-              className="p-1 border rounded"
-            />
-          </td>
-          <td className="px-4 py-2">
-            <button
-              onClick={(e) => handleStatusUpdate(e, lead._id)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-            >
-              Update
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+          <div className="overflow-x-auto bg-white rounded-lg shadow-lg mt-6 w-full">
+            <table className="w-full table-auto text-sm text-left text-gray-700">
+              <thead className="bg-indigo-200 text-indigo-800 text-sm">
+                <tr>
+                  <th className="px-4 py-3">Lead Name</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Created By</th>
+                  <th className="px-4 py-3">Follow-Ups</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Remarks</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forwardedLeads.map((lead) => (
+                  <tr key={lead._id} className="border-t hover:bg-gray-50 transition-all">
+                    <td className="px-4 py-2">{lead.leadDetails?.name}</td>
+                    <td className="px-4 py-2">{lead.leadDetails?.phone || 'N/A'}</td>
+                    <td className="px-4 py-2">{lead.createdBy?.name}</td>
+                    <td className="px-4 py-2 text-xs whitespace-pre-line">
+                      <button
+                        onClick={() => toggleDropdown(lead._id)}
+                        className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded"
+                      >
+                        {dropdownVisible[lead._id] ? 'Hide' : 'Show'} Follow-Ups
+                      </button>
+                      {dropdownVisible[lead._id] && (
+                        <div className="mt-1">
+                          {lead.followUps?.length > 0 ? (
+                            <ul className="space-y-1">
+                              {lead.followUps.map((fup, index) => (
+                                <li key={index}>
+                                  <span className="text-blue-600 font-medium">
+                                    {new Date(fup.date).toLocaleDateString()}
+                                  </span>: {fup.notes}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-gray-400">No follow-ups</span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <select
+                        value={statusUpdates[lead._id]?.status || ''}
+                        onChange={(e) =>
+                          setStatusUpdates({
+                            ...statusUpdates,
+                            [lead._id]: {
+                              ...statusUpdates[lead._id],
+                              status: e.target.value,
+                            },
+                          })
+                        }
+                        className="p-1 border rounded w-full"
+                      >
+                        <option value="" disabled>Select</option>
+                        {statusOptions.map((status) => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-2">
+                      <textarea
+                        rows={1}
+                        value={statusUpdates[lead._id]?.remarks || ''}
+                        onChange={(e) =>
+                          setStatusUpdates({
+                            ...statusUpdates,
+                            [lead._id]: {
+                              ...statusUpdates[lead._id],
+                              remarks: e.target.value,
+                            },
+                          })
+                        }
+                        className="w-full p-1 border rounded"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="date"
+                        value={statusUpdates[lead._id]?.date || ''}
+                        onChange={(e) =>
+                          setStatusUpdates({
+                            ...statusUpdates,
+                            [lead._id]: {
+                              ...statusUpdates[lead._id],
+                              date: e.target.value,
+                            },
+                          })
+                        }
+                        className="p-1 border rounded w-full"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={(e) => handleStatusUpdate(e, lead._id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                      >
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
   );
 };
-
 export default ProfilePage;

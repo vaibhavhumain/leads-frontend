@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import BASE_URL from '../utils/api';
 const STATUS_OPTIONS = ['Hot','Warm','Cold'];
 
-const LeadTable = ({ leads, setLeads }) => {
+const LeadTable = ({ leads, setLeads , searchTerm }) => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState({});
@@ -270,7 +270,17 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
         </tr>
       </thead>
       <tbody>
-  {leads.map((lead, idx) => {
+  {leads
+  .filter((lead) => {
+    const isOwnLead = lead.createdBy?._id === loggedInUser?._id;
+    const matchesSearch = lead.leadDetails?.phone
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    return isOwnLead || (searchTerm && matchesSearch);
+  })
+  .map((lead, idx) => {
+
     const isFrozenByCreator =
   lead.createdBy?._id === loggedInUser?._id &&
   lead.forwardedTo?.user?._id &&
