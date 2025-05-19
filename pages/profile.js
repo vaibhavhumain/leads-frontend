@@ -191,113 +191,61 @@ const toggleDropdown = (leadId) => {
         ) : (
           <div className="overflow-x-auto bg-white rounded-lg shadow-lg mt-6 w-full">
             <table className="w-full table-auto text-sm text-left text-gray-700">
-              <thead className="bg-indigo-200 text-indigo-800 text-sm">
-                <tr>
-                  <th className="px-4 py-3">Lead Name</th>
-                  <th className="px-4 py-3">Phone</th>
-                  <th className="px-4 py-3">Created By</th>
-                  <th className="px-4 py-3">Follow-Ups</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Remarks</th>
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {forwardedLeads.map((lead) => (
-                  <tr key={lead._id} className="border-t hover:bg-gray-50 transition-all">
-                    <td className="px-4 py-2">{lead.leadDetails?.name}</td>
-                    <td className="px-4 py-2">{lead.leadDetails?.phone || 'N/A'}</td>
-                    <td className="px-4 py-2">{lead.createdBy?.name}</td>
-                    <td className="px-4 py-2 text-xs whitespace-pre-line">
-                      <button
-                        onClick={() => toggleDropdown(lead._id)}
-                        className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded"
-                      >
-                        {dropdownVisible[lead._id] ? 'Hide' : 'Show'} Follow-Ups
-                      </button>
-                      {dropdownVisible[lead._id] && (
-                        <div className="mt-1">
-                          {lead.followUps?.length > 0 ? (
-                            <ul className="space-y-1">
-                              {lead.followUps.map((fup, index) => (
-                                <li key={index}>
-                                  <span className="text-blue-600 font-medium">
-                                    {new Date(fup.date).toLocaleDateString()}
-                                  </span>: {fup.notes}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span className="text-gray-400">No follow-ups</span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      <select
-                        value={statusUpdates[lead._id]?.status || ''}
-                        onChange={(e) =>
-                          setStatusUpdates({
-                            ...statusUpdates,
-                            [lead._id]: {
-                              ...statusUpdates[lead._id],
-                              status: e.target.value,
-                            },
-                          })
-                        }
-                        className="p-1 border rounded w-full"
-                      >
-                        <option value="" disabled>Select</option>
-                        {statusOptions.map((status) => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-2">
-                      <textarea
-                        rows={1}
-                        value={statusUpdates[lead._id]?.remarks || ''}
-                        onChange={(e) =>
-                          setStatusUpdates({
-                            ...statusUpdates,
-                            [lead._id]: {
-                              ...statusUpdates[lead._id],
-                              remarks: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full p-1 border rounded"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <input
-                        type="date"
-                        value={statusUpdates[lead._id]?.date || ''}
-                        onChange={(e) =>
-                          setStatusUpdates({
-                            ...statusUpdates,
-                            [lead._id]: {
-                              ...statusUpdates[lead._id],
-                              date: e.target.value,
-                            },
-                          })
-                        }
-                        className="p-1 border rounded w-full"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <button
-                        onClick={(e) => handleStatusUpdate(e, lead._id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                      >
-                        Update
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+  <thead className="bg-indigo-200 text-indigo-800 text-sm">
+    <tr>
+      <th className="px-4 py-3">Lead Name</th>
+      <th className="px-4 py-3">Phone</th>
+      <th className="px-4 py-3">Created By</th>
+      <th className="px-4 py-3">Forwarded To</th>
+      <th className="px-4 py-3">Follow-Ups</th>
+      <th className="px-4 py-3">View / Update</th> {/* ✅ Fix: remove colSpan */}
+    </tr>
+  </thead>
+  <tbody>
+    {forwardedLeads.map((lead) => (
+      <tr key={lead._id} className="border-t hover:bg-gray-50 transition-all">
+        <td className="px-4 py-2">{lead.leadDetails?.name}</td>
+        <td className="px-4 py-2">{lead.leadDetails?.phone || 'N/A'}</td>
+        <td className="px-4 py-2">{lead.createdBy?.name}</td>
+        <td className="px-4 py-2">{lead.forwardedTo?.user?.name || 'N/A'}</td>
+        <td className="px-4 py-2 text-xs whitespace-pre-line">
+          <button
+            onClick={() => toggleDropdown(lead._id)}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-1 rounded"
+          >
+            {dropdownVisible[lead._id] ? 'Hide' : 'Show'} Follow-Ups
+          </button>
+          {dropdownVisible[lead._id] && (
+            <div className="mt-1">
+              {lead.followUps?.length > 0 ? (
+                <ul className="space-y-1">
+                  {lead.followUps.map((fup, index) => (
+                    <li key={index}>
+                      <span className="text-blue-600 font-medium">
+                        {new Date(fup.date).toLocaleDateString()}
+                      </span>: {fup.notes}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="text-gray-400">No follow-ups</span>
+              )}
+            </div>
+          )}
+        </td>
+         <td colSpan={3} className="px-4 py-2">
+          <button
+            onClick={() => router.push(`/lead-details/${lead._id}`)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm"
+          >
+            View / Update
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
           </div>
         )}
       </div>
