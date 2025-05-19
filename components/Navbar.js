@@ -86,7 +86,7 @@ const Navbar = () => {
 
               {/* Dashboard */}
               <Link href="/dashboard" legacyBehavior>
-                <a className="flex items-center gap-1 hover:bg-yellow-700 px-3 py-1 rounded transition">
+                <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-yellow-500 hover:text-white hover:scale-105">
                   <HomeIcon className="w-5 h-5" />
                   <span className="hidden sm:inline">Dashboard</span>
                 </a>
@@ -94,7 +94,7 @@ const Navbar = () => {
 
               {/* Profile */}
               <Link href="/profile" legacyBehavior>
-                <a className="flex items-center gap-1 hover:bg-blue-700 px-3 py-1 rounded transition">
+                <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-blue-500 hover:text-white hover:scale-105">
                   <UserCircleIcon className="w-5 h-5" />
                   <span className="hidden sm:inline">Profile</span>
                 </a>
@@ -103,7 +103,7 @@ const Navbar = () => {
               {/* Logout */}
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition"
+                className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out bg-red-500 hover:bg-red-600 hover:scale-105"
               >
                 <ArrowRightOnRectangleIcon className="w-5 h-5" />
                 <span className="hidden sm:inline">Logout</span>
@@ -113,7 +113,7 @@ const Navbar = () => {
             <>
               {/* Register */}
               <Link href="/register" legacyBehavior>
-                <a className="flex items-center gap-1 hover:bg-blue-700 px-3 py-1 rounded transition">
+                <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-blue-500 hover:text-white hover:scale-105">
                   <UserCircleIcon className="w-5 h-5" />
                   Register
                 </a>
@@ -121,7 +121,7 @@ const Navbar = () => {
 
               {/* Login */}
               <Link href="/login" legacyBehavior>
-                <a className="flex items-center gap-1 hover:bg-blue-700 px-3 py-1 rounded transition">
+                <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-blue-500 hover:text-white hover:scale-105">
                   <ArrowLeftOnRectangleIcon className="w-5 h-5" />
                   Login
                 </a>

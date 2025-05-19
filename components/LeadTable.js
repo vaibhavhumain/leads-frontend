@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 import BASE_URL from '../utils/api';
-const STATUS_OPTIONS = ['Hot','Warm','Cold'];
+import { FaPlay, FaPause, FaStop } from 'react-icons/fa';
 
-const LeadTable = ({ leads, setLeads , searchTerm }) => {
+
+const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
+
+const LeadTable = ({ leads, setLeads, searchTerm }) => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState({});
@@ -14,154 +18,101 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [connectionStatusUpdates, setConnectionStatusUpdates] = useState({});
   const [remarksDropdownVisible, setRemarksDropdownVisible] = useState({});
+  const [uploadedLeads, setUploadedLeads] = useState([]);
+  const fileInputRef = useRef(null);
+  const [leadTimers, setLeadTimers] = useState({});
+  const timerIntervals = useRef({});
 
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const meRes = await axios.get(`${BASE_URL}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setLoggedInUser(meRes.data);
 
-  // Fetch users
- useEffect(() => {
-  const fetchUsers = async () => {
-    try {
-      const token = localStorage.getItem('token');
+        const allUsersRes = await axios.get(`${BASE_URL}/api/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUsers(allUsersRes.data);
+      } catch (err) {
+        console.error('Error fetching users:', err);
+        setError('Error fetching users');
+        toast.error('Failed to fetch users');
+      }
+    };
+    fetchUsers();
+  }, []);
 
-      // Get logged-in user
-      const meRes = await axios.get(`${BASE_URL}/api/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setLoggedInUser(meRes.data);
-
-      // Get all users
-      const allUsersRes = await axios.get(`${BASE_URL}/api/users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUsers(allUsersRes.data);
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      setError('Error fetching users');
-      toast.error('Failed to fetch users');
-    }
-  };
-
-  fetchUsers();
-}, []);
-
-
-  // Format date to a readable format
   const formatDateTime = (isoString) => {
-    const options = {
+    return new Date(isoString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    };
-    return new Date(isoString).toLocaleString('en-US', options);
+    });
   };
 
-  // Forward lead to selected user
- const handleForwardLead = async (leadId) => {
-  const userId = selectedUser[leadId];
+  const handleExcelUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  if (!userId) {
-    toast.error('Please select a user to forward the lead');
-    return;
-  }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-  try {
-    const token = localStorage.getItem('token');
+      const mappedLeads = jsonData.map((row) => ({
+        leadDetails: {
+          name: row.Name || '',
+          phone: row.Phone || '',
+          company: row.Company || '',
+        },
+        status: 'Cold',
+        connectionStatus: 'Not Connected',
+        createdBy: loggedInUser,
+        followUps: [],
+        forwardedTo: {},
+        isFrozen: false,
+        remarksHistory: [],
+      }));
 
-    const response = await axios.post(
-      `${BASE_URL}/api/leads/forward`,
-      { leadId, userId },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      setUploadedLeads(mappedLeads);
+      toast.success('File uploaded. Click the import button to continue.');
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
-    toast.success('Lead forwarded successfully!');
-
-    // ✅ Clear dropdown
-    setSelectedUser((prev) => ({
-      ...prev,
-      [leadId]: '',
-    }));
-
-    // ✅ Freeze the lead locally by updating the state
-    setLeads((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead._id === leadId
-          ? {
-              ...lead,
-              isFrozen: true,
-              forwardedTo: {
-                ...lead.forwardedTo,
-                user: users.find((u) => u._id === userId),
-                forwardedAt: new Date().toISOString(),
-              },
-            }
-          : lead
-      )
-    );
-  } catch (err) {
-    console.error('❌ Error forwarding lead:', {
-      message: err.message,
-      response: err.response?.data,
-    });
-    setError('Error forwarding lead');
-    toast.error(err.response?.data?.message || 'Failed to forward lead');
-  }
-};
-
-
-  // Add a follow-up note and date for a lead
-  const handleFollowUp = async (leadId) => {
-  const { date, notes } = followUpInputs[leadId] || {};
-
-  if (!date || !notes) {
-    toast.error('Please enter both date and notes');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('You must be logged in to add a follow-up');
+  const handleBulkUpload = async () => {
+    if (!uploadedLeads.length) {
+      toast.error('Please upload an Excel sheet first.');
       return;
     }
 
-    const formattedDate = new Date(date).toISOString();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${BASE_URL}/api/leads/bulk`,
+        { leads: uploadedLeads },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    await axios.post(
-      `${BASE_URL}/api/leads/followup`,
-      { leadId, followUp: { date: formattedDate, notes } },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      toast.success(`${response.data.leads.length} leads uploaded successfully.`);
+      setLeads((prev) => [...prev, ...response.data.leads]);
+      setUploadedLeads([]);
+    } catch (error) {
+      console.error('Error uploading leads:', error);
+      toast.error('Failed to upload leads');
+    }
+  };
 
-    toast.success('Follow-up added successfully');
-
-    // ✅ Update leads state
-    setLeads((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead._id === leadId
-          ? {
-              ...lead,
-              followUps: [...lead.followUps, { date: formattedDate, notes }],
-            }
-          : lead
-      )
-    );
-
-    // ✅ Clear input values
-    setFollowUpInputs((prevInputs) => ({
-      ...prevInputs,
-      [leadId]: { date: '', notes: '' },
-    }));
-  } catch (err) {
-    console.error('Error adding follow-up:', err.response ? err.response.data : err.message);
-    setError('Error adding follow-up');
-    toast.error(err.response ? err.response.data.message : 'Failed to add follow-up');
-  }
-};
-
-  // Update status of a lead
   const handleStatusUpdate = async (leadId) => {
   const token = localStorage.getItem('token');
-  const status = statusUpdates[leadId] || '';
+  const status = statusUpdates[leadId];
 
   if (!status) {
     toast.warning('Please select a status');
@@ -169,35 +120,29 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
   }
 
   try {
-    const toastId = toast.loading('Updating lead...');
+    const toastId = toast.loading('Updating lead status...');
 
     await axios.put(
       `${BASE_URL}/api/leads/${leadId}/status`,
       { status },
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
 
     toast.update(toastId, {
-      render: 'Lead updated successfully ✅',
+      render: 'Status updated successfully ✅',
       type: 'success',
       isLoading: false,
       autoClose: 3000,
     });
 
     setLeads((prevLeads) =>
-      prevLeads.map((lead) => {
-        const wasForwardedToMe =
-          lead.forwardedTo?.user?._id === loggedInUser?._id;
-
-        return lead._id === leadId
-          ? {
-              ...lead,
-              status,
-              // If I am the forwarded user and I updated it, unfreeze it for the creator
-              isFrozen: wasForwardedToMe ? false : lead.isFrozen,
-            }
-          : lead;
-      })
+      prevLeads.map((lead) =>
+        lead._id === leadId ? { ...lead, status } : lead
+      )
     );
 
     setStatusUpdates((prev) => ({
@@ -205,11 +150,10 @@ const LeadTable = ({ leads, setLeads , searchTerm }) => {
       [leadId]: '',
     }));
   } catch (err) {
-    console.error('Error updating lead:', err);
-    toast.error('Failed to update lead');
+    console.error('Error updating status:', err);
+    toast.error('Failed to update status');
   }
 };
-
 
 const handleConnectionStatusUpdate = async (leadId) => {
   const token = localStorage.getItem('token');
@@ -265,6 +209,148 @@ const handleConnectionStatusUpdate = async (leadId) => {
     [leadId]: !prev[leadId],
   }));
 };
+const handleForwardLead = async (leadId) => {
+  const token = localStorage.getItem('token');
+  const userId = selectedUser[leadId];
+
+  if (!userId) {
+    toast.warning('Please select a user to forward');
+    return;
+  }
+
+  try {
+    const toastId = toast.loading('Forwarding lead...');
+
+    const response = await axios.post(
+      `${BASE_URL}/api/leads/forward`,
+      { leadId, userId },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const updatedLead = response.data.lead; // ✅ FIXED HERE
+
+    toast.update(toastId, {
+      render: 'Lead forwarded successfully ✅',
+      type: 'success',
+      isLoading: false,
+      autoClose: 3000,
+    });
+
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead._id === leadId ? updatedLead : lead
+      )
+    );
+
+    setSelectedUser((prev) => ({
+      ...prev,
+      [leadId]: '',
+    }));
+  } catch (err) {
+    console.error('Error forwarding lead:', err);
+    toast.error('Failed to forward lead');
+  }
+};
+
+const handleFollowUp = async (leadId) => {
+  const token = localStorage.getItem('token');
+  const input = followUpInputs[leadId];
+
+  if (!input?.date || !input?.notes) {
+    toast.warning('Please enter both date and notes');
+    return;
+  }
+
+  try {
+    const toastId = toast.loading('Adding follow-up...');
+
+    const response = await axios.post(
+      `${BASE_URL}/api/leads/followup`,
+      {
+        leadId,
+        followUp: {
+          date: input.date,
+          notes: input.notes,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.update(toastId, {
+      render: 'Follow-up added ✅',
+      type: 'success',
+      isLoading: false,
+      autoClose: 3000,
+    });
+
+    const updatedLead = response.data.lead;
+
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead._id === leadId
+          ? { ...lead, followUps: response.data.lead.followUps }
+          : lead
+      )
+    );
+
+    setFollowUpInputs((prev) => ({
+      ...prev,
+      [leadId]: { date: '', notes: '' },
+    }));
+  } catch (err) {
+    console.error('Error adding follow-up:', err);
+    toast.error('Failed to add follow-up');
+  }
+};
+
+
+const handleDeleteLead = async (leadId) => {
+  const confirm = window.confirm('Are you sure you want to delete this lead?');
+  if (!confirm) return;
+
+  try {
+    const token = localStorage.getItem('token');
+
+    await axios.delete(`${BASE_URL}/api/leads/${leadId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    toast.success('Lead deleted successfully');
+
+    // Remove lead from state
+    setLeads((prevLeads) => prevLeads.filter((lead) => lead._id !== leadId));
+  } catch (error) {
+    console.error('Error deleting lead:', error);
+    toast.error('Failed to delete lead');
+  }
+};
+
+const handleDeleteAllLeads = async () => {
+  const confirm = window.confirm('⚠️ Are you sure you want to delete ALL leads? This cannot be undone.');
+  if (!confirm) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${BASE_URL}/api/leads`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    toast.success('All leads deleted successfully');
+    setLeads([]); // clear the table
+  } catch (error) {
+    console.error('Error deleting all leads:', error);
+    toast.error('Failed to delete all leads');
+  }
+};
+
 
   const generateWhatsAppLink = (lead) => {
   const message = `*Lead Details*\n
@@ -279,12 +365,115 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
 };
 
 
+const formatTime = (seconds) => {
+  const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
+
+const handleStartTimer = (leadId) => {
+  if (timerIntervals.current[leadId]) return;
+
+  timerIntervals.current[leadId] = setInterval(() => {
+    setLeadTimers((prev) => ({
+      ...prev,
+      [leadId]: (prev[leadId] || 0) + 1,
+    }));
+  }, 1000);
+};
+
+const handlePauseTimer = (leadId) => {
+  clearInterval(timerIntervals.current[leadId]);
+  delete timerIntervals.current[leadId];
+};
+
+const handleStopTimer = (leadId) => {
+  clearInterval(timerIntervals.current[leadId]);
+  delete timerIntervals.current[leadId];
+
+  setLeadTimers((prev) => ({
+    ...prev,
+    [leadId]: 0,
+  }));
+};
+
   return (
   <div className="w-full overflow-x-auto rounded-xl shadow-lg bg-white max-w-full sm:px-2">
+    <div className="flex justify-end mt-4 px-4">
+  <button
+    onClick={handleDeleteAllLeads}
+    className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md text-sm font-semibold"
+  >
+    Delete All Leads
+  </button>
+</div>
+<div className="p-4 border-b bg-white">
+  <div className="flex gap-3 items-center flex-wrap">
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".xlsx,.xls"
+      onChange={handleExcelUpload}
+      className="border rounded px-3 py-1 text-sm"
+    />
+    
+    <button
+      onClick={async () => {
+        if (!uploadedLeads.length) {
+          toast.error('Please upload an Excel sheet first.');
+          return;
+        }
+
+       const first10 = uploadedLeads.slice(0, 10);
+
+// ✅ Append new leads to existing ones (avoid duplicates)
+setLeads((prev) => [...prev, ...first10]);
+
+
+        try {
+          const token = localStorage.getItem('token');
+          const response = await axios.post(
+            `${BASE_URL}/api/leads/bulk`,
+            { leads: first10 },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          toast.success(`${response.data.leads.length} leads imported and saved to DB.`);
+          setUploadedLeads((prev) => {
+  const remaining = prev.slice(10);
+
+  // ✅ Only clear file input if all leads have been imported
+  if (remaining.length === 0 && fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+
+  return remaining;
+});
+// remove uploaded leads from queue
+        } catch (error) {
+          console.error('Error uploading leads:', error);
+          toast.error('Failed to save leads to DB');
+        }
+      }}
+      className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-semibold"
+    >
+      Import & Save First 10 Leads
+    </button>
+  </div>
+</div>
+
+
+
     <table className="min-w-full text-sm border-separate border-spacing-y-2 table-auto">
+    
       <thead className="bg-gray-200 text-gray-800 text-left">
         <tr>
           <th className="p-3 sm:p-4">Lead Name</th>
+          <th className="p-3 sm:p-4">Timer</th>
           <th className="p-3 sm:p-4">Phone</th>
           <th className="p-3 sm:p-4">Created By</th>
           <th className="p-3 sm:p-4">Status</th>
@@ -292,6 +481,8 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
           <th className="p-3 sm:p-4">Lead Status</th>
           <th className="p-3 sm:p-4">Forwarded To</th>
           <th className="p-3 sm:p-4">Next Action Plan</th>
+          <th className="p-3 sm:p-4">Actions</th>
+
         </tr>
       </thead>
       <tbody>
@@ -326,6 +517,34 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
           </div>
           <div className="text-sm text-gray-600">{lead.leadDetails?.company || ''}</div>
         </td>
+        <td className="p-3 sm:p-4 align-top text-center">
+  <div className="text-sm font-mono mb-1">
+    {formatTime(leadTimers[lead._id] || 0)}
+  </div>
+  <div className="flex justify-center gap-2 text-sm">
+    <button
+      onClick={() => handleStartTimer(lead._id)}
+      className="text-green-600 hover:scale-110"
+      title="Start"
+    >
+      <FaPlay />
+    </button>
+    <button
+      onClick={() => handlePauseTimer(lead._id)}
+      className="text-yellow-600 hover:scale-110"
+      title="Pause"
+    >
+      <FaPause />
+    </button>
+    <button
+      onClick={() => handleStopTimer(lead._id)}
+      className="text-red-600 hover:scale-110"
+      title="Stop"
+    >
+      <FaStop />
+    </button>
+  </div>
+</td>
 
         {/* Phone */}
         <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
@@ -557,8 +776,17 @@ Follow-Ups:\n${(lead.followUps || []).map(f => `- ${formatDateTime(f.date)}: ${f
   )}
 </td>
 
-
+<td className="p-3 sm:p-4 align-top">
+  <button
+    onClick={() => handleDeleteLead(lead._id)}
+    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold"
+  >
+    Delete
+  </button>
+  
+</td>
       </tr>
+      
       
     );
   })}
