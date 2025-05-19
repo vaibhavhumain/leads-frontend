@@ -161,6 +161,7 @@ const toggleDropdown = (leadId) => {
           >
             <p className="text-lg"><strong>Name:</strong> {user.name}</p>
             <p className="text-lg"><strong>Email:</strong> {user.email}</p>
+            
           </motion.div>
         ) : (
           <p>Error loading user info.</p>

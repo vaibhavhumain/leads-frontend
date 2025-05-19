@@ -9,8 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import BASE_URL from '../utils/api';
 
 const Dashboard = () => {
-  const [myLeads, setMyLeads] = useState([]); // Only self-created
-  const [allLeads, setAllLeads] = useState([]); // All for search
+  const [myLeads, setMyLeads] = useState([]);
+  const [filteredLeads, setFilteredLeads] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
@@ -18,61 +18,100 @@ const Dashboard = () => {
   const [searchVisible, setSearchVisible] = useState(false);
   const [loginDuration, setLoginDuration] = useState('');
 
-
   const formRef = useRef(null);
 
+  // Fetch initial leads
   useEffect(() => {
-  const fetchLeads = async () => {
-    setLoading(true);
+    const fetchLeads = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const response = await axios.get(`${BASE_URL}/api/leads/my-leads`, { headers });
+        setMyLeads(response.data);
+        setFilteredLeads(response.data); // Default view is my leads
+      } catch (err) {
+        setError(err.response?.data?.message || 'Error fetching leads');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeads();
+
+    const interval = setInterval(() => {
+      const loginTimeString = localStorage.getItem('loginTime');
+      if (loginTimeString) {
+        const loginTime = new Date(loginTimeString);
+        const now = new Date();
+        const diff = now - loginTime;
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let duration = '';
+        if (hours > 0) duration += `${hours}h `;
+        if (minutes > 0 || hours > 0) duration += `${minutes}m `;
+        duration += `${seconds}s`;
+
+        setLoginDuration(duration.trim());
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Search logic (backend API)
+  useEffect(() => {
+  const fetchSearchResults = async () => {
+    if (!searchTerm.trim()) {
+      setFilteredLeads(myLeads); // fallback to own leads
+      return;
+    }
+
     try {
+      setLoading(true);
+
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      if (!token) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
 
-      const [mine, all] = await Promise.all([
-        axios.get(`${BASE_URL}/api/leads/my-leads`, { headers }),
-        axios.get(`${BASE_URL}/api/leads/all`, { headers }),
-      ]);
+      const response = await axios.get(
+        `${BASE_URL}/api/leads/search?phone=${searchTerm}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      setMyLeads(mine.data);
-      setAllLeads(all.data);
+      setFilteredLeads(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error fetching leads');
+      console.error('Search error:', err);
+
+      if (err.response?.status === 401) {
+        alert('Unauthorized access. Please log in again.');
+      } else {
+        alert('Something went wrong while searching.');
+      }
+
+      setFilteredLeads([]);
     } finally {
       setLoading(false);
     }
   };
 
-  fetchLeads();
-
-  const interval = setInterval(() => {
-  const loginTimeString = localStorage.getItem('loginTime');
-  if (loginTimeString) {
-    const loginTime = new Date(loginTimeString);
-    const now = new Date();
-    const diff = now - loginTime; // in milliseconds
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    let duration = '';
-    if (hours > 0) duration += `${hours}h `;
-    if (minutes > 0 || hours > 0) duration += `${minutes}m `;
-    duration += `${seconds}s`;
-
-    setLoginDuration(duration.trim());
-  }
-}, 1000);
-
-
-
-  return () => clearInterval(interval);
-}, []);
+  fetchSearchResults();
+}, [searchTerm, myLeads]);
 
 
   const handleLeadCreated = (newLead) => {
     setMyLeads((prev) => [...prev, newLead]);
-    setAllLeads((prev) => [...prev, newLead]);
+    setFilteredLeads((prev) => [...prev, newLead]);
     setIsLeadFormOpen(false);
   };
 
@@ -83,45 +122,35 @@ const Dashboard = () => {
     }, 100);
   };
 
-  const filteredLeads = searchTerm.trim()
-  ? myLeads.filter((lead) =>
-      lead.leadDetails?.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  : myLeads;
-
-
   return (
     <ProtectedRoute>
       <Navbar />
 
       <motion.div
-  className="container mx-auto p-4"
-  initial={{ opacity: 0, y: 40 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.6 }}
->
-  <div className="relative flex justify-center items-center mb-6">
-    <motion.h1
-      className="text-4xl font-extrabold text-blue-600"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-    >
-      Dashboard
-    </motion.h1>
+        className="container mx-auto p-4"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="relative flex justify-center items-center mb-6">
+          <motion.h1
+            className="text-4xl font-extrabold text-blue-600"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Dashboard
+          </motion.h1>
 
-    {/* Timer absolutely positioned to right */}
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.4 }}
-      className="absolute right-0 bg-green-100 text-green-700 px-4 py-1 rounded-full shadow text-sm font-medium"
-    >
-      ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
-    </motion.div>
-  </div>
-
-
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="absolute right-0 bg-green-100 text-green-700 px-4 py-1 rounded-full shadow text-sm font-medium"
+          >
+            ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
+          </motion.div>
+        </div>
 
         {/* Search Bar */}
         <div className="mb-4 flex items-center space-x-3">
@@ -134,9 +163,7 @@ const Dashboard = () => {
           </motion.button>
 
           {!searchVisible && (
-            <span className="ml-4 text-sm text-gray-700 font-medium">
-              Search Leads
-            </span>
+            <span className="ml-4 text-sm text-gray-700 font-medium">Search Leads</span>
           )}
 
           <AnimatePresence>
@@ -168,19 +195,8 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Count */}
         {!loading && !error && (
-          <p className="text-sm text-gray-700 mb-4 flex items-center space-x-2">
-          </p>
-        )}
-
-        {/* Table */}
-        {!loading && !error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
             <div className="bg-white rounded-lg shadow-md p-4 overflow-auto">
               <LeadTable leads={filteredLeads} setLeads={setMyLeads} searchTerm={searchTerm} />
             </div>
