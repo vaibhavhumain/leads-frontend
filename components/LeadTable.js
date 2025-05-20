@@ -5,46 +5,54 @@ import * as XLSX from 'xlsx';
 import BASE_URL from '../utils/api';
 import { FaPlay, FaPause, FaStop } from 'react-icons/fa';
 
-
 const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
 
-const LeadTable = ({ leads, setLeads, searchTerm }) => {
+const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false }) => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState({});
   const [followUpInputs, setFollowUpInputs] = useState({});
   const [statusUpdates, setStatusUpdates] = useState({});
   const [dropdownVisible, setDropdownVisible] = useState({});
-  const [loggedInUser, setLoggedInUser] = useState(null);
   const [connectionStatusUpdates, setConnectionStatusUpdates] = useState({});
   const [remarksDropdownVisible, setRemarksDropdownVisible] = useState({});
   const [uploadedLeads, setUploadedLeads] = useState([]);
+  const [loggedInUser, setLoggedInUser] = useState(null);
   const fileInputRef = useRef(null);
-  const [leadTimers, setLeadTimers] = useState({});
-  const timerIntervals = useRef({});
+  const [editingClientNameId, setEditingClientNameId] = useState(null);
+  const [editedClientName, setEditedClientName] = useState('');
+
 
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchUsersAndSelf = async () => {
       try {
         const token = localStorage.getItem('token');
-        const meRes = await axios.get(`${BASE_URL}/api/users/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setLoggedInUser(meRes.data);
+        const headers = { Authorization: `Bearer ${token}` };
 
-        const allUsersRes = await axios.get(`${BASE_URL}/api/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const [meRes, allUsersRes] = await Promise.all([
+          axios.get(`${BASE_URL}/api/users/me`, { headers }),
+          axios.get(`${BASE_URL}/api/users`, { headers }),
+        ]);
+
+        setLoggedInUser(meRes.data);
         setUsers(allUsersRes.data);
       } catch (err) {
         console.error('Error fetching users:', err);
-        setError('Error fetching users');
         toast.error('Failed to fetch users');
       }
     };
-    fetchUsers();
+    fetchUsersAndSelf();
   }, []);
+
+  const filteredLeads = isAdminTable
+    ? leads
+    : leads.filter((lead) => {
+        const isOwnLead = lead.createdBy?._id === loggedInUser?._id;
+        const matchesSearch = lead.leadDetails?.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+        return isOwnLead || (searchTerm && matchesSearch);
+      });
+
 
   const formatDateTime = (isoString) => {
     return new Date(isoString).toLocaleDateString('en-US', {
@@ -66,20 +74,31 @@ const LeadTable = ({ leads, setLeads, searchTerm }) => {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      const mappedLeads = jsonData.map((row) => ({
-        leadDetails: {
-          name: row.Name || '',
-          phone: row.Phone || '',
-          company: row.Company || '',
-        },
-        status: 'Cold',
-        connectionStatus: 'Not Connected',
-        createdBy: loggedInUser,
-        followUps: [],
-        forwardedTo: {},
-        isFrozen: false,
-        remarksHistory: [],
-      }));
+      const mappedLeads = jsonData.map((row) => {
+  // Normalize column keys
+  const keys = Object.keys(row).reduce((acc, key) => {
+    acc[key.trim().toLowerCase()] = row[key];
+    return acc;
+  }, {});
+
+  return {
+    leadDetails: {
+      companyName: keys['company name'] || '',
+      contact: keys['phone'] || '',
+      location: keys['location'] || '',
+      clientName: 'N/A',
+      source: 'Excel Upload',
+    },
+    status: 'Cold',
+    connectionStatus: 'Not Connected',
+    createdBy: loggedInUser,
+    followUps: [],
+    forwardedTo: {},
+    isFrozen: false,
+    remarksHistory: [],
+  };
+});
+
 
       setUploadedLeads(mappedLeads);
       toast.success('File uploaded. Click the import button to continue.');
@@ -195,6 +214,47 @@ const handleConnectionStatusUpdate = async (leadId) => {
     toast.error('Failed to update connection status');
   }
 };
+
+const updateClientName = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedClientName.trim()) {
+    toast.warning('Client name cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/client-name`,
+      { clientName: editedClientName },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Client name updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                clientName: editedClientName,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingClientNameId(null);
+    setEditedClientName('');
+  } catch (err) {
+    console.error('Failed to update client name', err);
+    toast.error('Update failed');
+  }
+};
+
 
 
   const toggleDropdown = (leadId) => {
@@ -344,7 +404,7 @@ const handleDeleteAllLeads = async () => {
     });
 
     toast.success('All leads deleted successfully');
-    setLeads([]); // clear the table
+    setLeads([]); 
   } catch (error) {
     console.error('Error deleting all leads:', error);
     toast.error('Failed to delete all leads');
@@ -373,129 +433,107 @@ const formatTime = (seconds) => {
 };
 
 
-const handleStartTimer = (leadId) => {
-  if (timerIntervals.current[leadId]) return;
 
-  timerIntervals.current[leadId] = setInterval(() => {
-    setLeadTimers((prev) => ({
-      ...prev,
-      [leadId]: (prev[leadId] || 0) + 1,
-    }));
-  }, 1000);
-};
-
-const handlePauseTimer = (leadId) => {
-  clearInterval(timerIntervals.current[leadId]);
-  delete timerIntervals.current[leadId];
-};
-
-const handleStopTimer = (leadId) => {
-  clearInterval(timerIntervals.current[leadId]);
-  delete timerIntervals.current[leadId];
-
-  setLeadTimers((prev) => ({
-    ...prev,
-    [leadId]: 0,
-  }));
-};
 
   return (
   <div className="w-full overflow-x-auto rounded-xl shadow-lg bg-white max-w-full sm:px-2">
-    <div className="flex justify-end mt-4 px-4">
-  <button
-    onClick={handleDeleteAllLeads}
-    className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md text-sm font-semibold"
-  >
-    Delete All Leads
-  </button>
-</div>
-<div className="p-4 border-b bg-white">
-  <div className="flex gap-3 items-center flex-wrap">
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept=".xlsx,.xls"
-      onChange={handleExcelUpload}
-      className="border rounded px-3 py-1 text-sm"
-    />
-    
+    {isAdminTable && (
+  <div className="flex justify-end mt-4 px-4">
     <button
-      onClick={async () => {
-        if (!uploadedLeads.length) {
-          toast.error('Please upload an Excel sheet first.');
-          return;
-        }
-
-       const first10 = uploadedLeads.slice(0, 10);
-
-// ✅ Append new leads to existing ones (avoid duplicates)
-setLeads((prev) => [...prev, ...first10]);
-
-
-        try {
-          const token = localStorage.getItem('token');
-          const response = await axios.post(
-            `${BASE_URL}/api/leads/bulk`,
-            { leads: first10 },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          toast.success(`${response.data.leads.length} leads imported and saved to DB.`);
-          setUploadedLeads((prev) => {
-  const remaining = prev.slice(10);
-
-  // ✅ Only clear file input if all leads have been imported
-  if (remaining.length === 0 && fileInputRef.current) {
-    fileInputRef.current.value = '';
-  }
-
-  return remaining;
-});
-// remove uploaded leads from queue
-        } catch (error) {
-          console.error('Error uploading leads:', error);
-          toast.error('Failed to save leads to DB');
-        }
-      }}
-      className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-semibold"
+      onClick={handleDeleteAllLeads}
+      className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md text-sm font-semibold"
     >
-      Import & Save First 10 Leads
+      Delete All Leads
     </button>
   </div>
-</div>
+)}
+{!isAdminTable && (
+  <div className="p-4 border-b bg-white">
+    <div className="flex gap-3 items-center flex-wrap">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        onChange={handleExcelUpload}
+        className="border rounded px-3 py-1 text-sm"
+      />
 
+      <button
+        onClick={async () => {
+          if (!uploadedLeads.length) {
+            toast.error('Please upload an Excel sheet first.');
+            return;
+          }
+
+          const first10 = uploadedLeads.slice(0, 10);
+
+          // ✅ Append new leads to existing ones (avoid duplicates)
+          setLeads((prev) => [...prev, ...first10]);
+
+          try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+              `${BASE_URL}/api/leads/bulk`,
+              { leads: first10 },
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+
+            toast.success(`${response.data.leads.length} leads imported and saved to DB.`);
+
+            setUploadedLeads((prev) => {
+              const remaining = prev.slice(10);
+
+              // ✅ Only clear file input if all leads have been imported
+              if (remaining.length === 0 && fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+
+              return remaining;
+            });
+          } catch (error) {
+            console.error('Error uploading leads:', error);
+            toast.error('Failed to save leads to DB');
+          }
+        }}
+        className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-semibold"
+      >
+        Import & Save First 10 Leads
+      </button>
+    </div>
+  </div>
+)}
 
 
     <table className="min-w-full text-sm border-separate border-spacing-y-2 table-auto">
-    
-      <thead className="bg-gray-200 text-gray-800 text-left">
-        <tr>
-          <th className="p-3 sm:p-4">Lead Name</th>
-          <th className="p-3 sm:p-4">Timer</th>
-          <th className="p-3 sm:p-4">Phone</th>
-          <th className="p-3 sm:p-4">Created By</th>
-          <th className="p-3 sm:p-4">Status</th>
-          <th className="p-3 sm:p-4">Follow-Ups</th>
-          <th className="p-3 sm:p-4">Lead Status</th>
-          <th className="p-3 sm:p-4">Forwarded To</th>
-          <th className="p-3 sm:p-4">Next Action Plan</th>
-          <th className="p-3 sm:p-4">Actions</th>
+  <thead className="bg-gray-200 text-gray-800 text-left">
+    <tr>
+      <th className="p-3 sm:p-4 text-left">Client Name</th>
+      <th className="p-3 sm:p-4 text-left">Contact</th>
+      <th className="p-3 sm:p-4 text-left">Company Name</th>
+      <th className="p-3 sm:p-4 text-left">Location</th>
+      <th className="p-3 sm:p-4 text-left">Created By</th>
+      <th className="p-3 sm:p-4 text-left">Connection Status</th>
+      <th className="p-3 sm:p-4 text-left">Follow-Ups</th>
+      <th className="p-3 sm:p-4 text-left">Lead Status</th>
+      <th className="p-3 sm:p-4 text-left">Forwarded To</th>
+      <th className="p-3 sm:p-4 text-left">Next Action Plan</th>
+      {isAdminTable && <th className="p-3 sm:p-4 text-left">Actions</th>}
+    </tr>
+  </thead>
 
-        </tr>
-      </thead>
       <tbody>
-  {leads
-  .filter((lead) => {
+ {(isAdminTable ? leads : leads.filter((lead) => {
     const isOwnLead = lead.createdBy?._id === loggedInUser?._id;
     const matchesSearch = lead.leadDetails?.phone
       ?.toLowerCase()
       .includes(searchTerm.toLowerCase());
 
     return isOwnLead || (searchTerm && matchesSearch);
-  })
+  }))
   .map((lead, idx) => {
+
 
     const isFrozenByCreator =
   lead.createdBy?._id === loggedInUser?._id &&
@@ -507,49 +545,64 @@ setLeads((prev) => [...prev, ...first10]);
         key={lead._id}
         className={`rounded-xl ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow transition`}
       >
-        {/* Lead Name */}
-        <td className="p-3 sm:p-4 align-top break-words">
-          <div className="font-semibold text-base text-gray-900">
-            {lead.leadDetails?.name || 'N/A'}
-            {isFrozenByCreator && (
-              <span className="text-xs font-semibold text-red-600 ml-2">🔒 Forwarded</span>
-            )}
-          </div>
-          <div className="text-sm text-gray-600">{lead.leadDetails?.company || ''}</div>
-        </td>
-        <td className="p-3 sm:p-4 align-top text-center">
-  <div className="text-sm font-mono mb-1">
-    {formatTime(leadTimers[lead._id] || 0)}
-  </div>
-  <div className="flex justify-center gap-2 text-sm">
-    <button
-      onClick={() => handleStartTimer(lead._id)}
-      className="text-green-600 hover:scale-110"
-      title="Start"
-    >
-      <FaPlay />
-    </button>
-    <button
-      onClick={() => handlePauseTimer(lead._id)}
-      className="text-yellow-600 hover:scale-110"
-      title="Pause"
-    >
-      <FaPause />
-    </button>
-    <button
-      onClick={() => handleStopTimer(lead._id)}
-      className="text-red-600 hover:scale-110"
-      title="Stop"
-    >
-      <FaStop />
-    </button>
-  </div>
+
+{/* Client Name */}
+<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+  {editingClientNameId === lead._id ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        className="border px-2 py-1 rounded text-xs w-full"
+        value={editedClientName}
+        onChange={(e) => setEditedClientName(e.target.value)}
+      />
+      <button
+  onClick={() => updateClientName(lead._id)}
+        className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => {
+          setEditingClientNameId(null);
+          setEditedClientName('');
+        }}
+        className="bg-gray-400 hover:bg-gray-500 text-white text-xs px-2 py-1 rounded"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center justify-between gap-2">
+      <span>{lead.leadDetails?.clientName || 'N/A'}</span>
+      <button
+        onClick={() => {
+          setEditingClientNameId(lead._id);
+          setEditedClientName(lead.leadDetails?.clientName || '');
+        }}
+        className="text-blue-600 text-xs underline"
+      >
+        Edit
+      </button>
+    </div>
+  )}
 </td>
 
-        {/* Phone */}
-        <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-          {lead.leadDetails?.phone || 'N/A'}
-        </td>
+{/* Contact */}
+<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+  {lead.leadDetails?.contact || 'N/A'}
+</td>
+
+{/* Company Name */}
+<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+  {lead.leadDetails?.companyName || 'N/A'}
+</td>
+
+{/* Location */}
+<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+  {lead.leadDetails?.location || 'N/A'}
+</td>
+
 
         {/* Created By */}
         <td className="p-3 sm:p-4 align-top text-gray-700 break-words">
@@ -777,14 +830,16 @@ setLeads((prev) => [...prev, ...first10]);
 </td>
 
 <td className="p-3 sm:p-4 align-top">
-  <button
-    onClick={() => handleDeleteLead(lead._id)}
-    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold"
-  >
-    Delete
-  </button>
-  
+  {isAdminTable && (
+    <button
+      onClick={() => handleDeleteLead(lead._id)}
+      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold"
+    >
+      Delete
+    </button>
+  )}
 </td>
+
       </tr>
       
       

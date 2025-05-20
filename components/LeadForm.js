@@ -5,10 +5,11 @@ import BASE_URL from '../utils/api';
 
 const LeadForm = ({ onLeadCreated, closeModal }) => {
   const [leadDetails, setLeadDetails] = useState({
-    name: '',
-    phone: '',
-    company: '',
-    email: '',
+    source: '',
+   clientName: '',
+    contact: '',
+    companyName: '',
+    location: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

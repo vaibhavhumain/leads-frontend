@@ -11,18 +11,26 @@ const Login = () => {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
 
-    try {
-      const response = await axios.post(`${BASE_URL}/api/auth/login`, { email, password });
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('loginTime', new Date().toISOString());
+  try {
+    const response = await axios.post(`${BASE_URL}/api/auth/login`, { email, password });
+
+    const { token, user } = response.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('loginTime', new Date().toISOString());
+
+    if (user.role === 'admin') {
+      router.push('/admin');
+    } else {
       router.push('/dashboard');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
     }
-  };
+  } catch (error) {
+    setError(error.response?.data?.message || 'Login failed');
+  }
+};
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#c2e9fb] via-[#a1c4fd] to-[#fbc2eb]">

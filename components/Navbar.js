@@ -10,7 +10,7 @@ import {
   BriefcaseIcon,
 } from '@heroicons/react/24/solid';
 
-const Navbar = () => {
+const Navbar = ({ loggedInUser }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
   const [randomEmoji, setRandomEmoji] = useState('');
@@ -85,12 +85,14 @@ const Navbar = () => {
               </div>
 
               {/* Dashboard */}
-              <Link href="/dashboard" legacyBehavior>
-                <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-yellow-500 hover:text-white hover:scale-105">
-                  <HomeIcon className="w-5 h-5" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </a>
-              </Link>
+              {loggedInUser?.role !== 'admin' && (
+  <Link href="/dashboard" legacyBehavior>
+    <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-yellow-500 hover:text-white hover:scale-105">
+      <HomeIcon className="w-5 h-5" />
+      <span className="hidden sm:inline">Dashboard</span>
+    </a>
+  </Link>
+)}
 
               {/* Profile */}
               <Link href="/profile" legacyBehavior>
