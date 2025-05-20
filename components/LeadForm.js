@@ -5,8 +5,7 @@ import BASE_URL from '../utils/api';
 
 const LeadForm = ({ onLeadCreated, closeModal }) => {
   const [leadDetails, setLeadDetails] = useState({
-    source: '',
-   clientName: '',
+    clientName: '',
     contact: '',
     companyName: '',
     location: '',
@@ -43,7 +42,12 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
       );
 
       onLeadCreated(response.data.lead);
-      setLeadDetails({ name: '', phone: '', company: '', email: '' });
+      setLeadDetails({
+        clientName: '',
+        contact: '',
+        companyName: '',
+        location: '',
+      });
       toast.success('Lead created successfully!');
       if (closeModal) closeModal();
     } catch (err) {
@@ -67,12 +71,12 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
           <input
             type="text"
-            name="name"
+            name="clientName"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            value={leadDetails.name}
+            value={leadDetails.clientName}
             onChange={handleChange}
             required
             disabled={loading}
@@ -80,24 +84,37 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
           <input
             type="tel"
-            name="phone"
+            name="contact"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            value={leadDetails.phone}
+            value={leadDetails.contact}
+            onChange={handleChange}
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+          <input
+            type="text"
+            name="companyName"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            value={leadDetails.companyName}
             onChange={handleChange}
             disabled={loading}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
           <input
             type="text"
-            name="company"
+            name="location"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            value={leadDetails.company}
+            value={leadDetails.location}
             onChange={handleChange}
             disabled={loading}
           />
