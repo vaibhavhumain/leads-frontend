@@ -49,12 +49,20 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false }) => {
   }, []);
 
   const filteredLeads = isAdminTable
-    ? leads
-    : leads.filter((lead) => {
-        const isOwnLead = lead.createdBy?._id === loggedInUser?._id;
-        const matchesSearch = lead.leadDetails?.phone?.toLowerCase().includes(searchTerm.toLowerCase());
-        return isOwnLead || (searchTerm && matchesSearch);
-      });
+  ? leads
+  : leads.filter((lead) => {
+      const isOwnLead = loggedInUser && lead.createdBy?._id === loggedInUser._id;
+      const contact = (lead.leadDetails?.contact || '').toLowerCase();
+      const searchLower = searchTerm?.toLowerCase().trim();
+
+      if (searchLower && searchLower.length > 0) {
+        // 🔍 Show any lead (not just own) matching contact — but do NOT load from server
+        return contact.includes(searchLower);
+      }
+
+      // 🧑 Show only self-created leads by default
+      return isOwnLead;
+    });
 
 
   const formatDateTime = (isoString) => {
@@ -335,7 +343,7 @@ const handleForwardLead = async (leadId) => {
       }
     );
 
-    const updatedLead = response.data.lead; // ✅ FIXED HERE
+    const updatedLead = response.data.lead; 
 
     toast.update(toastId, {
       render: 'Lead forwarded successfully ✅',
@@ -477,6 +485,7 @@ const formatTime = (seconds) => {
 };
 
 
+if (!loggedInUser) return null;
 
 
   return (
@@ -509,16 +518,13 @@ const formatTime = (seconds) => {
             return;
           }
 
-          const first10 = uploadedLeads.slice(0, 10);
-
-          // ✅ Append new leads to existing ones (avoid duplicates)
-          setLeads((prev) => [...prev, ...first10]);
+          setLeads((prev) => [...prev, ...uploadedLeads]);
 
           try {
             const token = localStorage.getItem('token');
             const response = await axios.post(
               `${BASE_URL}/api/leads/bulk`,
-              { leads: first10 },
+              { leads: uploadedLeads },
               {
                 headers: { Authorization: `Bearer ${token}` },
               }
@@ -527,14 +533,6 @@ const formatTime = (seconds) => {
             toast.success(`${response.data.leads.length} leads imported and saved to DB.`);
 
             setUploadedLeads((prev) => {
-              const remaining = prev.slice(10);
-
-              // ✅ Only clear file input if all leads have been imported
-              if (remaining.length === 0 && fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
-
-              return remaining;
             });
           } catch (error) {
             console.error('Error uploading leads:', error);
@@ -543,7 +541,7 @@ const formatTime = (seconds) => {
         }}
         className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-semibold"
       >
-        Import & Save First 10 Leads
+        Import & Save Leads
       </button>
     </div>
   </div>
@@ -569,17 +567,7 @@ const formatTime = (seconds) => {
   </thead>
 
       <tbody>
- {(isAdminTable ? leads : leads.filter((lead) => {
-    const isOwnLead = lead.createdBy?._id === loggedInUser?._id;
-    const matchesSearch = lead.leadDetails?.phone
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-
-    return isOwnLead || (searchTerm && matchesSearch);
-  }))
-  .map((lead, idx) => {
-
-
+ {filteredLeads.map((lead, idx) => {
     const isFrozenByCreator =
   lead.createdBy?._id === loggedInUser?._id &&
   lead.forwardedTo?.user?._id &&
