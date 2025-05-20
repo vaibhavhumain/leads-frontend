@@ -536,6 +536,7 @@ if (!loggedInUser) return null;
     <table className="min-w-full text-sm border-separate border-spacing-y-2 table-auto">
   <thead className="bg-gray-200 text-gray-800 text-left">
     <tr>
+      <th className="p-3 sm:p-4 text-left">Sr. No</th>
       <th className="p-3 sm:p-4 text-left">Client Name</th>
       <th className="p-3 sm:p-4 text-left">Contact</th>
       <th className="p-3 sm:p-4 text-left">Company Name</th>
@@ -563,7 +564,8 @@ if (!loggedInUser) return null;
         key={lead._id}
         className={`rounded-xl ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow transition`}
       >
-
+          {/* Sr. No */}
+       <td className="p-3 sm:p-4 align-top text-gray-700">{idx + 1}</td>
 {/* Client Name */}
 <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
   {editingClientNameId === lead._id ? (
