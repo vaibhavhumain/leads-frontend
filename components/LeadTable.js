@@ -7,7 +7,7 @@ import { FaPlay, FaPause, FaStop } from 'react-icons/fa';
 
 const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
 
-const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false }) => {
+const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearchActive = false }) => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
   const [selectedUser, setSelectedUser] = useState({});
@@ -48,22 +48,7 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false }) => {
     fetchUsersAndSelf();
   }, []);
 
-  const filteredLeads = isAdminTable
-  ? leads
-  : leads.filter((lead) => {
-      const isOwnLead = loggedInUser && lead.createdBy?._id === loggedInUser._id;
-      const contact = (lead.leadDetails?.contact || '').toLowerCase();
-      const searchLower = searchTerm?.toLowerCase().trim();
-
-      if (searchLower && searchLower.length > 0) {
-        // 🔍 Show any lead (not just own) matching contact — but do NOT load from server
-        return contact.includes(searchLower);
-      }
-
-      // 🧑 Show only self-created leads by default
-      return isOwnLead;
-    });
-
+const filteredLeads = leads; 
 
   const formatDateTime = (isoString) => {
     return new Date(isoString).toLocaleDateString('en-US', {

@@ -77,42 +77,41 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    const fetchSearchResults = async () => {
-      if (!searchTerm.trim()) {
-        setFilteredLeads(myLeads);
-        return;
-      }
+  const fetchSearchResults = async () => {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
 
-      try {
-        setLoading(true);
-
-        const token = localStorage.getItem('token');
-        if (!token) {
-          alert('Session expired. Please log in again.');
-          return;
-        }
-
-        const response = await axios.get(
-          `${BASE_URL}/api/leads/search?phone=${searchTerm}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+    if (!searchTerm.trim()) {
+      // Restore only self-created leads
+      if (loggedInUser?.role === 'admin') {
+        setFilteredLeads(myLeads); // Admin can see all
+      } else {
+        const ownLeads = myLeads.filter(
+          (lead) => lead.createdBy?._id === loggedInUser?._id
         );
-
-        setFilteredLeads(response.data);
-      } catch (err) {
-        console.error('Search error:', err);
-        if (err.response?.status === 401) {
-          alert('Unauthorized access. Please log in again.');
-        } else {
-          alert('Something went wrong while searching.');
-        }
-        setFilteredLeads([]);
-      } finally {
-        setLoading(false);
+        setFilteredLeads(ownLeads);
       }
-    };
+      return;
+    }
 
+    // On search, query global results
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/leads/search?phone=${searchTerm}`,
+        { headers }
+      );
+      setFilteredLeads(response.data);
+    } catch (err) {
+      console.error('Search failed:', err);
+      toast.error('Failed to fetch search results');
+    }
+  };
+
+  if (loggedInUser) {
     fetchSearchResults();
-  }, [searchTerm, myLeads]);
+  }
+}, [searchTerm, loggedInUser, myLeads]);
+
 
   const handleLeadCreated = (newLead) => {
     setMyLeads((prev) => [...prev, newLead]);
@@ -176,11 +175,13 @@ const Dashboard = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
             <div className="bg-white rounded-lg shadow-md p-4 overflow-auto">
               <LeadTable
-                leads={filteredLeads}
-                setLeads={setMyLeads}
-                searchTerm={searchTerm}
-                loggedInUser={loggedInUser}
-              />
+  leads={filteredLeads}
+  setLeads={setMyLeads}
+  searchTerm={searchTerm}
+  loggedInUser={loggedInUser}
+  isSearchActive={!!searchTerm.trim()} 
+/>
+
             </div>
           </motion.div>
         )}
