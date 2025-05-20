@@ -21,6 +21,9 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false }) => {
   const fileInputRef = useRef(null);
   const [editingClientNameId, setEditingClientNameId] = useState(null);
   const [editedClientName, setEditedClientName] = useState('');
+  const [editingEmailId, setEditingEmailId] = useState(null);
+  const [editedEmail, setEditedEmail] = useState('');
+
 
 
 
@@ -214,6 +217,47 @@ const handleConnectionStatusUpdate = async (leadId) => {
     toast.error('Failed to update connection status');
   }
 };
+
+const updateEmail = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedEmail.trim()) {
+    toast.warning('Email cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/email`,
+      { email: editedEmail },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Email updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                email: editedEmail,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingEmailId(null);
+    setEditedEmail('');
+  } catch (err) {
+    console.error('Failed to update email', err);
+    toast.error('Update failed');
+  }
+};
+
 
 const updateClientName = async (leadId) => {
   const token = localStorage.getItem('token');
@@ -512,6 +556,7 @@ const formatTime = (seconds) => {
       <th className="p-3 sm:p-4 text-left">Client Name</th>
       <th className="p-3 sm:p-4 text-left">Contact</th>
       <th className="p-3 sm:p-4 text-left">Company Name</th>
+      <th className="p-3 sm:p-4 text-left">Email</th>
       <th className="p-3 sm:p-4 text-left">Location</th>
       <th className="p-3 sm:p-4 text-left">Created By</th>
       <th className="p-3 sm:p-4 text-left">Connection Status</th>
@@ -596,6 +641,48 @@ const formatTime = (seconds) => {
 {/* Company Name */}
 <td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
   {lead.leadDetails?.companyName || 'N/A'}
+</td>
+
+{/* Email */}
+<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
+  {editingEmailId === lead._id ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        className="border px-2 py-1 rounded text-xs w-full"
+        value={editedEmail}
+        onChange={(e) => setEditedEmail(e.target.value)}
+      />
+      <button
+        onClick={() => updateEmail(lead._id)}
+        className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => {
+          setEditingEmailId(null);
+          setEditedEmail('');
+        }}
+        className="bg-gray-400 hover:bg-gray-500 text-white text-xs px-2 py-1 rounded"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center justify-between gap-2">
+      <span>{lead.leadDetails?.email || 'N/A'}</span>
+      <button
+        onClick={() => {
+          setEditingEmailId(lead._id);
+          setEditedEmail(lead.leadDetails?.email || '');
+        }}
+        className="text-blue-600 text-xs underline"
+      >
+        Edit
+      </button>
+    </div>
+  )}
 </td>
 
 {/* Location */}
