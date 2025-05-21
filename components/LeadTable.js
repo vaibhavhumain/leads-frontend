@@ -1,9 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import * as XLSX from 'xlsx';
 import BASE_URL from '../utils/api';
-import { FaPlay, FaPause, FaStop } from 'react-icons/fa';
 
 const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
 
@@ -16,16 +14,11 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [dropdownVisible, setDropdownVisible] = useState({});
   const [connectionStatusUpdates, setConnectionStatusUpdates] = useState({});
   const [remarksDropdownVisible, setRemarksDropdownVisible] = useState({});
-  const [uploadedLeads, setUploadedLeads] = useState([]);
   const [loggedInUser, setLoggedInUser] = useState(null);
-  const fileInputRef = useRef(null);
   const [editingClientNameId, setEditingClientNameId] = useState(null);
   const [editedClientName, setEditedClientName] = useState('');
   const [editingEmailId, setEditingEmailId] = useState(null);
   const [editedEmail, setEditedEmail] = useState('');
-
-
-
 
   useEffect(() => {
     const fetchUsersAndSelf = async () => {
@@ -58,73 +51,7 @@ const filteredLeads = leads;
     });
   };
 
-  const handleExcelUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-      const mappedLeads = jsonData.map((row) => {
-  // Normalize column keys
-  const keys = Object.keys(row).reduce((acc, key) => {
-    acc[key.trim().toLowerCase()] = row[key];
-    return acc;
-  }, {});
-
-  return {
-    leadDetails: {
-      companyName: keys['company name'] || '',
-      contact: keys['phone'] || '',
-      location: keys['location'] || '',
-      clientName: 'N/A',
-      source: 'Excel Upload',
-    },
-    status: 'Cold',
-    connectionStatus: 'Not Connected',
-    createdBy: loggedInUser,
-    followUps: [],
-    forwardedTo: {},
-    isFrozen: false,
-    remarksHistory: [],
-  };
-});
-
-
-      setUploadedLeads(mappedLeads);
-      toast.success('File uploaded. Click the import button to continue.');
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  const handleBulkUpload = async () => {
-    if (!uploadedLeads.length) {
-      toast.error('Please upload an Excel sheet first.');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${BASE_URL}/api/leads/bulk`,
-        { leads: uploadedLeads },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      toast.success(`${response.data.leads.length} leads uploaded successfully.`);
-      setLeads((prev) => [...prev, ...response.data.leads]);
-      setUploadedLeads([]);
-    } catch (error) {
-      console.error('Error uploading leads:', error);
-      toast.error('Failed to upload leads');
-    }
-  };
-
+ 
   const handleStatusUpdate = async (leadId) => {
   const token = localStorage.getItem('token');
   const status = statusUpdates[leadId];
@@ -485,53 +412,6 @@ if (!loggedInUser) return null;
     </button>
   </div>
 )}
-{!isAdminTable && (
-  <div className="p-4 border-b bg-white">
-    <div className="flex gap-3 items-center flex-wrap">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={handleExcelUpload}
-        className="border rounded px-3 py-1 text-sm"
-      />
-
-      <button
-        onClick={async () => {
-          if (!uploadedLeads.length) {
-            toast.error('Please upload an Excel sheet first.');
-            return;
-          }
-
-          setLeads((prev) => [...prev, ...uploadedLeads]);
-
-          try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post(
-              `${BASE_URL}/api/leads/bulk`,
-              { leads: uploadedLeads },
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
-            );
-
-            toast.success(`${response.data.leads.length} leads imported and saved to DB.`);
-
-            setUploadedLeads((prev) => {
-            });
-          } catch (error) {
-            console.error('Error uploading leads:', error);
-            toast.error('Failed to save leads to DB');
-          }
-        }}
-        className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded text-sm font-semibold"
-      >
-        Import & Save Leads
-      </button>
-    </div>
-  </div>
-)}
-
 
     <table className="min-w-full text-sm border-separate border-spacing-y-2 table-auto">
   <thead className="bg-gray-200 text-gray-800 text-left">

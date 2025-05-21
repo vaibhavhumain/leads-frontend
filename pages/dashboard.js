@@ -7,6 +7,9 @@ import LeadForm from '../components/LeadForm';
 import { FiSearch } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import BASE_URL from '../utils/api';
+import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
+
 
 const Dashboard = () => {
   const [myLeads, setMyLeads] = useState([]);
@@ -19,6 +22,7 @@ const Dashboard = () => {
   const [loginDuration, setLoginDuration] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [isClient, setIsClient] = useState(false);
+  const [uploadedLeads, setUploadedLeads] = useState([]);
 
   const formRef = useRef(null);
 
@@ -126,6 +130,83 @@ const Dashboard = () => {
     }, 100);
   };
 
+  const handleExcelUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    const data = new Uint8Array(evt.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+    if (!jsonData.length) {
+      toast.error("Excel sheet is empty");
+      return;
+    }
+
+    const normalizeKey = (key) =>
+      key.toLowerCase().replace(/\s+/g, '').replace(/\u00a0/g, '');
+
+    const leads = jsonData.map((row) => {
+      const keys = {};
+      Object.keys(row).forEach((key) => {
+        const normalized = normalizeKey(key);
+        keys[normalized] = row[key];
+      });
+
+      // Flexible match for phone number
+      const phone = 
+        keys['phonenumber'] ||
+        keys['contactnumber'] ||
+        keys['contactno'] ||
+        keys['phone'] ||
+        keys['contact'] ||
+        keys['mobile'] ||
+        '';
+
+      return {
+        leadDetails: {
+          clientName: '',  // blank so you can edit later
+          contact: String(phone).trim(),
+          companyName: keys['companyname'] || '',
+          location: keys['location'] || '',
+          email: keys['email'] || '',
+        }
+      };
+    });
+
+    setUploadedLeads(leads);
+    toast.success(`${leads.length} lead(s) loaded from Excel`);
+  };
+
+  reader.readAsArrayBuffer(file);
+};
+
+
+const handleBulkUpload = async () => {
+  if (!uploadedLeads.length) {
+    toast.error('Please upload an Excel sheet first.');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const res = await axios.post(`${BASE_URL}/api/leads/bulk`, { leads: uploadedLeads }, { headers });
+    toast.success(`${res.data.leads.length} leads uploaded successfully ✅`);
+
+    setMyLeads((prev) => [...res.data.leads, ...prev]);
+setFilteredLeads((prev) => [...res.data.leads, ...prev]);
+    setUploadedLeads([]);
+  } catch (err) {
+    console.error('Upload failed:', err);
+    toast.error('Upload failed');
+  }
+};
+
   return (
     <ProtectedRoute>
       <Navbar />
@@ -138,6 +219,21 @@ const Dashboard = () => {
             ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
           </motion.div>
         </div>
+        <div className="mb-4 flex items-center gap-4 flex-wrap">
+  <input
+    type="file"
+    accept=".xlsx, .xls"
+    onChange={handleExcelUpload}
+    className="border px-3 py-2 rounded shadow-sm text-sm"
+  />
+  <button
+    onClick={handleBulkUpload}
+    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-semibold"
+  >
+    Import & Save Leads
+  </button>
+</div>
+
 
         <div className="mb-4 flex items-center space-x-3">
           <motion.button onClick={() => setSearchVisible((prev) => !prev)} className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 shadow" whileTap={{ scale: 0.95 }}>
@@ -218,6 +314,7 @@ const Dashboard = () => {
           </motion.button>
         )}
       </motion.div>
+      
     </ProtectedRoute>
   );
 };
