@@ -156,8 +156,8 @@ const Dashboard = () => {
         keys[normalized] = row[key];
       });
 
-      // Flexible match for phone number
-      const phone = 
+      // Flexible mappings
+      const phone =
         keys['phonenumber'] ||
         keys['contactnumber'] ||
         keys['contactno'] ||
@@ -166,13 +166,28 @@ const Dashboard = () => {
         keys['mobile'] ||
         '';
 
+      const company =
+        keys['companyname'] ||
+        keys['company'] ||
+        keys['firmname'] ||
+        keys['businessname'] ||
+        '';
+
+      const location =
+        keys['location'] ||
+        keys['place'] ||
+        keys['address'] ||
+        '';
+
+      const email = keys['email'] || '';
+
       return {
         leadDetails: {
-          clientName: '',  // blank so you can edit later
+          clientName: '', // leave blank to edit later
           contact: String(phone).trim(),
-          companyName: keys['companyname'] || '',
-          location: keys['location'] || '',
-          email: keys['email'] || '',
+          companyName: String(company).trim(),
+          location: String(location).trim(),
+          email: String(email).trim(),
         }
       };
     });
@@ -183,6 +198,7 @@ const Dashboard = () => {
 
   reader.readAsArrayBuffer(file);
 };
+
 
 
 const handleBulkUpload = async () => {
