@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import BASE_URL from '../utils/api';
+import { FaEdit } from 'react-icons/fa';
 
 const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
 
@@ -220,7 +221,6 @@ const updateClientName = async (leadId) => {
 };
 
 
-
   const toggleDropdown = (leadId) => {
     setDropdownVisible((prev) => ({
       ...prev,
@@ -401,395 +401,155 @@ if (!loggedInUser) return null;
 
 
   return (
-  <div className="w-full overflow-x-auto rounded-xl shadow-lg bg-white max-w-full sm:px-2">
+  <div className="w-full px-4 py-6 bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 min-h-screen">
     {isAdminTable && (
-  <div className="flex justify-end mt-4 px-4">
-    <button
-      onClick={handleDeleteAllLeads}
-      className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md text-sm font-semibold"
-    >
-      Delete All Leads
-    </button>
-  </div>
-)}
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={handleDeleteAllLeads}
+          className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white px-5 py-2 rounded-md text-sm font-semibold shadow-lg"
+        >
+          Delete All Leads
+        </button>
+      </div>
+    )}
 
-    <table className="min-w-full text-sm border-separate border-spacing-y-2 table-auto">
-  <thead className="bg-gray-200 text-gray-800 text-left">
-    <tr>
-      <th className="p-3 sm:p-4 text-left">Sr. No</th>
-      <th className="p-3 sm:p-4 text-left">Client Name</th>
-      <th className="p-3 sm:p-4 text-left">Contact</th>
-      <th className="p-3 sm:p-4 text-left">Company Name</th>
-      <th className="p-3 sm:p-4 text-left">Email</th>
-      <th className="p-3 sm:p-4 text-left">Location</th>
-      <th className="p-3 sm:p-4 text-left">Created By</th>
-      <th className="p-3 sm:p-4 text-left">Connection Status</th>
-      <th className="p-3 sm:p-4 text-left">Follow-Ups</th>
-      <th className="p-3 sm:p-4 text-left">Lead Status</th>
-      <th className="p-3 sm:p-4 text-left">Forwarded To</th>
-      <th className="p-3 sm:p-4 text-left">Next Action Plan</th>
-      {isAdminTable && <th className="p-3 sm:p-4 text-left">Actions</th>}
-    </tr>
-  </thead>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredLeads.map((lead, idx) => {
+        const isFrozenByCreator =
+          lead.createdBy?._id === loggedInUser?._id &&
+          lead.forwardedTo?.user?._id &&
+          lead.isFrozen;
 
-      <tbody>
- {filteredLeads.map((lead, idx) => {
-    const isFrozenByCreator =
-  lead.createdBy?._id === loggedInUser?._id &&
-  lead.forwardedTo?.user?._id &&
-  lead.isFrozen;
-
-    return (
-      <tr
-        key={lead._id}
-        className={`rounded-xl ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:shadow transition`}
-      >
-          {/* Sr. No */}
-       <td className="p-3 sm:p-4 align-top text-gray-700">{idx + 1}</td>
-{/* Client Name */}
-<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-  {editingClientNameId === lead._id ? (
-    <div className="flex items-center gap-2">
-      <input
-        type="text"
-        className="border px-2 py-1 rounded text-xs w-full"
-        value={editedClientName}
-        onChange={(e) => setEditedClientName(e.target.value)}
-      />
-      <button
-  onClick={() => updateClientName(lead._id)}
-        className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded"
-      >
-        Save
-      </button>
-      <button
-        onClick={() => {
-          setEditingClientNameId(null);
-          setEditedClientName('');
-        }}
-        className="bg-gray-400 hover:bg-gray-500 text-white text-xs px-2 py-1 rounded"
-      >
-        Cancel
-      </button>
-    </div>
-  ) : (
-    <div className="flex items-center justify-between gap-2">
-      <span>{lead.leadDetails?.clientName || 'N/A'}</span>
-      <button
-        onClick={() => {
-          setEditingClientNameId(lead._id);
-          setEditedClientName(lead.leadDetails?.clientName || '');
-        }}
-        className="text-blue-600 text-xs underline"
-      >
-        Edit
-      </button>
-    </div>
-  )}
-</td>
-
-{/* Contact */}
-<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-  {lead.leadDetails?.contact || 'N/A'}
-</td>
-
-{/* Company Name */}
-<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-  {lead.leadDetails?.companyName || 'N/A'}
-</td>
-
-{/* Email */}
-<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-  {editingEmailId === lead._id ? (
-    <div className="flex items-center gap-2">
-      <input
-        type="text"
-        className="border px-2 py-1 rounded text-xs w-full"
-        value={editedEmail}
-        onChange={(e) => setEditedEmail(e.target.value)}
-      />
-      <button
-        onClick={() => updateEmail(lead._id)}
-        className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 rounded"
-      >
-        Save
-      </button>
-      <button
-        onClick={() => {
-          setEditingEmailId(null);
-          setEditedEmail('');
-        }}
-        className="bg-gray-400 hover:bg-gray-500 text-white text-xs px-2 py-1 rounded"
-      >
-        Cancel
-      </button>
-    </div>
-  ) : (
-    <div className="flex items-center justify-between gap-2">
-      <span>{lead.leadDetails?.email || 'N/A'}</span>
-      <button
-        onClick={() => {
-          setEditingEmailId(lead._id);
-          setEditedEmail(lead.leadDetails?.email || '');
-        }}
-        className="text-blue-600 text-xs underline"
-      >
-        Edit
-      </button>
-    </div>
-  )}
-</td>
-
-{/* Location */}
-<td className="p-3 sm:p-4 align-top text-gray-800 break-words whitespace-normal">
-  {lead.leadDetails?.location || 'N/A'}
-</td>
-
-
-        {/* Created By */}
-        <td className="p-3 sm:p-4 align-top text-gray-700 break-words">
-          {lead.createdBy?.name || 'N/A'}
-        </td>
-        {/* Connection Status */}
-<td className="p-3 sm:p-4 align-top">
-  {/* Show current or updated connection status */}
-  <div className="text-sm font-semibold mb-1">
-    <span className={`
-      ${lead.connectionStatus === 'Connected' ? 'text-green-600' : 'text-red-600'}
-    `}>
-      {lead.connectionStatus || 'Not Connected'}
-    </span>
-  </div>
-
-  {/* Dropdown to change connection status */}
-  <select
-    className="w-full text-xs border px-2 py-1 rounded"
-    value={connectionStatusUpdates[lead._id] || ''}
-    onChange={(e) =>
-      setConnectionStatusUpdates((prev) => ({
-        ...prev,
-        [lead._id]: e.target.value,
-      }))
-    }
-    disabled={isFrozenByCreator}
-  >
-    <option value="">Update Connection</option>
-    <option value="Connected">Connected</option>
-    <option value="Not Connected">Not Connected</option>
-  </select>
-
-  <button
-    onClick={() => handleConnectionStatusUpdate(lead._id)}
-    disabled={isFrozenByCreator}
-    className={`w-full mt-1 py-1 rounded-md text-xs font-semibold text-white ${
-      isFrozenByCreator
-        ? 'bg-gray-400 cursor-not-allowed'
-        : 'bg-purple-600 hover:bg-purple-700'
-    }`}
-  >
-    Update
-  </button>
-</td>
-
-
-        {/* Follow-Ups */}
-        <td className="p-3 sm:p-4">
-          <button
-            onClick={() => toggleDropdown(lead._id)}
-            className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-1 rounded-md text-xs font-semibold ${
-              isFrozenByCreator ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            disabled={isFrozenByCreator}
+        return (
+          <div
+            key={lead._id}
+            className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200 flex flex-col justify-between hover:shadow-2xl transition duration-300"
+            style={{ backgroundImage: 'linear-gradient(to right top, #ffffff, #f2f6ff, #e2eeff, #cde6ff, #b3dfff)' }}
           >
-            {dropdownVisible[lead._id] ? 'Hide Follow-Ups' : 'Show Follow-Ups'}
-          </button>
+            <div className="text-xs text-gray-600 mb-2 font-semibold">#{idx + 1} • Created by: <span className="text-purple-700">{lead.createdBy?.name || 'N/A'}</span></div>
+            <div className="text-lg font-bold text-blue-900 mb-1">{lead.leadDetails?.clientName || 'N/A'}</div>
+            <div className="text-sm text-gray-700 mb-3 italic">{lead.leadDetails?.companyName || 'No Company'}</div>
 
-          {dropdownVisible[lead._id] && !isFrozenByCreator && (
-            <div className="mt-2 space-y-2">
-              {lead.followUps?.length > 0 ? (
-                <ul className="text-xs text-gray-700 space-y-1">
-                  {lead.followUps.map((f, i) => (
-                    <li key={i}>
-                      <span className="font-medium text-blue-600">{formatDateTime(f.date)}</span>: {f.notes}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-gray-500">No follow-ups</p>
-              )}
+            <div className="text-xs text-gray-600 mb-2">
+              📞 <span className="text-blue-700 font-semibold">{lead.leadDetails?.contact || 'N/A'}</span><br />
+              📍 {lead.leadDetails?.location || 'N/A'}
+            </div>
 
-              <input
-                type="date"
-                className="w-full border px-2 py-1 rounded text-xs"
-                value={followUpInputs[lead._id]?.date || ''}
-                onChange={(e) =>
-                  setFollowUpInputs({
-                    ...followUpInputs,
-                    [lead._id]: {
-                      ...followUpInputs[lead._id],
-                      date: e.target.value,
-                    },
-                  })
-                }
-              />
-              <textarea
-                rows={2}
-                placeholder="Follow-up notes"
-                className="w-full border px-2 py-1 rounded text-xs"
-                value={followUpInputs[lead._id]?.notes || ''}
-                onChange={(e) =>
-                  setFollowUpInputs({
-                    ...followUpInputs,
-                    [lead._id]: {
-                      ...followUpInputs[lead._id],
-                      notes: e.target.value,
-                    },
-                  })
-                }
-              />
-              <button
-                onClick={() => handleFollowUp(lead._id)}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white rounded-md py-1 text-xs font-semibold"
+            <div className="text-xs text-gray-600 mb-3">
+              ✉️ <span className="text-blue-700 font-semibold">{lead.leadDetails?.email || 'N/A'}</span>
+            </div>
+
+            <div className="text-sm font-medium text-gray-800 mb-2">
+              Status: <span className={`font-bold ${lead.status === 'Hot' ? 'text-red-500' : lead.status === 'Warm' ? 'text-yellow-500' : 'text-green-600'}`}>{lead.status || 'Not Updated'}</span>
+            </div>
+
+            <div className="flex flex-col gap-2 mb-2">
+              <select
+                className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none bg-blue-50"
+                value={statusUpdates[lead._id] || ''}
+                onChange={(e) => setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })}
+                disabled={isFrozenByCreator}
               >
-                Add Follow-Up
+                <option value="">Update Status</option>
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => handleStatusUpdate(lead._id)}
+                className={`text-xs py-1 rounded bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold transition ${isFrozenByCreator ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isFrozenByCreator}
+              >
+                Update Status
               </button>
             </div>
-          )}
-        </td>
 
-        {/* Status */}
-        <td className="p-3 sm:p-4">
-          <div className="text-sm font-semibold text-blue-700 mb-1">
-            {lead.status || 'Not Updated'}
+            <div className="text-sm font-medium text-gray-800 mb-2">Connection: <span className={lead.connectionStatus === 'Connected' ? 'text-green-600' : 'text-red-600'}>{lead.connectionStatus}</span></div>
+
+            <div className="flex flex-col gap-2 mb-2">
+              <select
+                className="text-xs border border-gray-300 rounded px-2 py-1 bg-purple-50"
+                value={connectionStatusUpdates[lead._id] || ''}
+                onChange={(e) => setConnectionStatusUpdates({ ...connectionStatusUpdates, [lead._id]: e.target.value })}
+                disabled={isFrozenByCreator}
+              >
+                <option value="">Update Connection</option>
+                <option value="Connected">Connected</option>
+                <option value="Not Connected">Not Connected</option>
+              </select>
+              <button
+                onClick={() => handleConnectionStatusUpdate(lead._id)}
+                className={`text-xs py-1 rounded bg-gradient-to-r from-purple-500 to-purple-700 text-white font-semibold transition ${isFrozenByCreator ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isFrozenByCreator}
+              >
+                Update Connection
+              </button>
+            </div>
+
+            <div className="mt-3 flex flex-col gap-2">
+              <select
+                className="text-xs border border-gray-300 rounded px-2 py-1 bg-green-50"
+                value={selectedUser[lead._id] || ''}
+                onChange={(e) => setSelectedUser({ ...selectedUser, [lead._id]: e.target.value })}
+                disabled={isFrozenByCreator}
+              >
+                <option value="">Forward to</option>
+                {users.filter((u) => u._id !== loggedInUser._id).map((u) => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+                ))}
+              </select>
+              <button
+                onClick={() => handleForwardLead(lead._id)}
+                className={`text-xs py-1 rounded bg-gradient-to-r from-green-500 to-green-700 text-white font-semibold transition ${isFrozenByCreator ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isFrozenByCreator}
+              >
+                Forward Lead
+              </button>
+              <a
+                href={generateWhatsAppLink(lead)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs py-1 rounded bg-gradient-to-r from-green-400 to-green-600 text-white font-semibold text-center"
+              >
+                WhatsApp Lead
+              </a>
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={() => toggleRemarksDropdown(lead._id)}
+                className="w-full text-xs font-semibold text-white bg-gradient-to-r from-indigo-500 to-indigo-700 hover:from-indigo-600 hover:to-indigo-800 py-1 rounded"
+              >
+                {remarksDropdownVisible[lead._id] ? 'Hide Remarks' : 'Show Remarks'}
+              </button>
+              {remarksDropdownVisible[lead._id] && (
+                <div className="mt-2 text-xs text-gray-800 max-h-36 overflow-y-auto space-y-1">
+                  {lead.remarksHistory?.map((r, i) => (
+                    <div key={i} className="border-b border-gray-300 pb-1">
+                      <span className="font-semibold text-blue-600">{formatDateTime(r.date)}</span>: {r.remarks}
+                      <div className="text-[10px] text-gray-500 italic">— by {r.updatedBy?.name}</div>
+                    </div>
+                  )) || <div className="text-gray-400">No remarks yet.</div>}
+                </div>
+              )}
+            </div>
+
+            {isAdminTable && (
+              <div className="mt-4">
+                <button
+                  onClick={() => handleDeleteLead(lead._id)}
+                  className="w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white py-1 text-xs font-semibold rounded shadow"
+                >
+                  Delete Lead
+                </button>
+              </div>
+            )}
           </div>
-          <select
-            className="w-full text-xs border px-2 py-1 rounded"
-            value={statusUpdates[lead._id] || ''}
-            onChange={(e) =>
-              setStatusUpdates({ ...statusUpdates, [lead._id]: e.target.value })
-            }
-            disabled={isFrozenByCreator}
-          >
-            <option value="">Update Status</option>
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => handleStatusUpdate(lead._id)}
-            disabled={isFrozenByCreator}
-            className={`w-full mt-2 py-1 rounded-md text-xs font-semibold text-white ${
-              isFrozenByCreator
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
-            }`}
-          >
-            Update
-          </button>
-        </td>
-
-        {/* Forwarded To */}
-        <td className="p-3 sm:p-4 space-y-2">
-          <select
-            className="w-full text-xs border px-2 py-1 rounded"
-            value={selectedUser[lead._id] || ''}
-            onChange={(e) =>
-              setSelectedUser({
-                ...selectedUser,
-                [lead._id]: e.target.value,
-              })
-            }
-            disabled={isFrozenByCreator}
-          >
-            <option value="">Select user</option>
-            {users
-              .filter((user) => loggedInUser && String(user._id) !== String(loggedInUser._id))
-              .map((user) => (
-                <option key={user._id} value={user._id}>
-                  {user.name} ({user.role})
-                </option>
-              ))}
-          </select>
-
-          <button
-            onClick={() => handleForwardLead(lead._id)}
-            disabled={isFrozenByCreator}
-            className={`w-full py-1 rounded-md text-xs font-semibold text-white ${
-              isFrozenByCreator
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            Forward
-          </button>
-          <a
-  href={generateWhatsAppLink(lead)}
-  target="_blank"
-  rel="noopener noreferrer"
->
-  <button
-    className="w-full bg-green-500 hover:bg-green-600 text-white py-1 text-xs font-semibold rounded-md mt-1"
-  >
-    WhatsApp Lead
-  </button>
-</a>
-
-        </td>
-        {/* Next Action Plan - Full Remark History */}
-<td className="p-3 sm:p-4 align-top text-xs text-gray-800 whitespace-pre-line">
-  <button
-    onClick={() => toggleRemarksDropdown(lead._id)}
-    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-1 rounded-md text-xs font-semibold"
-  >
-    {remarksDropdownVisible[lead._id] ? 'Hide Remarks' : 'Show Remarks'}
-  </button>
-
-  {remarksDropdownVisible[lead._id] && (
-    <div className="mt-2">
-      {lead.remarksHistory && lead.remarksHistory.length > 0 ? (
-        <ul className="space-y-1">
-          {lead.remarksHistory.map((r, index) => (
-            <li key={index} className="border-b pb-1">
-              <div>
-                <span className="text-blue-600 font-medium">
-                  {formatDateTime(r.date)}:
-                </span>{' '}
-                {r.remarks}
-              </div>
-              <div className="mt-1 text-[11px] text-gray-500 italic">
-                — Updated by: {r.updatedBy?.name || 'Unknown'}
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-500 mt-2">No remarks yet</p>
-      )}
+        );
+      })}
     </div>
-  )}
-</td>
-
-<td className="p-3 sm:p-4 align-top">
-  {isAdminTable && (
-    <button
-      onClick={() => handleDeleteLead(lead._id)}
-      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold"
-    >
-      Delete
-    </button>
-  )}
-</td>
-
-      </tr>
-      
-      
-    );
-  })}
-</tbody>
-    </table>
   </div>
 );
-}
+
+}   
 export default LeadTable;

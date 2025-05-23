@@ -19,29 +19,36 @@ const ProfilePage = () => {
   const statusOptions = ['Hot', 'Warm', 'Cold'];
   
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
+  const fetchUser = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${BASE_URL}/api/leads/forwarded-to-me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const leads = response.data;
+
+      if (leads.length > 0 && leads[0].forwardedTo?.user) {
+        setUser(leads[0].forwardedTo.user); // 👈 use first forwarded user's data
+      } else {
+        toast.warning('No forwarded leads, user info fallback unavailable');
       }
+    } catch (error) {
+      console.error('Error fetching forwarded leads:', error);
+      toast.error('Failed to load user info');
+    } finally {
+      setLoadingUser(false);
+    }
+  };
 
-      try {
-        const response = await axios.get(`${BASE_URL}/api/users/me`, {
+  fetchUser();
+}, [router]);
 
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(response.data);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        toast.error('Failed to load user info');
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-
-    fetchUser();
-  }, [router]);
 
   useEffect(() => {
   const fetchForwardedLeads = async () => {
@@ -204,8 +211,8 @@ const toggleDropdown = (leadId) => {
   <tbody>
     {forwardedLeads.map((lead) => (
       <tr key={lead._id} className="border-t hover:bg-gray-50 transition-all">
-        <td className="px-4 py-2">{lead.leadDetails?.name}</td>
-        <td className="px-4 py-2">{lead.leadDetails?.phone || 'N/A'}</td>
+        <td className="px-4 py-2">{lead.leadDetails?.clientName}</td>
+        <td className="px-4 py-2">{lead.leadDetails?.contact || 'N/A'}</td>
         <td className="px-4 py-2">{lead.createdBy?.name}</td>
         <td className="px-4 py-2">{lead.forwardedTo?.user?.name || 'N/A'}</td>
         <td className="px-4 py-2 text-xs whitespace-pre-line">

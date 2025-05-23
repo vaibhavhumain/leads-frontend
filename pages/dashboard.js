@@ -226,113 +226,88 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
   return (
     <ProtectedRoute>
       <Navbar />
-      <motion.div className="container mx-auto p-4" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-        <div className="relative flex justify-center items-center mb-6">
-          <motion.h1 className="text-4xl font-extrabold text-blue-600" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            Dashboard
-          </motion.h1>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="absolute right-0 bg-green-100 text-green-700 px-4 py-1 rounded-full shadow text-sm font-medium">
-            ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
-          </motion.div>
-        </div>
-        <div className="mb-4 flex items-center gap-4 flex-wrap">
-  <input
-    type="file"
-    accept=".xlsx, .xls"
-    onChange={handleExcelUpload}
-    className="border px-3 py-2 rounded shadow-sm text-sm"
-  />
-  <button
-    onClick={handleBulkUpload}
-    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm font-semibold"
-  >
-    Import & Save Leads
-  </button>
-</div>
+  <div className="w-full px-6 py-8 bg-gradient-to-tr from-blue-50 via-purple-100 to-pink-100 min-h-screen">
+    <div className="mb-8 flex flex-wrap justify-between items-center">
+      <h1 className="text-4xl font-bold text-blue-800 tracking-tight">🎯 Dashboard Overview</h1>
+      <div className="bg-green-200 text-green-900 px-5 py-1.5 rounded-full shadow-md text-sm font-semibold">
+        ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
+      </div>
+    </div>
 
+    <div className="mb-6 flex flex-wrap gap-4 items-center">
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleExcelUpload}
+        className="border border-blue-300 px-4 py-2 rounded-lg text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      <button
+        onClick={handleBulkUpload}
+        className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md"
+      >
+        📥 Import & Save Leads
+      </button>
+    </div>
 
-        <div className="mb-4 flex items-center space-x-3">
-          <motion.button onClick={() => setSearchVisible((prev) => !prev)} className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 shadow" whileTap={{ scale: 0.95 }}>
-            <FiSearch size={18} />
-          </motion.button>
+    <div className="mb-6 flex flex-wrap items-center gap-4">
+      <button
+        onClick={() => setSearchVisible((prev) => !prev)}
+        className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+      >
+        <FiSearch size={18} />
+      </button>
+      {searchVisible && (
+        <input
+          type="text"
+          placeholder="Search by phone number..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-4 py-2 border border-blue-300 rounded-lg shadow-sm text-sm bg-white focus:ring focus:ring-blue-300"
+        />
+      )}
+      {searchVisible && searchTerm && (
+        <button
+          onClick={() => setSearchTerm('')}
+          className="text-red-500 hover:text-red-700 text-xs font-medium"
+        >
+          Clear
+        </button>
+      )}
+    </div>
 
-          {!searchVisible && <span className="ml-4 text-sm text-gray-700 font-medium">Search Leads</span>}
+    {!loading && !error && (
+      <div className="bg-white bg-opacity-80 rounded-2xl shadow-2xl p-6 backdrop-blur-sm">
+        <LeadTable
+          leads={filteredLeads}
+          setLeads={setMyLeads}
+          searchTerm={searchTerm}
+          loggedInUser={loggedInUser}
+          isSearchActive={!!searchTerm.trim()}
+        />
+      </div>
+    )}
 
-          <AnimatePresence>
-            {searchVisible && (
-              <motion.input
-                key="search-input"
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: '16rem', opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                type="text"
-                autoFocus
-                placeholder="Search by phone number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 border rounded shadow-sm text-sm focus:ring w-64 origin-left"
-              />
-            )}
-          </AnimatePresence>
+    {loading && <p className="text-blue-600 font-medium">🔄 Loading leads...</p>}
+    {error && !loading && <p className="text-red-600 font-semibold">❌ {error}</p>}
 
-          {searchVisible && searchTerm && (
-            <motion.button onClick={() => setSearchTerm('')} whileTap={{ scale: 0.9 }} className="text-gray-500 hover:text-red-500 text-xs transition">
-              Clear
-            </motion.button>
-          )}
-        </div>
+    {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
+      <div ref={formRef} className="mt-8">
+        <LeadForm closeModal={() => setIsLeadFormOpen(false)} onLeadCreated={handleLeadCreated} />
+      </div>
+    )}
 
-        {!loading && !error && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            <div className="bg-white rounded-lg shadow-md p-4 overflow-auto">
-              <LeadTable
-  leads={filteredLeads}
-  setLeads={setMyLeads}
-  searchTerm={searchTerm}
-  loggedInUser={loggedInUser}
-  isSearchActive={!!searchTerm.trim()} 
-/>
+    {loggedInUser?.role !== 'admin' && (
+      <button
+        onClick={handleOpenLeadForm}
+        className="fixed bottom-6 right-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-full shadow-xl text-sm font-bold z-50"
+      >
+        ➕ New Lead
+      </button>
+    )}
+  </div>
+</ProtectedRoute>
+);
 
-            </div>
-          </motion.div>
-        )}
-
-        {loading && (
-          <motion.p className="text-blue-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            Loading leads...
-          </motion.p>
-        )}
-
-        {error && !loading && (
-          <motion.p className="text-red-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            {error}
-          </motion.p>
-        )}
-
-        {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
-          <motion.div ref={formRef} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
-            <LeadForm closeModal={() => setIsLeadFormOpen(false)} onLeadCreated={handleLeadCreated} />
-          </motion.div>
-        )}
-
-        {loggedInUser?.role !== 'admin' && (
-          <motion.button
-            onClick={handleOpenLeadForm}
-            className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-full shadow-lg z-50 text-sm font-semibold"
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            + New Lead
-          </motion.button>
-        )}
-      </motion.div>
-      
-    </ProtectedRoute>
-  );
 };
 
 export default Dashboard;
