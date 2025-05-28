@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash, FaStickyNote } from 'react-icons/fa';
 import { BsCalendarEvent } from 'react-icons/bs';
 
-const leadDetails = () => {
+const LeadDetails = () => {
   const [lead, setLead] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedConnection, setSelectedConnection] = useState('');
@@ -297,4 +297,4 @@ const leadDetails = () => {
   );
 };
 
-export default leadDetails;
+export default LeadDetails;

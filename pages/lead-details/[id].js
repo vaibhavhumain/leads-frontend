@@ -4,7 +4,6 @@ import axios from 'axios';
 import BASE_URL from '../../utils/api';
 import { motion } from 'framer-motion';
 import {  toast } from 'react-toastify';
-import LeadDetailsCard from '../../components/LeadDetailsCard';
 const LeadDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -15,7 +14,7 @@ const LeadDetailsPage = () => {
   const [remarkDate, setRemarkDate] = useState(new Date().toISOString().split("T")[0]); 
   const [users, setUsers] = useState([]);
 
-  
+
   useEffect(() => {
   if (!id) return;
 
