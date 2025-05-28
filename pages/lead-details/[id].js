@@ -4,7 +4,6 @@ import axios from 'axios';
 import BASE_URL from '../../utils/api';
 import { motion } from 'framer-motion';
 import {  toast } from 'react-toastify';
-import LeadDetailsCard from '../../components/LeadDetailsCard';
 const LeadDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -173,9 +172,9 @@ const LeadDetailsPage = () => {
           <p className="text-green-600 mt-3 font-medium">Lead is now unfrozen.</p>
         )}
       </div>
-       <div className="min-h-screen p-6 bg-gray-50">
+       {/* <div className="min-h-screen p-6 bg-gray-50">
       <LeadDetailsCard lead={lead} users={users} setLeads={() => {}} />
-    </div>
+    </div> */}
     </motion.div>
   );
 };
