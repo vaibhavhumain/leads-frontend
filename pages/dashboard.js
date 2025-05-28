@@ -223,92 +223,112 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
   }
 };
 
-  return (
-    <ProtectedRoute>
-      <Navbar />
-  <div className="w-full px-6 py-8 bg-gradient-to-tr from-blue-50 via-purple-100 to-pink-100 min-h-screen">
-    <div className="mb-8 flex flex-wrap justify-between items-center">
-      <h1 className="text-4xl font-bold text-blue-800 tracking-tight">🎯 Dashboard Overview</h1>
-      <div className="bg-green-200 text-green-900 px-5 py-1.5 rounded-full shadow-md text-sm font-semibold">
-        ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
+    return (
+  <ProtectedRoute>
+    <Navbar />
+    <div className="w-full px-6 py-10 bg-gradient-to-tr from-[#f0f9ff] via-[#f5e8ff] to-[#ffeef5] min-h-screen font-sans">
+      {/* Header */}
+      <div className="mb-10 flex flex-wrap justify-between items-center">
+        <h1 className="text-4xl font-extrabold text-blue-800 tracking-tight drop-shadow-sm">
+          🎯 Dashboard Overview
+        </h1>
+        <div className="bg-green-100 text-green-900 px-5 py-1.5 rounded-full shadow text-sm font-semibold">
+          ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
+        </div>
       </div>
-    </div>
 
-    <div className="mb-6 flex flex-wrap gap-4 items-center">
-      <input
-        type="file"
-        accept=".xlsx, .xls"
-        onChange={handleExcelUpload}
-        className="border border-blue-300 px-4 py-2 rounded-lg text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-      />
-      <button
-        onClick={handleBulkUpload}
-        className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md"
-      >
-        📥 Import & Save Leads
-      </button>
-    </div>
-
-    <div className="mb-6 flex flex-wrap items-center gap-4">
-      <button
-        onClick={() => setSearchVisible((prev) => !prev)}
-        className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-      >
-        <FiSearch size={18} />
-      </button>
-      {searchVisible && (
+      {/* Upload Section */}
+      <div className="mb-6 flex flex-wrap gap-4 items-center">
         <input
-          type="text"
-          placeholder="Search by phone number..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border border-blue-300 rounded-lg shadow-sm text-sm bg-white focus:ring focus:ring-blue-300"
+          type="file"
+          accept=".xlsx, .xls"
+          onChange={handleExcelUpload}
+          className="border border-blue-300 px-4 py-2 rounded-lg text-sm bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
         />
-      )}
-      {searchVisible && searchTerm && (
         <button
-          onClick={() => setSearchTerm('')}
-          className="text-red-500 hover:text-red-700 text-xs font-medium"
+          onClick={handleBulkUpload}
+          className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md transition"
         >
-          Clear
+          📥 Import & Save Leads
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-8 flex flex-wrap items-center gap-4">
+        <button
+          onClick={() => setSearchVisible((prev) => !prev)}
+          className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+        >
+          <FiSearch size={18} />
+        </button>
+
+        {searchVisible && (
+          <>
+            <input
+              type="text"
+              placeholder="Search by phone number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-4 py-2 border border-blue-300 rounded-lg shadow-sm text-sm bg-white focus:ring focus:ring-blue-300 transition"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="text-red-500 hover:text-red-700 text-xs font-medium"
+              >
+                Clear
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Lead Table */}
+      {!loading && !error && (
+        <div className="bg-white bg-opacity-80 rounded-3xl shadow-2xl p-6 backdrop-blur-sm border border-blue-100">
+          <LeadTable
+            leads={filteredLeads}
+            setLeads={setMyLeads}
+            searchTerm={searchTerm}
+            loggedInUser={loggedInUser}
+            isSearchActive={!!searchTerm.trim()}
+          />
+        </div>
+      )}
+
+      {/* Loading/Error States */}
+      {loading && (
+        <div className="text-center text-blue-600 font-medium text-sm mt-4">
+          🔄 Loading leads...
+        </div>
+      )}
+      {error && !loading && (
+        <div className="text-center text-red-600 font-semibold text-sm mt-4">
+          ❌ {error}
+        </div>
+      )}
+
+      {/* Lead Form Modal */}
+      {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
+        <div ref={formRef} className="mt-10">
+          <LeadForm
+            closeModal={() => setIsLeadFormOpen(false)}
+            onLeadCreated={handleLeadCreated}
+          />
+        </div>
+      )}
+
+      {/* Floating Button */}
+      {loggedInUser?.role !== 'admin' && (
+        <button
+          onClick={handleOpenLeadForm}
+          className="fixed bottom-6 right-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-bold z-50 transition"
+        >
+          ➕ New Lead
         </button>
       )}
     </div>
-
-    {!loading && !error && (
-      <div className="bg-white bg-opacity-80 rounded-2xl shadow-2xl p-6 backdrop-blur-sm">
-        <LeadTable
-          leads={filteredLeads}
-          setLeads={setMyLeads}
-          searchTerm={searchTerm}
-          loggedInUser={loggedInUser}
-          isSearchActive={!!searchTerm.trim()}
-        />
-      </div>
-    )}
-
-    {loading && <p className="text-blue-600 font-medium">🔄 Loading leads...</p>}
-    {error && !loading && <p className="text-red-600 font-semibold">❌ {error}</p>}
-
-    {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
-      <div ref={formRef} className="mt-8">
-        <LeadForm closeModal={() => setIsLeadFormOpen(false)} onLeadCreated={handleLeadCreated} />
-      </div>
-    )}
-
-    {loggedInUser?.role !== 'admin' && (
-      <button
-        onClick={handleOpenLeadForm}
-        className="fixed bottom-6 right-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-full shadow-xl text-sm font-bold z-50"
-      >
-        ➕ New Lead
-      </button>
-      
-    )}
-  </div>
-   
-</ProtectedRoute>
-
+  </ProtectedRoute>
 );
 
 };
