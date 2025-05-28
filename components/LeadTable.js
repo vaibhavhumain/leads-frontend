@@ -206,10 +206,14 @@ const goToNextLead = () => {
 };
 
 
+// Sends just a text message on WhatsApp
 const handleWhatsAppMessage = (contact, clientName = '') => {
+  if (!contact || typeof contact !== 'string') {
+    alert("Contact is invalid or missing");
+    return;
+  }
   const cleanedContact = contact.replace(/\D/g, '');
   const isValidContact = /^\d{10}$/.test(cleanedContact);
-
   if (!isValidContact) {
     alert("Please enter a valid 10-digit contact number.");
     return;
@@ -220,15 +224,18 @@ const handleWhatsAppMessage = (contact, clientName = '') => {
   );
 
   const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${message}`;
-  console.log("WhatsApp URL:", url);
   window.open(url, '_blank');
 };
 
 
+// Sends a message on WhatsApp including a PDF link
 const handleWhatsAppPdfShare = (contact, clientName = '', pdfFileName) => {
+  if (!contact || typeof contact !== 'string') {
+    alert("Contact is invalid or missing");
+    return;
+  }
   const cleanedContact = contact.replace(/\D/g, '');
   const isValidContact = /^\d{10}$/.test(cleanedContact);
-
   if (!isValidContact) {
     alert("Please enter a valid 10-digit contact number.");
     return;
@@ -237,17 +244,14 @@ const handleWhatsAppPdfShare = (contact, clientName = '', pdfFileName) => {
   const origin = window.location.origin;
   const pdfUrl = `${origin}/${pdfFileName}`;
 
-  console.log("PDF URL:", pdfUrl); // For debugging
-
   const message = encodeURIComponent(
     `Dear ${clientName || 'Customer'},\n\nPlease find the PDF here:\n${pdfUrl}`
   );
 
   const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${message}`;
-
   window.open(url, '_blank');
-  window.open(pdfUrl, '_blank');
 };
+
 
 if (!loggedInUser) return null;
 
@@ -391,28 +395,30 @@ return (
             </button>
 
             <button
-              onClick={() =>
-                handleWhatsAppMessage(
-                  lead.leadDetails?.contact,
-                  lead.leadDetails?.clientName
-                )
-              }
-              className="mt-3 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-            >
-              WhatsApp
-            </button>
-            <button
+  onClick={() =>
+    handleWhatsAppMessage(
+      lead.leadDetails?.contact,
+      lead.leadDetails?.clientName
+    )
+  }
+  className="mt-3 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+>
+  WhatsApp Message
+</button>
+
+<button
   onClick={() =>
     handleWhatsAppPdfShare(
       lead.leadDetails?.contact,
       lead.leadDetails?.clientName,
-      'gcb.pdf'
+      'gcb.pdf'  
     )
   }
   className="mt-3 ml-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
 >
   WhatsApp Share PDF
 </button>
+
           </div>
         </div>
       );
