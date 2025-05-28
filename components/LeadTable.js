@@ -42,6 +42,37 @@ const handleViewDetails = (lead) => {
     updateClientName(editingClientNameId);
 };
 
+useEffect(() => {
+  const fetchActionPlansForCurrentLead = async () => {
+    const currentLead = filteredLeads[currentLeadIndex];
+    if (!currentLead?._id) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/leads/${currentLead._id}/actionPlans`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSavedActionPlansMap((prev) => ({
+          ...prev,
+          [currentLead._id]: data.actionPlans.map(plan => plan.text),
+        }));
+      } else {
+        console.warn('Failed to fetch saved action plans');
+      }
+    } catch (err) {
+      console.error('Error fetching action plans:', err);
+    }
+  };
+
+  fetchActionPlansForCurrentLead();
+}, [currentLeadIndex]);
+
+
 const handleEmailSave = () => {
   updateEmail(editingEmailId);
 };
