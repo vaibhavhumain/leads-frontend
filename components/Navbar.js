@@ -31,28 +31,28 @@ const Navbar = ({ loggedInUser }) => {
   ];
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetch(`${BASE_URL}/api/users/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  const token = localStorage.getItem('token');
+  if (token) {
+    fetch(`${BASE_URL}/api/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Unauthorized');
+        return res.json();
       })
-        .then(res => {
-          if (!res.ok) throw new Error('Unauthorized');
-          return res.json();
-        })
-        .then(data => {
-          setUserName(data.name || 'User');
-          setIsAuthenticated(true);
-          setRandomEmoji(emojis[Math.floor(Math.random() * emojis.length)]);
-        })
-        .catch(err => {
-          console.error('Failed to fetch user:', err);
-          setIsAuthenticated(false);
-        });
-    }
-  }, []);
+      .then(data => {
+        setUserName(data.name || 'User');
+        setIsAuthenticated(true);
+        setRandomEmoji(emojis[Math.floor(Math.random() * emojis.length)]);
+      })
+      .catch(err => {
+        console.error('Failed to fetch user:', err);
+        setIsAuthenticated(false);
+      });
+  }
+}, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

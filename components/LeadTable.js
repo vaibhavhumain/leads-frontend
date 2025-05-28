@@ -5,6 +5,8 @@ import BASE_URL from '../utils/api';
 import { FaEdit } from 'react-icons/fa';
 import { useRouter } from 'next/router';
 const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
+import { FaWhatsapp } from 'react-icons/fa';
+import { MdAlarm } from 'react-icons/md';
 
 const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearchActive = false }) => {
   const [users, setUsers] = useState([]);
@@ -31,12 +33,6 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [leadId, setLeadId] = useState(null);
 
   const leadsPerPage = 3;
-
-  
-const handleViewDetails = (lead) => {
-  navigate(`/lead-details/${lead._id}`);
-};
-
 
     const handleSave = () => {
     updateClientName(editingClientNameId);
@@ -311,6 +307,39 @@ const handleWhatsAppMessage = (contact, clientName = '') => {
 };
 
 
+const handleWeeklyReminderMessage = (contact, clientName = '') => {
+  if (!contact || typeof contact !== 'string') {
+    toast.error("Contact is invalid or missing");
+    return;
+  }
+
+  const cleanedContact = contact.replace(/\D/g, '');
+  const isValidContact = /^\d{10}$/.test(cleanedContact);
+  if (!isValidContact) {
+    toast.error("Please enter a valid 10-digit contact number.");
+    return;
+  }
+  
+  // Check if a weekly reminder was sent in the last 7 days
+  const storageKey = `weeklyReminder-${cleanedContact}`;
+  const lastSent = localStorage.getItem(storageKey);
+  const oneWeek = 7 * 24 * 60 * 60 * 1000;
+
+  if (lastSent && Date.now() - parseInt(lastSent, 10) < oneWeek) {
+    toast.info("A weekly reminder was already sent in the last 7 days.");
+    return;
+  }
+
+  const reminderMessage = encodeURIComponent(
+    `Dear ${clientName || 'Customer'}, just a friendly reminder from Gobind Coach Builders! We're here to help with any updates or questions regarding your bus body needs. Feel free to reach out.`
+  );
+
+  const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${reminderMessage}`;
+  window.open(url, '_blank');
+  localStorage.setItem(storageKey, Date.now().toString());
+  toast.success("Weekly reminder sent!");
+};
+
 // Sends a message on WhatsApp including a PDF link
 const handleWhatsAppPdfShare = (contact, clientName = '', pdfFileName) => {
   if (!contact || typeof contact !== 'string') {
@@ -508,6 +537,8 @@ return (
     })()
   )}
 </div>
+    
+
 {/* New Action Plan / Remarks Section */}
 <div className="mt-6 bg-white bg-opacity-80 rounded-xl shadow-lg p-4 backdrop-blur-sm max-w-xl mx-auto">
   <h2 className="text-lg font-semibold mb-2 text-blue-700">📝 Next Action Plan / Remarks</h2>
@@ -553,6 +584,31 @@ return (
     savedActionPlansMap[filteredLeads[currentLeadIndex]._id].length === 0) && (
     <p className="text-blue-400 italic text-sm">No saved action plans yet.</p>
 )}
+</div>
+
+<div className="flex justify-center mt-4">
+  <button
+    onClick={() =>
+      handleWeeklyReminderMessage(
+        filteredLeads[currentLeadIndex]?.leadDetails?.contact,
+        filteredLeads[currentLeadIndex]?.leadDetails?.clientName
+      )
+    }
+    className="
+      inline-flex items-center
+      px-5 py-2
+      bg-green-500 hover:bg-green-600
+      text-white font-bold text-lg
+      rounded-lg
+      shadow-md
+      transition-colors duration-300
+      focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75
+      active:bg-green-700 active:shadow-lg
+    "
+  >
+    <MdAlarm className="mr-2" size={20} />
+    Weekly Reminder
+  </button>
 </div>
 
 <button 
