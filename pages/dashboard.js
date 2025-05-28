@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [isClient, setIsClient] = useState(false);
   const [uploadedLeads, setUploadedLeads] = useState([]);
-
+  
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -303,9 +303,12 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
       >
         ➕ New Lead
       </button>
+      
     )}
   </div>
+   
 </ProtectedRoute>
+
 );
 
 };

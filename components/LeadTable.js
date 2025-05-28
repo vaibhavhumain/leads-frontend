@@ -22,8 +22,13 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [editedEmail, setEditedEmail] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [currentLeadIndex , setCurrentLeadIndex] = useState(0); 
+  const [actionPlan, setActionPlan] = useState('');
+  const [savedActionPlansMap, setSavedActionPlansMap] = useState({});
+  const [showActionPlans, setShowActionPlans] = useState(false);
   const router = useRouter();
   const navigate = useRouter().push;
+  const token = localStorage.getItem('token');
+  const [leadId, setLeadId] = useState(null);
 
   const leadsPerPage = 3;
 
@@ -156,6 +161,53 @@ const updateClientName = async (leadId) => {
   }
 };
 
+
+const handleSaveActionPlan = async () => {
+  const currentLead = filteredLeads[currentLeadIndex];
+  if (!currentLead?._id) {
+    toast.error('Lead ID not found.');
+    return;
+  }
+
+  if (!actionPlan.trim()) {
+    toast.error('Action Plan / Remarks cannot be empty.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/leads/saveActionPlan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ leadId: currentLead._id, actionPlan }),
+    });
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      toast.error('Response is not valid JSON');
+      return;
+    }
+
+    if (res.ok) {
+      setSavedActionPlansMap((prev) => ({
+        ...prev,
+        [currentLead._id]: data.actionPlans.map(plan => plan.text),
+      }));
+      setActionPlan('');
+      toast.success('Action plan saved!');
+    } else {
+      toast.error(data.message || 'Failed to save');
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error('Something went wrong.');
+  }
+};
 
   const toggleDropdown = (leadId) => {
     setDropdownVisible((prev) => ({
@@ -424,6 +476,52 @@ return (
       );
     })()
   )}
+</div>
+{/* New Action Plan / Remarks Section */}
+<div className="mt-6 bg-white bg-opacity-80 rounded-xl shadow-lg p-4 backdrop-blur-sm max-w-xl mx-auto">
+  <h2 className="text-lg font-semibold mb-2 text-blue-700">📝 Next Action Plan / Remarks</h2>
+
+  <textarea
+    value={actionPlan}
+    onChange={(e) => setActionPlan(e.target.value)}
+    placeholder="Type your next action plan or remarks here..."
+    className="w-full min-h-[70px] p-2 border border-blue-300 rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2 text-sm"
+  />
+
+  <div className="flex items-center gap-3 mb-3">
+    <button
+      onClick={handleSaveActionPlan}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md shadow font-semibold text-sm"
+    >
+      💾 Save
+    </button>
+    <button
+      onClick={() => setShowActionPlans((prev) => !prev)}
+      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 rounded-md shadow font-medium text-sm"
+    >
+      {showActionPlans ? 'Hide Saved' : 'Show Saved'}
+    </button>
+  </div>
+
+  {/* Saved action plans display */}
+  {showActionPlans && (savedActionPlansMap[filteredLeads[currentLeadIndex]?._id]?.length > 0) && (
+  <div className="max-h-36 overflow-y-auto border border-blue-200 rounded-md p-2 bg-blue-50 text-blue-900 text-sm">
+    {savedActionPlansMap[filteredLeads[currentLeadIndex]._id].map((plan, index) => (
+      <div
+        key={index}
+        className="mb-1 p-1 border-b border-blue-300 last:border-b-0 break-words whitespace-pre-wrap"
+      >
+        {plan}
+      </div>
+    ))}
+  </div>
+)}
+
+{showActionPlans &&
+  (!savedActionPlansMap[filteredLeads[currentLeadIndex]?._id] ||
+    savedActionPlansMap[filteredLeads[currentLeadIndex]._id].length === 0) && (
+    <p className="text-blue-400 italic text-sm">No saved action plans yet.</p>
+)}
 </div>
 
 <button 
