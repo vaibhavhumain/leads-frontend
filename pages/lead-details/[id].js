@@ -4,7 +4,7 @@ import axios from 'axios';
 import BASE_URL from '../../utils/api';
 import { motion } from 'framer-motion';
 import {  toast } from 'react-toastify';
-
+import LeadDetailsCard from '../../components/LeadDetailsCard';
 const LeadDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -13,26 +13,35 @@ const LeadDetailsPage = () => {
   const [remarkInput, setRemarkInput] = useState('');
   const [updating, setUpdating] = useState(false);
   const [remarkDate, setRemarkDate] = useState(new Date().toISOString().split("T")[0]); 
+  const [users, setUsers] = useState([]);
 
+  
   useEffect(() => {
-    if (!id) return;
+  if (!id) return;
 
-    const fetchLead = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${BASE_URL}/api/leads/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setLead(res.data);
-      } catch (err) {
-        console.error('Error fetching lead:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchLead = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-    fetchLead();
-  }, [id]);
+      // Fetch both lead and users
+      const [leadRes, usersRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/leads/${id}`, { headers }),
+        axios.get(`${BASE_URL}/api/users`, { headers }),
+      ]);
+
+      setLead(leadRes.data);
+      setUsers(usersRes.data); 
+    } catch (err) {
+      console.error('Error fetching lead or users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchLead();
+}, [id]);
+
 
   const handleRemarkSubmit = async () => {
   const token = localStorage.getItem('token');
@@ -164,6 +173,9 @@ const LeadDetailsPage = () => {
           <p className="text-green-600 mt-3 font-medium">Lead is now unfrozen.</p>
         )}
       </div>
+       <div className="min-h-screen p-6 bg-gray-50">
+      <LeadDetailsCard lead={lead} users={users} setLeads={() => {}} />
+    </div>
     </motion.div>
   );
 };
