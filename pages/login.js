@@ -17,15 +17,24 @@ const Login = () => {
   try {
     const response = await axios.post(`${BASE_URL}/api/auth/login`, { email, password });
 
-    const { token, user } = response.data;
+    const { token } = response.data;
     localStorage.setItem('token', token);
     localStorage.setItem('loginTime', new Date().toISOString());
 
-    if (user.role === 'admin') {
+    const profileRes = await axios.get(`${BASE_URL}/api/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    localStorage.setItem('user', JSON.stringify(profileRes.data));
+
+    if (profileRes.data.role === 'admin') {
       router.push('/admin');
     } else {
       router.push('/dashboard');
     }
+
   } catch (error) {
     setError(error.response?.data?.message || 'Login failed');
   }

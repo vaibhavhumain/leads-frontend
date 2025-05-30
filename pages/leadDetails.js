@@ -14,6 +14,8 @@ import {
   FaUserShield,
   FaStickyNote, } from 'react-icons/fa';
 import { BsCalendarEvent } from 'react-icons/bs';
+import Link from 'next/link';
+import { FaArrowRight } from "react-icons/fa";
 
 const LeadDetails = () => {
   const [lead, setLead] = useState(null);
@@ -23,6 +25,16 @@ const LeadDetails = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [users, setUsers] = useState([]);
   const [showFollowUps, setShowFollowUps] = useState(true);
+  const [loggedInUserId, setLoggedInUserId] = useState(null);
+
+useEffect(() => {
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    const parsedUser = JSON.parse(storedUser);
+    setLoggedInUserId(parsedUser._id); 
+  }
+}, []);
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -151,12 +163,18 @@ const LeadDetails = () => {
   if (!lead) return <p>Loading lead...</p>;
 
   return (
+    
   <div className="relative min-h-screen w-full bg-gradient-to-br from-rose-100 via-red-100 to-pink-200 py-16 px-4 flex items-start justify-center overflow-hidden font-sans">
     {/* Background blobs */}
     <div className="absolute top-0 left-0 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
     <div className="absolute top-1/3 right-0 w-80 h-80 bg-red-200 rounded-full mix-blend-multiply filter blur-2xl opacity-20" />
     <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10" />
-
+    <Link href="/dashboard">
+  <button className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg font-semibold transition">
+    <FaArrowRight />
+    Go to Dashboard
+  </button>
+</Link>
     {/* Lead Card */}
     <div
       className="relative z-10 bg-white/80 p-8 rounded-3xl shadow-2xl border border-blue-100 w-full max-w-2xl backdrop-blur-lg transition hover:shadow-blue-200"
@@ -284,17 +302,20 @@ const LeadDetails = () => {
       <div className="mb-2">
         <label className="block text-sm font-medium text-gray-700 mb-1">📤 Forward Lead</label>
         <select
-          value={selectedUserId}
-          onChange={(e) => setSelectedUserId(e.target.value)}
-          className="w-full border border-orange-300 px-3 py-2 rounded focus:ring-2 focus:ring-orange-400"
-        >
-          <option value="">-- Select User --</option>
-          {users.map((user) => (
-            <option key={user._id} value={user._id}>
-              {user.name}
-            </option>
-          ))}
-        </select>
+  value={selectedUserId}
+  onChange={(e) => setSelectedUserId(e.target.value)}
+  className="w-full border border-orange-300 px-3 py-2 rounded focus:ring-2 focus:ring-orange-400"
+>
+  <option value="">-- Select User --</option>
+  {users
+    .filter((user) => user._id !== loggedInUserId)
+    .map((user) => (
+      <option key={user._id} value={user._id}>
+        {user.name}
+      </option>
+    ))}
+</select>
+
         <button
           onClick={handleForward}
           className="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded shadow-md font-semibold"

@@ -307,6 +307,30 @@ const handleWhatsAppMessage = (contact, clientName = '') => {
   window.open(url, '_blank');
 };
 
+// Sends a link to the GC Builders Database on WhatsApp
+const handleSendGcDatabaseLink = (contact, clientName = '') => {
+  if (!contact || typeof contact !== 'string') {
+    alert("Contact is invalid or missing");
+    return;
+  }
+
+  const cleanedContact = contact.replace(/\D/g, '');
+  const isValidContact = /^\d{10}$/.test(cleanedContact);
+
+  if (!isValidContact) {
+    alert("Please enter a valid 10-digit contact number.");
+    return;
+  }
+
+  const gcDatabaseUrl = 'https://gc-database.netlify.app/';
+  const message = encodeURIComponent(
+    `Dear ${clientName || 'Customer'}, please visit our GC Builders Database for detailed bus body options: ${gcDatabaseUrl}`
+  );
+
+  const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${message}`;
+  window.open(url, '_blank');
+};
+
 
 const handleWeeklyReminderMessage = (contact, clientName = '') => {
   if (!contact || typeof contact !== 'string') {
@@ -523,8 +547,15 @@ return (
       }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md text-sm">
         📋 View Full Lead Card
       </button>
-    </div>
 
+      <button
+    onClick={() => handleSendGcDatabaseLink(filteredLeads[currentLeadIndex]?.leadDetails?.contact, filteredLeads[currentLeadIndex]?.leadDetails?.clientName)}
+    className="mt-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md text-sm center"
+  >
+    Send GC database to WhatsApp
+  </button>
+
+    </div>
     <div className="flex justify-center gap-4 mt-8">
   <button
     onClick={goToPreviousLead}

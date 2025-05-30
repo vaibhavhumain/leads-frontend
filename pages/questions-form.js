@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
 import { toast } from 'react-toastify';
+import { FaArrowRight } from "react-icons/fa";
+import Link from 'next/link'
 
 const predefinedQuestions = [
   { text: "How many buses they make in a year?", type: "number" },
@@ -87,6 +89,12 @@ export default function QuestionsForm() {
         >
           Submit Answers
         </button>
+        <Link href="/dashboard">
+  <button className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg font-semibold transition">
+    <FaArrowRight />
+    Go to Dashboard
+  </button>
+</Link>
       </div>
     </div>
   );
