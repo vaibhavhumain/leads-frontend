@@ -32,6 +32,7 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const navigate = useRouter().push;
   const token = localStorage.getItem('token');
   const [leadId, setLeadId] = useState(null);
+  const [showRemarksSection , setShowRemarksSection] = useState(false);
 
   const leadsPerPage = 3;
 
@@ -501,39 +502,58 @@ return (
       })()}
     </div>
 
-    {/* Remarks Section */}
-    <div className="mt-8 bg-white/80 rounded-2xl shadow-md p-5 max-w-xl mx-auto backdrop-blur-sm border border-blue-200">
-      <h2 className="text-lg font-bold text-blue-700 mb-3">📝 Next Action Plan / Remarks</h2>
+{/* Toggle Button */}
+<button
+  onClick={() => setShowRemarksSection(prev => !prev)}
+  className="block mx-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-md shadow mt-5 transition duration-300 text-sm font-medium"
+>
+  {showRemarksSection ? 'Hide Remarks' : 'Show Remarks'}
+</button>
 
-      <textarea
-        value={actionPlan}
-        onChange={(e) => setActionPlan(e.target.value)}
-        placeholder="Type your next action plan or remarks here..."
-        className="w-full min-h-[80px] p-3 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-      />
+{/* Remarks Section */}
+{showRemarksSection && (
+  <div className="mt-4 bg-white/80 rounded-2xl shadow-md p-5 max-w-xl mx-auto backdrop-blur-sm border border-blue-200">
+    <h2 className="text-lg font-bold text-blue-700 mb-3">📝 Next Action Plan / Remarks</h2>
 
-      <div className="flex items-center gap-3 mt-3">
-        <button onClick={handleSaveActionPlan} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm shadow">
-          💾 Save
-        </button>
-        <button onClick={() => setShowActionPlans(prev => !prev)} className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 rounded-md text-sm shadow">
-          {showActionPlans ? 'Hide Saved' : 'Show Saved'}
-        </button>
-      </div>
+    <textarea
+      value={actionPlan}
+      onChange={(e) => setActionPlan(e.target.value)}
+      placeholder="Type your next action plan or remarks here..."
+      className="w-full min-h-[80px] p-3 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+    />
 
-      {/* Saved Plans */}
-      {showActionPlans && (
-        <div className="mt-3 max-h-36 overflow-y-auto bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800 space-y-1">
-          {(savedActionPlansMap[filteredLeads[currentLeadIndex]?._id] || []).length > 0 ? (
-            savedActionPlansMap[filteredLeads[currentLeadIndex]._id].map((plan, index) => (
-              <div key={index} className="border-b border-blue-300 last:border-0 pb-1">{plan}</div>
-            ))
-          ) : (
-            <p className="text-blue-400 italic">No saved action plans yet.</p>
-          )}
-        </div>
-      )}
+    <div className="flex items-center gap-3 mt-3">
+      <button
+        onClick={handleSaveActionPlan}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm shadow"
+      >
+        💾 Save
+      </button>
+      <button
+        onClick={() => setShowActionPlans(prev => !prev)}
+        className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 rounded-md text-sm shadow"
+      >
+        {showActionPlans ? 'Hide Saved' : 'Show Saved'}
+      </button>
     </div>
+
+    {/* Saved Plans */}
+    {showActionPlans && (
+      <div className="mt-3 max-h-36 overflow-y-auto bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800 space-y-1">
+        {(savedActionPlansMap[filteredLeads[currentLeadIndex]?._id] || []).length > 0 ? (
+          savedActionPlansMap[filteredLeads[currentLeadIndex]._id].map((plan, index) => (
+            <div key={index} className="border-b border-blue-300 last:border-0 pb-1">
+              {plan}
+            </div>
+          ))
+        ) : (
+          <p className="text-blue-400 italic">No saved action plans yet.</p>
+        )}
+      </div>
+    )}
+  </div>
+)}
+
 
     {/* Weekly Reminder & Lead Card Button */}
     <div className="flex flex-col items-center mt-6 space-y-3">

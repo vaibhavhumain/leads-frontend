@@ -57,6 +57,7 @@ const Dashboard = () => {
 
     fetchLeadsAndCheckRole();
 
+    
     const interval = setInterval(() => {
       const loginTimeString = localStorage.getItem('loginTime');
       if (loginTimeString) {
@@ -249,7 +250,7 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
           onClick={handleBulkUpload}
           className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md transition"
         >
-          📥 Import & Save Leads
+          📥 Import Leads
         </button>
       </div>
 
