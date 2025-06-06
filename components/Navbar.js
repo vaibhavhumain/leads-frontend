@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useRouter } from 'next/router';
 import BASE_URL from '../utils/api';
 import {
@@ -30,29 +31,33 @@ const Navbar = ({ loggedInUser }) => {
     '😴', '🤤', '😪', '😵', '🤯', '🥴', '😷', '🤒', '🤕', '🫠',
   ];
 
-  useEffect(() => {
+useEffect(() => {
   const token = localStorage.getItem('token');
-  if (token) {
-    fetch(`${BASE_URL}/api/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Unauthorized');
-        return res.json();
-      })
-      .then(data => {
-        setUserName(data.name || 'User');
-        setIsAuthenticated(true);
-        setRandomEmoji(emojis[Math.floor(Math.random() * emojis.length)]);
-      })
-      .catch(err => {
-        console.error('Failed to fetch user:', err);
-        setIsAuthenticated(false);
-      });
+
+  if (!token) {
+    setIsAuthenticated(false);
+    router.push('/login');
+    return;
   }
+
+  axios.get(`${BASE_URL}/api/users/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  .then(res => {
+    setUserName(res.data.name || 'User');
+    setIsAuthenticated(true);
+    setRandomEmoji(emojis[Math.floor(Math.random() * emojis.length)]);
+  })
+  .catch(err => {
+    console.error('Failed to fetch user:', err);
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    router.push('/login');
+  });
 }, []);
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');

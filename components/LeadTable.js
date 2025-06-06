@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
 import { MdAlarm } from 'react-icons/md';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import Link from 'next/link';
 
 
 const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearchActive = false }) => {
@@ -33,6 +34,8 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const token = localStorage.getItem('token');
   const [leadId, setLeadId] = useState(null);
   const [showRemarksSection , setShowRemarksSection] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState({});
+
 
   const leadsPerPage = 3;
 
@@ -70,6 +73,9 @@ useEffect(() => {
   fetchActionPlansForCurrentLead();
 }, [currentLeadIndex]);
 
+const handleCreateEnquiry = () => {
+    router.push('/EnquiryForm'); 
+  };
 
 const handleEmailSave = () => {
   updateEmail(editingEmailId);
@@ -269,6 +275,78 @@ const handleDeleteAllLeads = async () => {
   }
 };
 
+
+const handleImageUpload = async (e, leadId, contact, clientName) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const cleanedContact = contact?.replace(/\D/g, '');
+
+  if (!cleanedContact || !/^\d{10}$/.test(cleanedContact)) {
+    toast.error('❌ Invalid contact number');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('images', file);
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/upload/upload-images`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.images.length > 0) {
+      const imageUrl = data.images[0];
+
+      setUploadedImages((prev) => ({ ...prev, [leadId]: imageUrl }));
+
+      toast.success('✅ Image uploaded! Redirecting to gallery...');
+
+      setTimeout(() => {
+        window.location.href = `/gallery?phone=${cleanedContact}&name=${encodeURIComponent(clientName)}&img=${encodeURIComponent(imageUrl)}`;
+      }, 1500);
+    } else {
+      toast.error('❌ Image upload failed');
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error('❌ Something went wrong while uploading.');
+  }
+};
+
+
+const handleSendUploadedImage = (contact, clientName = '', imagePath = '') => {
+  if (!contact || typeof contact !== 'string') {
+    alert("Contact is invalid or missing");
+    return;
+  }
+
+  const cleanedContact = contact.replace(/\D/g, '');
+  const isValidContact = /^\d{10}$/.test(cleanedContact);
+  if (!isValidContact) {
+    alert("Please enter a valid 10-digit contact number.");
+    return;
+  }
+
+  if (!imagePath) {
+    alert("Image path is required. Please upload an image first.");
+    return;
+  }
+
+  const fullImageUrl = `${BASE_URL}${imagePath}`;
+
+  const message = encodeURIComponent(
+    `Dear ${clientName || 'Customer'},\n\nIt was a pleasure speaking with you today! Thank you for considering Gobind Coach Builders for your bus body requirements. We’re excited about the opportunity to bring your vision to life.\n\nPlease check this image:\n${fullImageUrl}`
+  );
+
+  const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${message}`;
+  window.open(url, '_blank');
+};
+
+
 const paginatedLeads = filteredLeads.slice(
   currentPage * leadsPerPage,
   currentPage * leadsPerPage + leadsPerPage
@@ -293,6 +371,7 @@ const handleWhatsAppMessage = (contact, clientName = '') => {
     alert("Contact is invalid or missing");
     return;
   }
+  
   const cleanedContact = contact.replace(/\D/g, '');
   const isValidContact = /^\d{10}$/.test(cleanedContact);
   if (!isValidContact) {
@@ -407,7 +486,7 @@ return (
       </div>
     )}
 
-    <div className="flex justify-center">
+    <div className="flex justify-center relative">
       {filteredLeads.length > 0 && (() => {
         const lead = filteredLeads[currentLeadIndex];
         const isFrozenByCreator =
@@ -416,92 +495,116 @@ return (
           lead.isFrozen;
 
         return (
-          <div
-            key={lead._id}
-            className="bg-gradient-to-br from-white via-[#f3f8ff] to-[#d9e9ff] p-6 rounded-3xl shadow-2xl border border-blue-100 w-full max-w-xl transition duration-300 hover:shadow-blue-200"
-          >
-            <div className="text-xs text-gray-500 mb-2 font-semibold">
-              #{currentLeadIndex + 1} • Created by: <span className="text-indigo-600">{lead.createdBy?.name || 'N/A'}</span>
-            </div>
-
-            {/* Client Name */}
-            <div className="text-lg font-semibold text-gray-700 mb-1">
-              {editingClientNameId === lead._id ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={editedClientName}
-                    onChange={(e) => setEditedClientName(e.target.value)}
-                    className="border border-indigo-300 rounded px-2 py-1 text-sm w-full"
-                  />
-                  <button onClick={handleSave} className="text-green-600 text-sm font-medium hover:underline">Save</button>
-                  <button onClick={() => setEditingClientNameId(null)} className="text-red-500 text-sm font-medium hover:underline">Cancel</button>
+          <div className="relative">
+            {isFrozenByCreator && (
+              <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-3xl border border-red-200">
+                <div className="text-center px-4">
+                  <p className="text-red-600 font-semibold text-lg mb-1">
+                    🔒 This lead has been forwarded and is now frozen.
+                  </p>
+                  <p className="text-gray-600 text-sm">You cannot make any changes.</p>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>{lead.leadDetails?.clientName || 'No Name'}</span>
-                  <FaEdit className="text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => {
-                    setEditingClientNameId(lead._id);
-                    setEditedClientName(lead.leadDetails?.clientName || '');
-                  }} />
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Company */}
-            <div className="text-sm text-gray-600 italic mb-1">
-              {lead.leadDetails?.companyName || 'No Company'}
-            </div>
+            <div
+              key={lead._id}
+              className={`bg-gradient-to-br from-white via-[#f3f8ff] to-[#d9e9ff] p-6 rounded-3xl shadow-2xl border border-blue-100 w-full max-w-xl transition duration-300 hover:shadow-blue-200 relative z-10 ${
+                isFrozenByCreator ? 'pointer-events-none opacity-70' : ''
+              }`}
+            >
+              <div className="text-xs text-gray-500 mb-2 font-semibold">
+                #{currentLeadIndex + 1} • Created by: <span className="text-indigo-600">{lead.createdBy?.name || 'N/A'}</span>
+              </div>
 
-            {/* Contact & Location */}
-            <div className="text-xs text-gray-500 mb-2">
-              📞 <span className="text-blue-800 font-semibold">{lead.leadDetails?.contact || 'N/A'}</span><br />
-              📍 {lead.leadDetails?.location || 'N/A'}
-            </div>
+              {/* Client Name */}
+              <div className="text-lg font-semibold text-gray-700 mb-1">
+                {editingClientNameId === lead._id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editedClientName}
+                      onChange={(e) => setEditedClientName(e.target.value)}
+                      className="border border-indigo-300 rounded px-2 py-1 text-sm w-full"
+                    />
+                    <button onClick={handleSave} className="text-green-600 text-sm font-medium hover:underline">Save</button>
+                    <button onClick={() => setEditingClientNameId(null)} className="text-red-500 text-sm font-medium hover:underline">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>{lead.leadDetails?.clientName || 'No Name'}</span>
+                    <FaEdit className="text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => {
+                      setEditingClientNameId(lead._id);
+                      setEditedClientName(lead.leadDetails?.clientName || '');
+                    }} />
+                  </div>
+                )}
+              </div>
 
-            {/* Email */}
-            <div className="mb-4">
-              {editingEmailId === lead._id ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="email"
-                    value={editedEmail}
-                    onChange={(e) => setEditedEmail(e.target.value)}
-                    className="border border-indigo-300 px-2 py-1 rounded text-sm"
-                  />
-                  <button onClick={handleEmailSave} className="text-green-600 text-sm font-medium hover:underline">Save</button>
-                  <button onClick={() => { setEditingEmailId(null); setEditedEmail(''); }} className="text-red-600 text-sm font-medium hover:underline">Cancel</button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>{lead.leadDetails?.email || 'No email'}</span>
-                  <FaEdit className="text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => {
-                    setEditingEmailId(lead._id);
-                    setEditedEmail(lead.leadDetails?.email || '');
-                  }} />
-                </div>
-              )}
-            </div>
+              {/* Company */}
+              <div className="text-sm text-gray-600 italic mb-1">
+                {lead.leadDetails?.companyName || 'No Company'}
+              </div>
 
-            {/* Buttons */}
-            <div className="flex flex-col items-center gap-2 mt-4">
-              <button onClick={() => router.push('/questions-form')} className="w-full bg-gradient-to-r from-indigo-500 to-indigo-700 text-white py-2 text-sm font-semibold rounded-md shadow hover:to-indigo-800">
-                Go to Full Questions Page →
-              </button>
+              {/* Contact & Location */}
+              <div className="text-xs text-gray-500 mb-2">
+                📞 <span className="text-blue-800 font-semibold">{lead.leadDetails?.contact || 'N/A'}</span><br />
+                📍 {lead.leadDetails?.location || 'N/A'}
+              </div>
 
-              <button onClick={() => handleWhatsAppMessage(lead.leadDetails?.contact, lead.leadDetails?.clientName)} className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm">
-                📩 WhatsApp Message
-              </button>
+              {/* Email */}
+              <div className="mb-4">
+                {editingEmailId === lead._id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={editedEmail}
+                      onChange={(e) => setEditedEmail(e.target.value)}
+                      className="border border-indigo-300 px-2 py-1 rounded text-sm"
+                    />
+                    <button onClick={handleEmailSave} className="text-green-600 text-sm font-medium hover:underline">Save</button>
+                    <button onClick={() => { setEditingEmailId(null); setEditedEmail(''); }} className="text-red-600 text-sm font-medium hover:underline">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>{lead.leadDetails?.email || 'No email'}</span>
+                    <FaEdit className="text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => {
+                      setEditingEmailId(lead._id);
+                      setEditedEmail(lead.leadDetails?.email || '');
+                    }} />
+                  </div>
+                  
+                )}
+                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 w-full">
+  <button
+    onClick={handleCreateEnquiry}
+    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
+  >
+    📝 Questions Form
+  </button>
 
-              <button onClick={() => handleWhatsAppPdfShare(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')} className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm">
-                📄 WhatsApp Share PDF
-              </button>
+  <button
+    onClick={() => handleWhatsAppMessage(lead.leadDetails?.contact, lead.leadDetails?.clientName)}
+    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
+  >
+    📩 WhatsApp Message
+  </button>
+
+  <button
+    onClick={() => handleWhatsAppPdfShare(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')}
+    className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
+  >
+    📄 Share PDF via WhatsApp
+  </button>
+</div>
+
+
+              </div>
             </div>
           </div>
         );
       })()}
     </div>
-
 {/* Toggle Button */}
 <button
   onClick={() => setShowRemarksSection(prev => !prev)}
@@ -568,12 +671,12 @@ return (
         📋 View Full Lead Card
       </button>
 
-      <button
+      {/* <button
     onClick={() => handleSendGcDatabaseLink(filteredLeads[currentLeadIndex]?.leadDetails?.contact, filteredLeads[currentLeadIndex]?.leadDetails?.clientName)}
     className="mt-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md text-sm center"
   >
     Send GC database to WhatsApp
-  </button>
+  </button> */}
 
     </div>
     <div className="flex justify-center gap-4 mt-8">

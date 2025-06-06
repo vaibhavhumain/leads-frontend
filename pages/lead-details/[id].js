@@ -111,7 +111,7 @@ const LeadDetailsPage = () => {
         <table className="min-w-full text-sm text-gray-700">
           <thead className="bg-indigo-100 text-indigo-700">
             <tr>
-              {['Name', 'Phone', 'Company', 'Status', 'Remarks', 'Date', 'Created By'].map(
+              {['Name', 'Phone', 'Company', 'Status', 'Date', 'Created By'].map(
                 (label, i) => (
                   <motion.th
                     key={label}
@@ -133,7 +133,7 @@ const LeadDetailsPage = () => {
               <td className="px-6 py-4">{lead.leadDetails?.contact || '—'}</td>
               <td className="px-6 py-4">{lead.leadDetails?.company || '—'}</td>
               <td className="px-6 py-4">{lead.status || '—'}</td>
-              <td className="px-6 py-4">{lead.remarks || '—'}</td>
+              {/* <td className="px-6 py-4">{lead.remarks || '—'}</td> */}
               <td className="px-6 py-4">
                 {lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}
               </td>
@@ -168,6 +168,46 @@ const LeadDetailsPage = () => {
         >
           {updating ? 'Saving...' : 'Submit Remark'}
         </button>
+
+{lead?.remarksHistory?.length > 0 && (
+  <div className="mt-10 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 rounded-xl shadow-inner border border-indigo-100">
+    <h3 className="text-lg font-semibold text-indigo-700 mb-4">📝 Remarks History</h3>
+    <div className="space-y-3 max-h-60 overflow-y-auto">
+      {lead.remarksHistory.map((entry, idx) => (
+        <div
+          key={idx}
+          className="border-b pb-2 last:border-none text-sm text-gray-700 bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200"
+        > 
+          <p className="font-medium text-indigo-600">By: {entry.updatedBy?.name || 'Unknown'}</p>
+          <p className="italic text-gray-800">"{entry.remarks}"</p>
+          <p className="text-xs text-gray-500">📅 {new Date(entry.date).toLocaleDateString()}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{/* Follow-ups by the person who forwarded the lead */}
+{lead.createdBy && (
+  <div className="mt-6">
+    <h4 className="text-sm font-semibold text-orange-600 mb-2">📤 By {lead.createdBy.name} (Forwarded the lead)</h4>
+    {lead.followUps.filter(fu => fu.by?._id === lead.createdBy._id).length === 0 ? (
+      <p className="text-xs text-gray-500 italic">No follow-ups by {lead.createdBy.name}</p>
+    ) : (
+      lead.followUps
+        .filter(fu => fu.by?._id === lead.createdBy._id)
+        .map((fup, idx) => (
+          <div key={idx} className="flex items-start gap-3 text-sm bg-white px-4 py-3 mb-2 rounded-lg shadow-sm border border-gray-200">
+            <span className="font-medium text-gray-800">{fup.date.split('T')[0]}</span>
+            <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
+          </div>
+        ))
+    )}
+  </div>
+)}
+
+
+
         {lead?.isFrozen === false && (
           <p className="text-green-600 mt-3 font-medium">Lead is now unfrozen.</p>
         )}

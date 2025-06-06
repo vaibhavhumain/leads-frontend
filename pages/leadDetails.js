@@ -63,42 +63,49 @@ useEffect(() => {
 };
 
 
-  useEffect(() => {
+useEffect(() => {
   const storedLead = localStorage.getItem('selectedLead');
   if (storedLead) {
     const parsedLead = JSON.parse(storedLead);
-    setLead(parsedLead);
-    setSelectedStatus(parsedLead.status || '');
-    setSelectedConnection(parsedLead.connectionStatus || '');
+    fetchLead(parsedLead._id); 
   }
 }, []);
 
 
   const handleAddFollowUp = async () => {
-    const token = localStorage.getItem('token');
-    if (!followUp.date || !followUp.notes) {
-      toast.warning('Please fill out both date and notes');
-      return;
-    }
+  const token = localStorage.getItem('token');
+  if (!followUp.date || !followUp.notes) {
+    toast.warning('Please fill out both date and notes');
+    return;
+  }
 
-    try {
-      await axios.post(
-        `${BASE_URL}/api/leads/followup`,
-        {
-          leadId: lead._id,
-          followUp,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  try {
+    // Add follow-up
+    await axios.post(
+      `${BASE_URL}/api/leads/followup`,
+      {
+        leadId: lead._id,
+        followUp,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      toast.success('Follow-up added');
-      setFollowUp({ date: '', notes: '' });
-      fetchLead(lead._id);
-    } catch (err) {
-      toast.error('Failed to add follow-up');
-      console.error(err);
-    }
-  };
+    toast.success('Follow-up added');
+
+    const res = await axios.get(`${BASE_URL}/api/leads/${lead._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setFollowUp({ date: '', notes: '' });
+    setLead(res.data);
+    localStorage.setItem('selectedLead', JSON.stringify(res.data));
+
+  } catch (err) {
+    toast.error('Failed to add follow-up');
+    console.error(err);
+  }
+};
+
 
   const handleStatusUpdate = async () => {
   const token = localStorage.getItem('token');
@@ -271,32 +278,69 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Follow-Up History */}
       {showFollowUps && (
-        <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4 rounded-xl shadow-inner border border-blue-100 mb-6">
-          <h3 className="text-base font-semibold text-purple-700 mb-3 flex items-center gap-2">
-            <FaStickyNote /> Follow-Up History
-          </h3>
-          {(lead.followUps || []).length === 0 ? (
-            <p className="text-sm text-gray-500 italic">No follow-ups yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {lead.followUps.map((fup, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 text-sm bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200"
-                >
-                  <BsCalendarEvent className="text-blue-500 mt-1" />
-                  <div className="flex flex-col">
-                    <span className="font-medium text-gray-800">{fup.date.split('T')[0]}</span>
-                    <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
-                  </div>
+  <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4 rounded-xl shadow-inner border border-blue-100 mb-6">
+    <h3 className="text-base font-semibold text-purple-700 mb-4 flex items-center gap-2">
+      <FaStickyNote /> Follow-Up History
+    </h3>
+
+   {/* Follow-ups by the assigned user
+{lead.forwardedTo?.user?._id && (
+
+  <div className="mt-6">
+    <h4 className="text-sm font-semibold text-green-600 mb-2">
+      📩 By {lead.forwardedTo.user.name} (Assigned user)
+    </h4>
+    {lead.followUps.filter(fu => fu.by?._id === lead.forwardedTo.user._id).length === 0 ? (
+      <p className="text-xs text-gray-500 italic">No follow-ups by {lead.forwardedTo.user.name}</p>
+    ) : (
+      lead.followUps
+        .filter(fu => fu.by?._id === lead.forwardedTo.user._id)
+        .map((fup, idx) => (
+          <div
+            key={idx}
+            className="flex items-start gap-3 text-sm bg-white px-4 py-3 mb-2 rounded-lg shadow-sm border border-gray-200"
+          >
+            <span className="font-medium text-gray-800">{fup.date?.split('T')[0]}</span>
+            <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
+          </div>
+        ))
+    )}
+  </div>
+)} */}
+
+    {/* 🧑‍💼 Follow-ups by the person who forwarded the lead (createdBy) */}
+    {lead.createdBy && (
+      <div>
+        <h4 className="text-sm font-semibold text-blue-700 mb-2">
+          🧑‍💼 By {lead.createdBy.name} (Forwarded the Lead)
+        </h4>
+        {lead.followUps.filter(f => f.by?._id === lead.createdBy._id).length === 0 ? (
+          <p className="text-xs text-gray-500 italic">
+            No follow-ups by {lead.createdBy.name}
+          </p>
+        ) : (
+          lead.followUps
+            .filter(f => f.by?._id === lead.createdBy._id)
+            .map((fup, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-3 text-sm bg-white px-4 py-3 mb-2 rounded-lg shadow-sm border border-gray-200"
+              >
+                <BsCalendarEvent className="text-blue-500 mt-1" />
+                <div className="flex flex-col">
+                  <span className="font-medium text-gray-800">
+                    {fup.date?.split('T')[0] || 'No Date'}
+                  </span>
+                  <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            ))
+        )}
+      </div>
+    )}
+  </div>
+)}
 
       {/* Forward Section */}
       <div className="mb-2">

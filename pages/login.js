@@ -33,7 +33,7 @@ const Login = () => {
       router.push('/admin');
     } else {
       router.push('/dashboard');
-    }
+    }   
 
   } catch (error) {
     setError(error.response?.data?.message || 'Login failed');

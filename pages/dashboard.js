@@ -8,7 +8,9 @@ import { FiSearch } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import BASE_URL from '../utils/api';
 import * as XLSX from 'xlsx';
+import {useRouter} from 'next/router';
 import { toast } from 'react-toastify';
+import { generateEnquiryPDF } from '@/utils/pdfGenerator';
 
 
 const Dashboard = () => {
@@ -23,6 +25,7 @@ const Dashboard = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [isClient, setIsClient] = useState(false);
   const [uploadedLeads, setUploadedLeads] = useState([]);
+  const router = useRouter();
   
   const formRef = useRef(null);
 
@@ -55,9 +58,9 @@ const Dashboard = () => {
       }
     };
 
-    fetchLeadsAndCheckRole();
+    fetchLeadsAndCheckRole()
 
-    
+
     const interval = setInterval(() => {
       const loginTimeString = localStorage.getItem('loginTime');
       if (loginTimeString) {
@@ -81,15 +84,19 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+
+  
+    const goToSendImageForm = () => {
+    router.push('/SendImageForm');
+  };
   useEffect(() => {
   const fetchSearchResults = async () => {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
     if (!searchTerm.trim()) {
-      // Restore only self-created leads
       if (loggedInUser?.role === 'admin') {
-        setFilteredLeads(myLeads); // Admin can see all
+        setFilteredLeads(myLeads); 
       } else {
         const ownLeads = myLeads.filter(
           (lead) => lead.createdBy?._id === loggedInUser?._id
@@ -327,6 +334,8 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
         >
           ➕ New Lead
         </button>
+
+        
       )}
     </div>
   </ProtectedRoute>

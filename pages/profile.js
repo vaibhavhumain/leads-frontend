@@ -214,7 +214,10 @@ const toggleDropdown = (leadId) => {
         <td className="px-4 py-2">{lead.leadDetails?.clientName}</td>
         <td className="px-4 py-2">{lead.leadDetails?.contact || 'N/A'}</td>
         <td className="px-4 py-2">{lead.createdBy?.name}</td>
-        <td className="px-4 py-2">{lead.forwardedTo?.user?.name || 'N/A'}</td>
+        <td className="px-4 py-2">
+  To: <strong>{lead.forwardedTo?.user?.name || 'You'}</strong><br />
+</td>
+
         <td className="px-4 py-2 text-xs whitespace-pre-line">
           <button
             onClick={() => toggleDropdown(lead._id)}
