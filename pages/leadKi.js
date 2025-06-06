@@ -17,7 +17,7 @@ import { BsCalendarEvent } from 'react-icons/bs';
 import Link from 'next/link';
 import { FaArrowRight } from "react-icons/fa";
 
-const leadDetails = () => {
+const leadKi = () => {
   const [lead, setLead] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedConnection, setSelectedConnection] = useState('');
@@ -372,4 +372,5 @@ useEffect(() => {
 );
 };
 
-export default leadDetails;
+export default leadKi;
+
