@@ -6,8 +6,6 @@ import { saveAs } from "file-saver";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
-import { useSearchParams } from 'next/navigation';
-
 
 const builder = imageUrlBuilder(sanity);
 function urlFor(source) {
@@ -15,7 +13,6 @@ function urlFor(source) {
 }
 
 export default function Gallery() {
-
   const [categories, setCategories] = useState([]);
   const [models, setModels] = useState([]);
   const [buses, setBuses] = useState([]);
@@ -28,10 +25,6 @@ export default function Gallery() {
   const [selectedImages, setSelectedImages] = useState(new Set());
   const [swiperInstance, setSwiperInstance] = useState(null);
 
-  const searchParams = useSearchParams();
-  const contact = searchParams.get('contact');
-  const clientName = searchParams.get('name');
-
   // Set beautiful gradient background on mount
   useEffect(() => {
     const prev = document.body.style.background;
@@ -41,8 +34,6 @@ export default function Gallery() {
       document.body.style.background = prev;
     };
   }, []);
-
-
 
   // Fetch categories on mount
   useEffect(() => {
@@ -120,8 +111,6 @@ export default function Gallery() {
       }
     }
 
-   
-
     // Fallback: ZIP and prompt download
     const zip = new JSZip();
     for (const img of imgs) {
@@ -157,6 +146,16 @@ export default function Gallery() {
     });
   }
 
+  // --- Select All/Deselect All Logic ---
+  const allSelected = images.length > 0 && selectedImages.size === images.length;
+  function handleSelectAllToggle() {
+    if (allSelected) {
+      setSelectedImages(new Set());
+    } else {
+      setSelectedImages(new Set(images.map(img => img._id)));
+    }
+  }
+
   // Keyboard navigation in modal (Esc to close, arrows to switch)
   useEffect(() => {
     if (!modalOpen) return;
@@ -183,44 +182,12 @@ export default function Gallery() {
     }
   };
 
-   const handleWhatsAppPhotoShare = (contact, clientName = '', selectedImages) => {
-  if (!contact || typeof contact !== 'string') {
-    alert("Contact is invalid or missing");
-    return;
-  }
-
-  const cleanedContact = contact.replace(/\D/g, '');
-  const isValidContact = /^\d{10}$/.test(cleanedContact);
-
-  if (!isValidContact) {
-    alert("Please enter a valid 10-digit contact number.");
-    return;
-  }
-
-  if (!selectedImages || selectedImages.size === 0) {
-    alert("No images selected to share.");
-    return;
-  }
-
-  const origin = window.location.origin;
-  const imageLinks = Array.from(selectedImages).map((id, idx) => `${origin}/images/${id}.jpg`);
-  const imageText = imageLinks.map((link, idx) => `Image ${idx + 1}: ${link}`).join('\n');
-
-  const message = encodeURIComponent(
-    `Dear ${clientName || 'Customer'},\n\nHere are your requested bus images:\n${imageText}`
-  );
-
-  const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${message}`;
-  window.open(url, '_blank');
-};
-
-
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-8">
       <h1 className="text-3xl sm:text-4xl font-extrabold mb-8 text-blue-800 drop-shadow text-center">
         Bus Image Gallery
       </h1>
-      {/* Category Dropdown */}
+      {/* Category Dropdowns */}
       <div className="mb-4 flex flex-col sm:flex-row gap-4">
         <div>
           <label className="font-semibold mr-2">Category:</label>
@@ -273,7 +240,7 @@ export default function Gallery() {
         )}
       </div>
 
-      {/* WhatsApp Share for Folder and Select */}
+      {/* WhatsApp Share, Select All/Deselect All */}
       {selectedBus && images.length > 0 && (
         <div className="mb-6 flex gap-3 items-center flex-wrap">
           <button
@@ -282,6 +249,16 @@ export default function Gallery() {
           >
             Share Selected Images (Native/ZIP)
           </button>
+          <button
+            className={`rounded px-4 py-2 font-semibold shadow transition
+              ${allSelected
+                ? "bg-gray-200 text-blue-600 hover:bg-gray-100"
+                : "bg-blue-600 text-white hover:bg-blue-700"}
+            `}
+            onClick={handleSelectAllToggle}
+          >
+            {allSelected ? "Deselect All" : "Select All"}
+          </button>
           <span className="text-base text-gray-600">
             {selectedImages.size
               ? `${selectedImages.size} image(s) selected`
@@ -289,13 +266,6 @@ export default function Gallery() {
           </span>
         </div>
       )}
-
-      <button
-  onClick={() => handleWhatsAppPhotoShare(contact, clientName, selectedImages)}
-  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow text-sm font-semibold"
->
-  📤 Send Selected Photos
-</button>
 
       {/* Image Gallery */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -345,8 +315,6 @@ export default function Gallery() {
           );
         })}
       </div>
-
-      
 
       {/* Full-Screen Modal with Swiper */}
       {modalOpen && (
@@ -461,9 +429,6 @@ export default function Gallery() {
           >
             &#8594;
           </button>
-
-          
-
         </div>
       )}
     </div>
