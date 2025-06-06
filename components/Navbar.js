@@ -125,7 +125,8 @@ useEffect(() => {
                   Register
                 </a>
               </Link>
-
+              <Link href="/gallery">
+              </Link>
               {/* Login */}
               <Link href="/login" legacyBehavior>
                 <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-blue-500 hover:text-white hover:scale-105">

@@ -412,6 +412,53 @@ const handleSendGcDatabaseLink = (contact, clientName = '') => {
 };
 
 
+
+const handleWhatsAppPhotoShare = (contact, clientName = '', selectedImages) => {
+  if (!contact || typeof contact !== 'string') {
+    alert("Contact is invalid or missing");
+    return;
+  }
+
+  const cleanedContact = contact.replace(/\D/g, '');
+  const isValidContact = /^\d{10}$/.test(cleanedContact);
+
+  if (!isValidContact) {
+    alert("Please enter a valid 10-digit contact number.");
+    return;
+  }
+
+  if (!selectedImages || selectedImages.size === 0) {
+    alert("No images selected to share.");
+    return;
+  }
+
+  // Wherever you're triggering the gallery page (e.g. Dashboard)
+
+
+  // Build message
+  const origin = window.location.origin;
+  const imageLinks = Array.from(selectedImages).map((id, idx) => `${origin}/images/${id}.jpg`);
+  const imageText = imageLinks.map((link, idx) => `Image ${idx + 1}: ${link}`).join('\n');
+
+  const message = encodeURIComponent(
+    `Dear ${clientName || 'Customer'},\n\nHere are your requested bus images:\n${imageText}`
+  );
+
+  const url = `https://api.whatsapp.com/send?phone=91${cleanedContact}&text=${message}`;
+  window.open(url, '_blank');
+};
+
+
+
+const handleGoToGallery = (lead) => {
+  const query = new URLSearchParams({
+    contact: lead.leadDetails?.contact,
+    name: lead.leadDetails?.clientName,
+  }).toString();
+
+  window.location.href = `/gallery?${query}`;
+};
+
 const handleWeeklyReminderMessage = (contact, clientName = '') => {
   if (!contact || typeof contact !== 'string') {
     toast.error("Contact is invalid or missing");
@@ -590,12 +637,22 @@ return (
     📩 WhatsApp Message
   </button>
 
+  
+
   <button
     onClick={() => handleWhatsAppPdfShare(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')}
     className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
   >
     📄 Share PDF via WhatsApp
   </button>
+
+  <button
+  onClick={() => handleGoToGallery(lead)}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md text-sm"
+>
+  Send Photos
+</button>
+
 </div>
 
 
@@ -670,6 +727,9 @@ return (
       }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md text-sm">
         📋 View Full Lead Card
       </button>
+
+      
+      
 
       {/* <button
     onClick={() => handleSendGcDatabaseLink(filteredLeads[currentLeadIndex]?.leadDetails?.contact, filteredLeads[currentLeadIndex]?.leadDetails?.clientName)}
