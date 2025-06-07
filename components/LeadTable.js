@@ -37,6 +37,7 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [uploadedImages, setUploadedImages] = useState({});
 
 
+
   const leadsPerPage = 3;
 
     const handleSave = () => {
@@ -519,6 +520,7 @@ const handleWhatsAppPdfShare = (contact, clientName = '', pdfFileName) => {
 
 if (!loggedInUser) return null;
 
+const lead = filteredLeads[currentLeadIndex] || {};
 
 return (
   <div className="w-full px-4 py-8 bg-gradient-to-br from-[#f0f4ff] via-[#e6f0ff] to-[#dceeff] min-h-screen font-sans">
@@ -564,134 +566,169 @@ return (
                 #{currentLeadIndex + 1} • Created by: <span className="text-indigo-600">{lead.createdBy?.name || 'N/A'}</span>
               </div>
 
-              {/* Client Name */}
-              <div className="text-lg font-semibold text-gray-700 mb-1">
-                {editingClientNameId === lead._id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editedClientName}
-                      onChange={(e) => setEditedClientName(e.target.value)}
-                      className="border border-indigo-300 rounded px-2 py-1 text-sm w-full"
-                    />
-                    <button onClick={handleSave} className="text-green-600 text-sm font-medium hover:underline">Save</button>
-                    <button onClick={() => setEditingClientNameId(null)} className="text-red-500 text-sm font-medium hover:underline">Cancel</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span>{lead.leadDetails?.clientName || 'No Name'}</span>
-                    <FaEdit className="text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => {
-                      setEditingClientNameId(lead._id);
-                      setEditedClientName(lead.leadDetails?.clientName || '');
-                    }} />
-                  </div>
-                )}
-              </div>
-
-              {/* Company */}
-              <div className="text-sm text-gray-600 italic mb-1">
-                {lead.leadDetails?.companyName || 'No Company'}
-              </div>
-
-              {/* Contact & Location */}
-              <div className="text-xs text-gray-500 mb-2">
-                📞 <span className="text-blue-800 font-semibold">{lead.leadDetails?.contact || 'N/A'}</span><br />
-                📍 {lead.leadDetails?.location || 'N/A'}
-              </div>
-
-              {/* Email */}
-              <div className="mb-4">
-                {editingEmailId === lead._id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="email"
-                      value={editedEmail}
-                      onChange={(e) => setEditedEmail(e.target.value)}
-                      className="border border-indigo-300 px-2 py-1 rounded text-sm"
-                    />
-                    <button onClick={handleEmailSave} className="text-green-600 text-sm font-medium hover:underline">Save</button>
-                    <button onClick={() => { setEditingEmailId(null); setEditedEmail(''); }} className="text-red-600 text-sm font-medium hover:underline">Cancel</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span>{lead.leadDetails?.email || 'No email'}</span>
-                    <FaEdit className="text-gray-500 cursor-pointer hover:text-blue-600" onClick={() => {
-                      setEditingEmailId(lead._id);
-                      setEditedEmail(lead.leadDetails?.email || '');
-                    }} />
-                  </div>
-                  
-                )}
-                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 w-full">
-  <button
-    onClick={handleCreateEnquiry}
-    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
-  >
-    📝 Questions Form
-  </button>
-
-  <button
-    onClick={() => handleWhatsAppMessage(lead.leadDetails?.contact, lead.leadDetails?.clientName)}
-    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
-  >
-    📩 WhatsApp Message
-  </button>
-
-  
-
-  <button
-    onClick={() => handleWhatsAppPdfShare(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')}
-    className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition"
-  >
-    📄 Share PDF via WhatsApp
-  </button>
-
-  <button
-  onClick={() => handleGoToGallery(lead)}
-  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md text-sm"
->
-  Send Photos
-</button>
-
+             <div className="w-full max-w-xl mx-auto bg-white/90 rounded-3xl border border-indigo-100 shadow-2xl p-8 mb-8">
+ {/* Client Name */}
+<div className="text-xl font-bold text-gray-800 mb-1 flex items-center gap-2 w-full">
+  {editingClientNameId === lead._id ? (
+    <div className="flex items-center gap-2 w-full">
+      <input
+        type="text"
+        value={editedClientName}
+        onChange={(e) => setEditedClientName(e.target.value)}
+        className="border border-indigo-300 bg-indigo-50 rounded px-2 py-1 text-base flex-1 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+      />
+      <button
+        onClick={handleSave}
+        className="text-green-700 bg-green-100 px-3 py-1 rounded font-medium hover:bg-green-200 transition"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingClientNameId(null)}
+        className="text-red-600 bg-red-100 px-3 py-1 rounded font-medium hover:bg-red-200 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 w-full">
+      <span className="truncate">{lead.leadDetails?.clientName || 'No Name'}</span>
+      <FaEdit
+        className="text-indigo-400 cursor-pointer hover:text-indigo-700 ml-1"
+        onClick={() => {
+          setEditingClientNameId(lead._id);
+          setEditedClientName(lead.leadDetails?.clientName || '');
+        }}
+      />
+    </div>
+  )}
 </div>
 
+{/* Company */}
+{lead.leadDetails?.companyName && (
+  <div className="text-sm font-semibold mb-2 flex items-center gap-2 w-full">
+    <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full shadow">{lead.leadDetails.companyName}</span>
+  </div>
+)}
 
-              </div>
-            </div>
+{/* Contact & Location */}
+<div className="flex flex-wrap gap-2 text-sm mb-3 w-full">
+  <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow-sm">
+    📞 <span className="font-semibold">{lead.leadDetails?.contact || 'N/A'}</span>
+  </span>
+  <span className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full shadow-sm">
+    📍 {lead.leadDetails?.location || 'N/A'}
+  </span>
+</div>
+
+{/* Email */}
+<div className="mb-6 w-full">
+  {editingEmailId === lead._id ? (
+    <div className="flex items-center gap-2 w-full">
+      <input
+        type="email"
+        value={editedEmail}
+        onChange={(e) => setEditedEmail(e.target.value)}
+        className="border border-indigo-300 bg-indigo-50 px-2 py-1 rounded text-sm flex-1 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+      />
+      <button
+        onClick={handleEmailSave}
+        className="text-green-700 bg-green-100 px-3 py-1 rounded font-medium hover:bg-green-200 transition"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => { setEditingEmailId(null); setEditedEmail(''); }}
+        className="text-red-600 bg-red-100 px-3 py-1 rounded font-medium hover:bg-red-200 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 w-full">
+      <span className="bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full truncate">{lead.leadDetails?.email || 'No email'}</span>
+      <FaEdit
+        className="text-indigo-400 cursor-pointer hover:text-indigo-700 ml-1"
+        onClick={() => {
+          setEditingEmailId(lead._id);
+          setEditedEmail(lead.leadDetails?.email || '');
+        }}
+      />
+    </div>
+  )}
+</div>
+  </div>
+  </div>
           </div>
         );
       })()}
     </div>
+
+    <div className="flex flex-col gap-4 mt-6 w-full max-w-md mx-auto">
+  <button
+    onClick={handleCreateEnquiry}
+    className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-2xl text-base font-semibold shadow-lg transition"
+    style={{ minHeight: 48, fontSize: "1rem" }}
+  >
+    📝 Questions Form
+  </button>
+  <div className="flex flex-col gap-4 w-full max-w-md mx-auto mt-4">
+  <button
+    onClick={() => handleWhatsAppMessage(lead.leadDetails?.contact, lead.leadDetails?.clientName)}
+    className="w-full flex items-center justify-center bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white px-6 py-3 rounded-2xl text-base font-semibold shadow-lg transition duration-150"
+    style={{ minHeight: 48, fontSize: "1rem" }}
+  >
+    📩 WhatsApp Message
+  </button>
+  <button
+    onClick={() => handleWhatsAppPdfShare(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')}
+    className="w-full flex items-center justify-center bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 rounded-2xl text-base font-semibold shadow-lg transition duration-150"
+    style={{ minHeight: 48, fontSize: "1rem" }}
+  >
+    📄 Share PDF via WhatsApp
+  </button>
+  <button
+    onClick={() => handleGoToGallery(lead)}
+    className="w-full flex items-center justify-center bg-gradient-to-r from-fuchsia-500 to-pink-400 hover:from-fuchsia-600 hover:to-pink-500 text-white px-6 py-3 rounded-2xl text-base font-semibold shadow-lg transition duration-150"
+    style={{ minHeight: 48, fontSize: "1rem" }}
+  >
+    🖼️ Send Photos
+  </button>
+</div>
+
+</div>
+
 {/* Toggle Button */}
 <button
   onClick={() => setShowRemarksSection(prev => !prev)}
-  className="block mx-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-md shadow mt-5 transition duration-300 text-sm font-medium"
+  className="block mx-auto bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-700 hover:to-indigo-600 text-white px-6 py-2 rounded-full shadow-lg mt-6 transition text-base font-semibold tracking-wide"
 >
   {showRemarksSection ? 'Hide Remarks' : 'Show Remarks'}
 </button>
 
 {/* Remarks Section */}
 {showRemarksSection && (
-  <div className="mt-4 bg-white/80 rounded-2xl shadow-md p-5 max-w-xl mx-auto backdrop-blur-sm border border-blue-200">
-    <h2 className="text-lg font-bold text-blue-700 mb-3">📝 Next Action Plan / Remarks</h2>
-
+  <div className="mt-6 w-full max-w-2xl mx-auto bg-white/90 rounded-3xl shadow-2xl p-8 border border-indigo-100 backdrop-blur-xl">
+    <h2 className="text-xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+      📝 <span>Next Action Plan / Remarks</span>
+    </h2>
     <textarea
       value={actionPlan}
       onChange={(e) => setActionPlan(e.target.value)}
       placeholder="Type your next action plan or remarks here..."
-      className="w-full min-h-[80px] p-3 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+      className="w-full min-h-[100px] p-4 text-base border-2 border-blue-200 rounded-2xl shadow focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-indigo-50 transition"
     />
 
-    <div className="flex items-center gap-3 mt-3">
+    <div className="flex flex-col sm:flex-row items-center gap-4 mt-5">
       <button
         onClick={handleSaveActionPlan}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm shadow"
+        className="flex-1 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white px-4 py-2 rounded-2xl text-base font-semibold shadow-md transition"
       >
         💾 Save
       </button>
       <button
         onClick={() => setShowActionPlans(prev => !prev)}
-        className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 rounded-md text-sm shadow"
+        className="flex-1 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-800 px-4 py-2 rounded-2xl text-base font-semibold shadow-md transition"
       >
         {showActionPlans ? 'Hide Saved' : 'Show Saved'}
       </button>
@@ -699,10 +736,10 @@ return (
 
     {/* Saved Plans */}
     {showActionPlans && (
-      <div className="mt-3 max-h-36 overflow-y-auto bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800 space-y-1">
+      <div className="mt-5 max-h-40 overflow-y-auto bg-blue-50 border border-blue-200 rounded-xl p-4 text-base text-blue-800 space-y-2 shadow-inner">
         {(savedActionPlansMap[filteredLeads[currentLeadIndex]?._id] || []).length > 0 ? (
           savedActionPlansMap[filteredLeads[currentLeadIndex]._id].map((plan, index) => (
-            <div key={index} className="border-b border-blue-300 last:border-0 pb-1">
+            <div key={index} className="border-b border-blue-200 last:border-0 pb-2">
               {plan}
             </div>
           ))
@@ -714,48 +751,57 @@ return (
   </div>
 )}
 
-
-    {/* Weekly Reminder & Lead Card Button */}
-    <div className="flex flex-col items-center mt-6 space-y-3">
-      <button onClick={() => handleWeeklyReminderMessage(filteredLeads[currentLeadIndex]?.leadDetails?.contact, filteredLeads[currentLeadIndex]?.leadDetails?.clientName)} className="flex items-center bg-green-500 hover:bg-green-600 text-white font-semibold text-sm px-5 py-2 rounded-lg shadow transition">
-        <MdAlarm className="mr-2" size={18} /> Weekly Reminder
-      </button>
-
-      <button onClick={() => {
-        localStorage.setItem('selectedLead', JSON.stringify(filteredLeads[currentLeadIndex]));
-        window.location.href = '/LeadDetails';
-      }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md text-sm">
-        📋 View Full Lead Card
-      </button>
-
-      
-      
-
-      {/* <button
-    onClick={() => handleSendGcDatabaseLink(filteredLeads[currentLeadIndex]?.leadDetails?.contact, filteredLeads[currentLeadIndex]?.leadDetails?.clientName)}
-    className="mt-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md text-sm center"
+{/* Weekly Reminder & Lead Card Button */}
+<div className="flex flex-col md:flex-row md:justify-between items-center gap-4 mt-7 mb-3 w-full">
+  <button
+    onClick={() =>
+      handleWeeklyReminderMessage(
+        filteredLeads[currentLeadIndex]?.leadDetails?.contact,
+        filteredLeads[currentLeadIndex]?.leadDetails?.clientName
+      )
+    }
+    className="flex items-center bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-semibold text-base px-6 py-3 rounded-2xl shadow-md transition gap-2"
   >
-    Send GC database to WhatsApp
-  </button> */}
+    <MdAlarm size={20} />
+    Weekly Reminder
+  </button>
 
-    </div>
-    <div className="flex justify-center gap-4 mt-8">
+  <button
+    onClick={() => {
+      localStorage.setItem(
+        "selectedLead",
+        JSON.stringify(filteredLeads[currentLeadIndex])
+      );
+      window.location.href = "/LeadDetails";
+    }}
+    className="flex items-center bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-2xl shadow-md text-base font-semibold transition gap-2"
+  >
+    📋 View Full Lead Card
+  </button>
+</div>
+
+{/* Lead Navigation */}
+<div className="flex justify-center items-center gap-8 mt-8 mb-2">
   <button
     onClick={goToPreviousLead}
     disabled={!hasPreviousLead}
-    className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm font-medium transition ${
-      !hasPreviousLead ? 'opacity-50 cursor-not-allowed' : ''
+    className={`flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-700 font-medium text-base shadow transition ${
+      !hasPreviousLead ? "opacity-50 cursor-not-allowed" : ""
     }`}
   >
     <FaArrowLeft />
     Previous
   </button>
 
+  <div className="text-base font-semibold text-indigo-600 px-4 py-2 rounded-lg bg-indigo-50 border border-indigo-100 shadow">
+    Showing {currentLeadIndex + 1} of {filteredLeads.length}
+  </div>
+
   <button
     onClick={goToNextLead}
     disabled={!hasNextLead}
-    className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium transition ${
-      !hasNextLead ? 'opacity-50 cursor-not-allowed' : ''
+    className={`flex items-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-medium text-base shadow transition ${
+      !hasNextLead ? "opacity-50 cursor-not-allowed" : ""
     }`}
   >
     Next

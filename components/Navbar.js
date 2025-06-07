@@ -61,6 +61,9 @@ useEffect(() => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+  localStorage.removeItem('pausedSessions');
+  localStorage.removeItem('totalLeadsUploaded');
+  setTotalLeadsUploaded(0);
     router.push('/login');
   };
 

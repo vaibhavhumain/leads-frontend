@@ -1,18 +1,24 @@
+// import Sidebar from '../components/Sidebar'; 
+import { groupBy } from "lodash";
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import LeadTable from '../components/LeadTable';
-import Navbar from '@/components/Navbar';
+import Navbar from '../components/Navbar';
 import ProtectedRoute from '../components/ProtectedRoute';
 import LeadForm from '../components/LeadForm';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch , FiMenu , FiHome , FiUsers} from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import BASE_URL from '../utils/api';
 import * as XLSX from 'xlsx';
 import {useRouter} from 'next/router';
 import { toast } from 'react-toastify';
-import { generateEnquiryPDF } from '@/utils/pdfGenerator';
+import { BiImport } from "react-icons/bi";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell
+} from 'recharts';
 
-
+  
 const Dashboard = () => {
   const [myLeads, setMyLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -25,67 +31,134 @@ const Dashboard = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [isClient, setIsClient] = useState(false);
   const [uploadedLeads, setUploadedLeads] = useState([]);
+  const [seconds, setSeconds] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const router = useRouter();
+  const [pauseHistory, setPauseHistory] = useState([]);
+   const [sidebarOpen, setSidebarOpen] = useState(false);
+   const [totalPausedSessions, setTotalPausedSessions] = useState(0);
+
+
+const [totalLeadsUploaded, setTotalLeadsUploaded] = useState(0);
+
+
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const count = parseInt(localStorage.getItem('totalPausedSessions') || '0', 10);
+    setTotalPausedSessions(count);
+  }
+}, []);
+
+useEffect(() => {
+  // Only runs in browser
+  const count = parseInt(localStorage.getItem('totalLeadsUploaded') || '0', 10);
+  setTotalLeadsUploaded(count);
+}, []);
+
+
   
   const formRef = useRef(null);
 
   useEffect(() => {
-    setIsClient(true);
+  setIsClient(true);
 
-    const fetchLeadsAndCheckRole = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
+  const fetchLeadsAndCheckRole = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-        const userRes = await axios.get(`${BASE_URL}/api/users/me`, { headers });
-        const user = userRes.data;
-        setLoggedInUser(user);
+      const userRes = await axios.get(`${BASE_URL}/api/users/me`, { headers });
+      const user = userRes.data;
+      setLoggedInUser(user);
 
-        if (user.role === 'admin') {
-          const allLeadsRes = await axios.get(`${BASE_URL}/api/leads/all`, { headers });
-          setMyLeads(allLeadsRes.data);
-          setFilteredLeads(allLeadsRes.data);
-        } else {
-          const response = await axios.get(`${BASE_URL}/api/leads/my-leads`, { headers });
-          setMyLeads(response.data);
-          setFilteredLeads(response.data);
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || 'Error fetching leads');
-      } finally {
-        setLoading(false);
+      if (user.role === 'admin') {
+        const allLeadsRes = await axios.get(`${BASE_URL}/api/leads/all`, { headers });
+        setMyLeads(allLeadsRes.data);
+        setFilteredLeads(allLeadsRes.data);
+
+        const logsRes = await axios.get(`${BASE_URL}/api/pause-logs/all`, { headers });
+        setPauseHistory(logsRes.data);
+      } else {
+        const response = await axios.get(`${BASE_URL}/api/leads/my-leads`, { headers });
+        setMyLeads(response.data);
+        setFilteredLeads(response.data);
       }
-    };
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error fetching leads');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchLeadsAndCheckRole()
+  fetchLeadsAndCheckRole();
+
+  const interval = setInterval(() => {
+    const loginTimeString = localStorage.getItem('loginTime');
+    if (loginTimeString && !isPaused) {
+      const loginTime = new Date(loginTimeString);
+      const now = new Date();
+      const diff = now - loginTime;
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      let duration = '';
+      if (hours > 0) duration += `${hours}h `;
+      if (minutes > 0 || hours > 0) duration += `${minutes}m `;
+      duration += `${seconds}s`;
+
+      setLoginDuration(duration.trim());
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isPaused]);
 
 
-    const interval = setInterval(() => {
-      const loginTimeString = localStorage.getItem('loginTime');
-      if (loginTimeString) {
-        const loginTime = new Date(loginTimeString);
-        const now = new Date();
-        const diff = now - loginTime;
+const leadsByDay = Object.entries(
+  groupBy(myLeads, (lead) =>
+    new Date(lead.createdAt).toLocaleDateString("en-IN")
+  )
+).map(([date, leads]) => ({
+  date,
+  count: leads.length,
+}));
 
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+// Calculate leads by status (for bar chart)
+const leadsByStatus = Object.entries(
+  myLeads.reduce((acc, cur) => {
+    const status = cur.status || "Unknown";
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {})
+).map(([status, count]) => ({ status, count }));
 
-        let duration = '';
-        if (hours > 0) duration += `${hours}h `;
-        if (minutes > 0 || hours > 0) duration += `${minutes}m `;
-        duration += `${seconds}s`;
-
-        setLoginDuration(duration.trim());
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+// When a new lead is uploaded successfully
+function handleLeadUploaded(countToAdd = 1) {
+  const prev = parseInt(localStorage.getItem('totalLeadsUploaded') || '0', 10);
+  const newTotal = prev + countToAdd;
+  localStorage.setItem('totalLeadsUploaded', newTotal);
+  setTotalLeadsUploaded(newTotal);
+}
 
 
-  
+
+
+// When you pause a session
+function handlePausedSession() {
+  const count = parseInt(localStorage.getItem('pausedSessions') || '0', 10);
+  localStorage.setItem('pausedSessions', count + 1);
+  setTotalPausedSessions(count + 1);
+}
+
+// On mount
+useEffect(() => {
+  const count = parseInt(localStorage.getItem('pausedSessions') || '0', 10);
+  setTotalPausedSessions(count);
+}, []);
+
     const goToSendImageForm = () => {
     router.push('/SendImageForm');
   };
@@ -225,122 +298,299 @@ const handleBulkUpload = async () => {
     setMyLeads((prev) => [...res.data.leads, ...prev]);
 setFilteredLeads((prev) => [...res.data.leads, ...prev]);
     setUploadedLeads([]);
+    handleLeadUploaded(res.data.leads.length);
   } catch (err) {
     console.error('Upload failed:', err);
     toast.error('Upload failed');
   }
 };
 
-    return (
-  <ProtectedRoute>
-    <Navbar />
-    <div className="w-full px-6 py-10 bg-gradient-to-tr from-[#f0f9ff] via-[#f5e8ff] to-[#ffeef5] min-h-screen font-sans">
-      {/* Header */}
-      <div className="mb-10 flex flex-wrap justify-between items-center">
-        <h1 className="text-4xl font-extrabold text-blue-800 tracking-tight drop-shadow-sm">
-          🎯 Dashboard Overview
-        </h1>
-        <div className="bg-green-100 text-green-900 px-5 py-1.5 rounded-full shadow text-sm font-semibold">
-          ⏱️ Logged in: <span className="font-bold">{loginDuration}</span>
-        </div>
-      </div>
-
-      {/* Upload Section */}
-      <div className="mb-6 flex flex-wrap gap-4 items-center">
-        <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleExcelUpload}
-          className="border border-blue-300 px-4 py-2 rounded-lg text-sm bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-        />
+  return (
+    <ProtectedRoute>
+      <div className="flex min-h-screen bg-gradient-to-br from-[#f7f8fa] via-[#f9f5fa] to-[#faf8f6] relative">
+        {/* Hamburger for mobile */}
         <button
-          onClick={handleBulkUpload}
-          className="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md transition"
+          className="fixed top-4 left-4 z-50 p-2 bg-white shadow md:hidden rounded-lg"
+          onClick={() => setSidebarOpen(true)}
         >
-          📥 Import Leads
+          <FiMenu size={26} />
         </button>
-      </div>
+        {/* <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
 
-      {/* Search Bar */}
-      <div className="mb-8 flex flex-wrap items-center gap-4">
-        <button
-          onClick={() => setSearchVisible((prev) => !prev)}
-          className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-        >
-          <FiSearch size={18} />
-        </button>
-
-        {searchVisible && (
-          <>
-            <input
-              type="text"
-              placeholder="Search by phone number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-4 py-2 border border-blue-300 rounded-lg shadow-sm text-sm bg-white focus:ring focus:ring-blue-300 transition"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="text-red-500 hover:text-red-700 text-xs font-medium"
-              >
-                Clear
+        {/* Main content */}
+<div className="flex-1 flex flex-col min-h-screen px-2 sm:px-4 md:px-8 lg:px-14 py-6 bg-transparent">
+          {/* HEADER */}
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+            <div className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-500 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg">
+              <span className="text-2xl">💼</span>
+              <span className="text-lg font-bold">Leads Portal</span>
+            </div>
+            <div className="flex gap-3 items-center">
+              <div className="bg-white px-4 py-2 rounded-2xl shadow flex items-center gap-2 text-gray-700 font-semibold">
+                <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
+                  V
+                </span>
+                Vaibhav 🏆
+              </div>
+              <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-indigo-600 font-semibold hover:bg-indigo-50">
+                <FiHome /> Dashboard
+              </a>
+              <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-gray-700 font-semibold hover:bg-indigo-50">
+                Profile
+              </a>
+              <button className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow font-semibold transition">
+                Logout
               </button>
+            </div>
+          </div>
+
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 mb-8">
+            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
+              <span className="bg-indigo-50 text-indigo-500 p-2 rounded-full mb-2">
+                <FiHome size={24} />
+              </span>
+              <div className="text-gray-400 text-xs mb-1">Total Leads</div>
+              <div className="text-3xl font-bold text-indigo-600">{myLeads.length}</div>
+            </div>
+            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
+              <span className="bg-green-50 text-green-500 p-2 rounded-full mb-2">
+                <BiImport size={24} />
+              </span>
+              <div className="text-gray-400 text-xs mb-1">Uploaded Today</div>
+              <div className="text-3xl font-bold text-indigo-600">{totalLeadsUploaded}</div>
+            </div>
+            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
+              <span className="bg-yellow-50 text-yellow-500 p-2 rounded-full mb-2">
+                <FiUsers size={24} />
+              </span>
+             <div className="text-gray-400 text-xs mb-1">Paused Sessions</div>
+<div className="text-xl font-bold text-yellow-500">{totalPausedSessions}</div>
+
+            </div>
+            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
+              <span className="bg-blue-50 text-blue-500 p-2 rounded-full mb-2">
+                <FiHome size={24} />
+              </span>
+              <div className="text-gray-400 text-xs mb-1">Login Time</div>
+<div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
+  <div className="flex flex-col items-center gap-2">
+    <div className="text-3xl font-bold text-blue-600">{loginDuration}</div>
+    <button
+  onClick={() => {
+    const now = new Date();
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    if (!isPaused) {
+      // --- PAUSE: Log pause, increment all-time counter ---
+      axios.post(`${BASE_URL}/api/pause-logs/save`, {
+        pausedAt: now.toISOString()
+      }, { headers })
+        .then(() => toast.info('⏸️ Paused'))
+        .catch(err => {
+          console.error('Pause error:', err);
+          toast.error('Pause failed');
+        });
+
+      // Increment the all-time paused sessions counter
+  let total = 0;
+  if (typeof window !== "undefined") {
+    total = parseInt(localStorage.getItem('totalPausedSessions') || '0', 10);
+    total += 1;
+    localStorage.setItem('totalPausedSessions', total);
+  }
+  setTotalPausedSessions(total);
+
+    } else {
+      // --- RESUME: Log resume, but don't touch the counter ---
+      const last = pauseHistory[pauseHistory.length - 1];
+      if (last && !last.resumedAt) {
+        const pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
+        axios.post(`${BASE_URL}/api/pause-logs/save`, {
+          resumedAt: now.toISOString(),
+          pausedAt: last.pausedAt,
+          pausedDuration
+        }, { headers })
+          .then(() => toast.success('▶️ Resumed'))
+          .catch(err => {
+            console.error('Resume error:', err);
+            toast.error('Resume failed');
+          });
+      }
+    }
+
+    // --- Always update pauseHistory & toggle isPaused ---
+    setPauseHistory(prev => {
+      const updated = [...prev];
+      if (!isPaused) {
+        updated.push({ pausedAt: now.toISOString() });
+      } else {
+        const last = updated[updated.length - 1];
+        if (last && !last.resumedAt) {
+          last.resumedAt = now.toISOString();
+          last.pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
+        }
+      }
+      return updated;
+    });
+    setIsPaused(prev => !prev);
+  }}
+  className={`mt-1 px-4 py-1 rounded-full text-xs font-bold shadow transition ${
+    isPaused
+      ? "bg-yellow-400 hover:bg-yellow-500 text-white"
+      : "bg-red-500 hover:bg-red-600 text-white"
+  }`}
+>
+  {isPaused ? "Resume" : "Pause"}
+</button>
+
+  </div>
+</div>
+            </div>
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-7">
+            <button
+              onClick={() => setSearchVisible((prev) => !prev)}
+              className="p-3 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow"
+            >
+              <FiSearch size={20} />
+            </button>
+            {searchVisible && (
+              <input
+                type="text"
+                placeholder="🔎 Search by phone number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 min-w-0 px-4 py-2 border border-indigo-200 rounded-lg shadow-sm text-sm bg-white focus:ring focus:ring-indigo-200 transition"
+              />
             )}
-          </>
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              onChange={handleExcelUpload}
+              className="border border-indigo-200 px-4 py-2 rounded-lg text-sm bg-white shadow focus:outline-none focus:ring-2 focus:ring-indigo-200 transition"
+            />
+            <button
+              onClick={handleBulkUpload}
+              className="bg-gradient-to-r from-indigo-400 to-pink-400 hover:from-indigo-500 hover:to-pink-500 text-white px-8 py-3 rounded-full text-lg font-bold shadow-md transition flex items-center gap-2"
+            >
+              <BiImport size={20} />
+              Import Leads
+            </button>
+            <button
+              onClick={handleOpenLeadForm}
+              className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white px-8 py-3 rounded-full text-lg font-bold shadow-2xl transition flex items-center gap-2"
+            >
+              ➕ New Lead
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-8">
+  {/* Area/Line Chart: Leads by Day */}
+  <div className="bg-white/70 border rounded-2xl shadow-xl p-6 min-h-[250px] flex flex-col">
+    <div className="font-bold mb-2 text-gray-600">Leads by Day</div>
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={leadsByDay}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* Bar Chart: Leads by Status */}
+  <div className="bg-white/70 border rounded-2xl shadow-xl p-6 min-h-[250px] flex flex-col">
+    <div className="font-bold mb-2 text-gray-600">Leads by Status</div>
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart
+        data={
+          Object.entries(
+            myLeads.reduce((acc, cur) => {
+              const status = cur.status || "Unknown";
+              acc[status] = (acc[status] || 0) + 1;
+              return acc;
+            }, {})
+          ).map(([status, count]) => ({ status, count }))
+        }
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="status" />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Bar dataKey="count" fill="#10b981" />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+
+          {/* Leads Table */}
+          {!loading && !error && (
+            <div className="bg-white/90 rounded-3xl shadow-xl p-6 mb-8 border">
+              <LeadTable
+                leads={filteredLeads}
+                setLeads={setMyLeads}
+                searchTerm={searchTerm}
+                loggedInUser={loggedInUser}
+                isSearchActive={!!searchTerm.trim()}
+              />
+            </div>
+          )}
+
+        {/* Admin Pause Logs */}
+        {loggedInUser?.role === 'admin' && pauseHistory.length > 0 && (
+          <div className="mt-6 bg-white border p-4 rounded-lg shadow max-w-xl">
+            <h2 className="text-lg font-bold mb-2 text-indigo-600">⏳ User Pause Logs</h2>
+            <ul className="text-sm text-gray-700 space-y-2 max-h-[250px] overflow-y-auto">
+              {pauseHistory.map((entry, idx) => (
+                <li key={idx} className="border-b pb-1">
+                  <div>🛑 Paused At: <strong>{new Date(entry.pausedAt).toLocaleString()}</strong></div>
+                  {entry.resumedAt && (
+                    <>
+                      <div>▶️ Resumed At: <strong>{new Date(entry.resumedAt).toLocaleString()}</strong></div>
+                      <div>
+                        ⏱️ Paused Duration: <strong>
+                          {Math.floor(entry.pausedDuration / 3600) > 0 && `${Math.floor(entry.pausedDuration / 3600)}h `}
+                          {Math.floor((entry.pausedDuration % 3600) / 60) > 0 && `${Math.floor((entry.pausedDuration % 3600) / 60)}m `}
+                          {entry.pausedDuration % 60}s
+                        </strong>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Loading/Error States */}
+        {loading && (
+          <div className="text-center text-indigo-600 font-medium text-sm mt-4">
+            🔄 Loading leads...
+          </div>
+        )}
+        {error && !loading && (
+          <div className="text-center text-red-600 font-semibold text-sm mt-4">
+            ❌ {error}
+          </div>
+        )}
+
+        {/* Lead Form Modal */}
+        {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
+          <div ref={formRef} className="mt-10">
+            <LeadForm
+              closeModal={() => setIsLeadFormOpen(false)}
+              onLeadCreated={handleLeadCreated}
+            />
+          </div>
         )}
       </div>
-
-      {/* Lead Table */}
-      {!loading && !error && (
-        <div className="bg-white bg-opacity-80 rounded-3xl shadow-2xl p-6 backdrop-blur-sm border border-blue-100">
-          <LeadTable
-            leads={filteredLeads}
-            setLeads={setMyLeads}
-            searchTerm={searchTerm}
-            loggedInUser={loggedInUser}
-            isSearchActive={!!searchTerm.trim()}
-          />
-        </div>
-      )}
-
-      {/* Loading/Error States */}
-      {loading && (
-        <div className="text-center text-blue-600 font-medium text-sm mt-4">
-          🔄 Loading leads...
-        </div>
-      )}
-      {error && !loading && (
-        <div className="text-center text-red-600 font-semibold text-sm mt-4">
-          ❌ {error}
-        </div>
-      )}
-
-      {/* Lead Form Modal */}
-      {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
-        <div ref={formRef} className="mt-10">
-          <LeadForm
-            closeModal={() => setIsLeadFormOpen(false)}
-            onLeadCreated={handleLeadCreated}
-          />
-        </div>
-      )}
-
-      {/* Floating Button */}
-      {loggedInUser?.role !== 'admin' && (
-        <button
-          onClick={handleOpenLeadForm}
-          className="fixed bottom-6 right-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-bold z-50 transition"
-        >
-          ➕ New Lead
-        </button>
-
-        
-      )}
     </div>
   </ProtectedRoute>
 );
-
-};
-
-export default Dashboard;
+}
+export default Dashboard

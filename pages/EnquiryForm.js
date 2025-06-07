@@ -4,15 +4,15 @@ import { motion } from 'framer-motion';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Select from 'react-select';
-import EnquirySummary from '@/components/EnquirySummary';
-import BASE_URL from '@/utils/api';
-
+import BASE_URL from '../utils/api';
+import { useRouter } from 'next/router'
+import Link from 'next/link';
 export default function EnquiryForm() {
   const [stage, setStage] = useState(1);
   const [category, setCategory] = useState('');
   const [submittedData, setSubmittedData] = useState(null);
   const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
-
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     enquiryId: `ENQ-${Date.now()}`,
@@ -166,7 +166,10 @@ export default function EnquiryForm() {
 
     if (res.ok) {
       toast.success(`✅ ${result.message || 'Enquiry submitted successfully!'}`);
+      localStorage.setItem("leadId", result.leadId); 
       setSubmittedData(combinedData);
+      router.push(`/enquiry/pdf/${result.leadId}`);  
+
       resetForm();
     } else {
       toast.error(`❌ ${result.message || 'Submission failed.'}`);
@@ -238,9 +241,22 @@ export default function EnquiryForm() {
   return (
     <div className="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Customer Enquiry Form</h2>
+      <div className="mt-6 text-center">
+  <button
+  onClick={() => {
+    const leadId = localStorage.getItem('leadId');
+    if (leadId) {
+      router.push(`/enquiry/pdf/${leadId}`);
+    } else {
+      alert("No lead ID found. Submit an enquiry first.");
+    }
+  }}
+>
+    View All PDFs for This Lead
+  </button>
+</div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {submittedData && <EnquirySummary data={submittedData} />}
         {/* Stage 1 */}
         {stage === 1 && (
           <motion.div
@@ -592,6 +608,18 @@ export default function EnquiryForm() {
         )}
       </form>
       <ToastContainer position="top-right" autoClose={3000} pauseOnHover={false} theme="colored" />
+      {submittedData?.enquiryId && (
+  <div className="mt-6 text-center">
+    <a
+      href={`/enquiry/pdf/${submittedData.enquiryId}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
+    >
+      View Enquiry PDF
+    </a>
+  </div>
+)}
     </div>
   );
 }
@@ -626,5 +654,6 @@ const SelectField = ({ label, name, value, onChange, options }) => (
         <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
+
   </div>
-);
+);  

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import BASE_URL from '@/utils/api';
+import BASE_URL from '../utils/api';
 import { motion } from 'framer-motion';
 
 const Register = () => {

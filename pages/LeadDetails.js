@@ -26,6 +26,8 @@ const LeadDetails = () => {
   const [users, setUsers] = useState([]);
   const [showFollowUps, setShowFollowUps] = useState(true);
   const [loggedInUserId, setLoggedInUserId] = useState(null);
+  const [leadTimers, setLeadTimers] = useState({});
+
 
 useEffect(() => {
   const storedUser = localStorage.getItem('user');
@@ -34,6 +36,81 @@ useEffect(() => {
     setLoggedInUserId(parsedUser._id); 
   }
 }, []);
+
+const initializeTimers = (leads) => {
+  const timers = {};
+  leads.forEach(lead => {
+    timers[lead._id] = {
+      time: 0,
+      running: false,
+      paused: false,
+      intervalId: null,
+    };
+  });
+  setLeadTimers(timers);
+};
+
+
+const startimer = (leadId) => {
+  if (leadTimers[leadId]?.running) return;
+  const intervalId = setInterval(() => {
+    setLeadTimers(prev => ({
+      ...prev,
+      [leadId]: {
+        ...prev[leadId],
+        time: prev[leadId].time + 1,
+        running: true,
+        paused: false,
+        stopped: false,
+        intervalId,
+      }
+    }));
+  }, 1000);
+};
+
+const pauseTimer = (leadId) => {
+  const { intervalId } = leadTimers[leadId] || {};
+  if (intervalId) clearInterval(intervalId);
+
+  setLeadTimers(prev => ({
+    ...prev,
+    [leadId]: {
+      ...prev[leadId],
+      running: false,
+      paused: true,
+      intervalId: null,
+    }
+  }));
+};
+
+const resumeTimer = (leadId) => {
+  if (!leadTimers[leadId]?.paused) return;
+  startTimer(leadId);
+};
+
+const stopTimer = (leadId) => {
+  const { intervalId } = leadTimers[leadId] || {};
+  if (intervalId) clearInterval(intervalId);
+
+  setLeadTimers(prev => ({
+    ...prev,
+    [leadId]: {
+      ...prev[leadId],
+      running: false,
+      paused: false,
+      stopped: true,
+      intervalId: null,
+    }
+  }));
+};
+
+
+const formatTime = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}m ` : ''}${s}s`;
+};
 
 
   useEffect(() => {
@@ -57,6 +134,20 @@ useEffect(() => {
     setSelectedStatus(res.data.status || '');
     setSelectedConnection(res.data.connectionStatus || '');
     localStorage.setItem('selectedLead', JSON.stringify(res.data));
+
+    // ✅ Initialize timer for this lead if not already present
+    if (!leadTimers[res.data._id]) {
+      setLeadTimers(prev => ({
+        ...prev,
+        [res.data._id]: {
+          time: 0,
+          running: false,
+          paused: false,
+          intervalId: null,
+        }
+      }));
+    }
+
   } catch (err) {
     console.error("Failed to fetch lead", err);
   }
@@ -202,6 +293,15 @@ useEffect(() => {
         <p><FaMapMarkerAlt className="inline mr-2 text-pink-600" /> <strong>Location:</strong> {lead.leadDetails?.location || 'N/A'}</p>
         <p><FaUserShield className="inline mr-2 text-gray-600" /> <strong>Created By:</strong> {lead.createdBy?.name || 'N/A'}</p>
       </div>
+      <div className="text-sm text-gray-700 mt-3">
+  ⏱️ {formatTime(leadTimers[lead._id]?.time || 0)}
+</div>
+<div className="flex gap-2 mt-2">
+  <button onClick={() => startimer(lead._id)} className="px-2 py-1 bg-green-500 text-white rounded">Start</button>
+  <button onClick={() => pauseTimer(lead._id)} className="px-2 py-1 bg-yellow-400 text-white rounded">Pause</button>
+  <button onClick={() => resumeTimer(lead._id)} className="px-2 py-1 bg-blue-500 text-white rounded">Resume</button>
+  <button onClick={() => stopTimer(lead._id)} className="px-2 py-1 bg-red-600 text-white rounded">Stop</button>
+</div>
 
       {/* Status */}
       <div className="mb-6">
@@ -284,30 +384,32 @@ useEffect(() => {
       <FaStickyNote /> Follow-Up History
     </h3>
 
-   {/* Follow-ups by the assigned user
-{lead.forwardedTo?.user?._id && (
-
+   {/* Follow-ups by the assigned user */}
+{lead.forwardedTo?.user && (
   <div className="mt-6">
     <h4 className="text-sm font-semibold text-green-600 mb-2">
-      📩 By {lead.forwardedTo.user.name} (Assigned user)
+      💬 Remarks by {lead.forwardedTo.user.name} (Assigned user)
     </h4>
-    {lead.followUps.filter(fu => fu.by?._id === lead.forwardedTo.user._id).length === 0 ? (
-      <p className="text-xs text-gray-500 italic">No follow-ups by {lead.forwardedTo.user.name}</p>
+    {lead.remarksHistory?.filter(entry => entry.updatedBy?._id === lead.forwardedTo.user._id).length === 0 ? (
+      <p className="text-xs text-gray-500 italic">
+        No remarks by {lead.forwardedTo.user.name}
+      </p>
     ) : (
-      lead.followUps
-        .filter(fu => fu.by?._id === lead.forwardedTo.user._id)
-        .map((fup, idx) => (
+      lead.remarksHistory
+        .filter(entry => entry.updatedBy?._id === lead.forwardedTo.user._id)
+        .map((remark, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-3 text-sm bg-white px-4 py-3 mb-2 rounded-lg shadow-sm border border-gray-200"
+            className="flex flex-col gap-1 text-sm bg-white px-4 py-3 mb-2 rounded-lg shadow-sm border border-gray-200"
           >
-            <span className="font-medium text-gray-800">{fup.date?.split('T')[0]}</span>
-            <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
+            <span className="text-indigo-700 font-medium">📅 {new Date(remark.date).toLocaleDateString()}</span>
+            <span className="text-gray-700">📝 {remark.remarks}</span>
           </div>
         ))
     )}
   </div>
-)} */}
+)}
+
 
     {/* 🧑‍💼 Follow-ups by the person who forwarded the lead (createdBy) */}
     {lead.createdBy && (
