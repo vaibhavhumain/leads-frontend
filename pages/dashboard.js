@@ -281,7 +281,6 @@ useEffect(() => {
 };
 
 
-
 const handleBulkUpload = async () => {
   if (!uploadedLeads.length) {
     toast.error('Please upload an Excel sheet first.');
@@ -292,18 +291,23 @@ const handleBulkUpload = async () => {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
+    // Upload leads to backend
     const res = await axios.post(`${BASE_URL}/api/leads/bulk`, { leads: uploadedLeads }, { headers });
     toast.success(`${res.data.leads.length} leads uploaded successfully ✅`);
 
-    setMyLeads((prev) => [...res.data.leads, ...prev]);
-setFilteredLeads((prev) => [...res.data.leads, ...prev]);
+    // 🚩 Fetch the updated leads created by the user so that all uploaded leads are shown
+    const updated = await axios.get(`${BASE_URL}/api/leads/my-leads`, { headers });
+    setMyLeads(updated.data);
+    setFilteredLeads(updated.data);
+
     setUploadedLeads([]);
-    handleLeadUploaded(res.data.leads.length);
+    handleLeadUploaded(res.data.leads.length); // Optionally update your stat counter
   } catch (err) {
     console.error('Upload failed:', err);
     toast.error('Upload failed');
   }
 };
+
 
   return (
     <ProtectedRoute>
