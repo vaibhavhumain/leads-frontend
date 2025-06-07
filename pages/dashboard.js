@@ -335,12 +335,28 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
               <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-indigo-600 font-semibold hover:bg-indigo-50">
                 <FiHome /> Dashboard
               </a>
-              <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-gray-700 font-semibold hover:bg-indigo-50">
-                Profile
-              </a>
-              <button className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow font-semibold transition">
-                Logout
-              </button>
+              <button
+  onClick={() => router.push('/profile')}
+  className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-gray-700 font-semibold hover:bg-indigo-50"
+>
+  Profile
+</button>
+
+              <button
+  onClick={() => {
+    // Remove sensitive info
+    if (typeof window !== "undefined") {
+      localStorage.removeItem('token');
+      localStorage.removeItem('loginTime');
+      // remove any other user-specific items here
+    }
+    router.push('/login'); // or your actual login page route
+  }}
+  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow font-semibold transition"
+>
+  Logout
+</button>
+
             </div>
           </div>
 
