@@ -327,11 +327,14 @@ setFilteredLeads((prev) => [...res.data.leads, ...prev]);
             </div>
             <div className="flex gap-3 items-center">
               <div className="bg-white px-4 py-2 rounded-2xl shadow flex items-center gap-2 text-gray-700 font-semibold">
-                <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
-                  V
-                </span>
-                Vaibhav 🏆
-              </div>
+  <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
+    {/* User's First Initial */}
+    {loggedInUser?.name ? loggedInUser.name.charAt(0).toUpperCase() : 'U'}
+  </span>
+  {/* User's Name */}
+  {loggedInUser?.name || 'User'} 
+</div>
+
               <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-indigo-600 font-semibold hover:bg-indigo-50">
                 <FiHome /> Dashboard
               </a>
