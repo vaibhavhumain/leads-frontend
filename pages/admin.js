@@ -9,7 +9,29 @@ import { FaSearch , FaTimes} from 'react-icons/fa';
 import { MdAlarm } from 'react-icons/md';
 import { useRef } from 'react'
 import { MdPauseCircle , MdPlayCircle , MdAccessTime } from 'react-icons/md';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LabelList,
+} from 'recharts';
 
+const STATUS_COLORS = [
+  "#6366F1", 
+  "#F472B6", 
+  "#60A5FA", 
+  "#FBBF24", 
+  "#10B981", 
+  "#F87171", 
+];
 const Admin = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +85,31 @@ const Admin = () => {
   fetchAdminLeads();
 }, []);
 
+const getStatusDistribution = (leads) => {
+  const map = {};
+  leads.forEach((lead) => {
+    map[lead.status] = (map[lead.status] || 0) + 1;
+  });
+  return Object.entries(map).map(([status, value], i) => ({
+    name: status || "N/A",
+    value,
+    color: STATUS_COLORS[i % STATUS_COLORS.length],
+  }));
+};
+
+const getUserDurationDistribution = (timerLogs) => {
+  const userMap = {};
+  timerLogs.forEach((log) => {
+    const name = log.stoppedByName || "N/A";
+    userMap[name] = (userMap[name] || 0) + log.duration;
+  });
+  return Object.entries(userMap).map(([name, value], i) => ({
+    name,
+    value,
+    color: STATUS_COLORS[i % STATUS_COLORS.length],
+  }));
+};
+
 
   // Format seconds to hh:mm:ss
   function formatDuration(seconds) {
@@ -95,6 +142,19 @@ const Admin = () => {
     timerDurationByLead[log.leadId].totalDuration += log.duration;
   });
 
+  const getPauseLogsPerUser = (pauseLogs) => {
+  const userMap = {};
+  pauseLogs.forEach((log) => {
+    const name = log.user?.name || "N/A";
+    userMap[name] = (userMap[name] || 0) + 1;
+  });
+  return Object.entries(userMap).map(([name, value]) => ({
+    name,
+    count: value,
+  }));
+};
+
+
   const getCreatorNameByLeadId = (leadId) => {
     const lead = leads.find((l) => l._id === leadId);
     if (lead && lead.createdBy && lead.createdBy.name) {
@@ -125,9 +185,84 @@ const Admin = () => {
       >
         <span className="inline-flex items-center gap-2">
           <FaUser className="text-pink-500 drop-shadow" size={38} />
-          Admin 
+          Admin Dashboard
         </span>
       </motion.h1>
+
+      {/* --- PIE & DONUT CHART SECTION --- */}
+<div className="grid sm:grid-cols-2 gap-8 mb-12">
+  {/* Pie Chart for Lead Status */}
+  <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="text-lg font-bold mb-4 text-indigo-600">Lead Status Distribution</div>
+    <ResponsiveContainer width="100%" height={260}>
+      <PieChart>
+        <Pie
+          data={getStatusDistribution(leads)}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label
+        >
+          {getStatusDistribution(leads).map((entry, idx) => (
+            <Cell key={`cell-${idx}`} fill={entry.color} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend verticalAlign="bottom" />
+      </PieChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* Donut Chart for Timer Log Distribution */}
+  <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="text-lg font-bold mb-4 text-pink-500">Time Spent by User</div>
+    <ResponsiveContainer width="100%" height={260}>
+      <PieChart>
+        <Pie
+          data={getUserDurationDistribution(timerLogs)}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          innerRadius={55}
+          outerRadius={80}
+          label
+        >
+          {getUserDurationDistribution(timerLogs).map((entry, idx) => (
+            <Cell key={`cell-${idx}`} fill={entry.color} />
+          ))}
+        </Pie>
+        <Tooltip
+          formatter={(value) => formatDuration(value)}
+        />
+        <Legend verticalAlign="bottom" />
+      </PieChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+
+
+  {/* Bar Chart for User Pause Logs */}
+  <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="text-lg font-bold mb-4 text-blue-500">Paused Sessions Per User</div>
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart
+        data={getPauseLogsPerUser(pauseLogs)}
+        margin={{ top: 20, right: 20, left: 5, bottom: 20 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="count" fill="#6366F1">
+          <LabelList dataKey="count" position="top" />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
 
       {/* LEAD DETAILS TABLE */}
       <motion.div
