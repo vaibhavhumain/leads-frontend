@@ -34,15 +34,19 @@ const LeadDetails = () => {
     onSelect: null,  // callback for when a contact is selected
     actionLabel: '',
   });
-  const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const intervalRefs = useRef({});
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  
 useEffect(() => {
-  const storedUser = localStorage.getItem('user');
-  if (storedUser) {
-    const parsedUser = JSON.parse(storedUser);
-    setLoggedInUserId(parsedUser._id); 
+  if (typeof window !== 'undefined') {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setLoggedInUser(parsedUser);
+      setLoggedInUserId(parsedUser._id);
+    }
   }
 }, []);
+
 
 const initializeTimers = (leads) => {
   const timers = {};
