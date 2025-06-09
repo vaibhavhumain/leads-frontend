@@ -14,6 +14,12 @@ export default function EnquiryForm() {
   const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const router = useRouter();
 
+  
+useEffect(() => {
+  localStorage.setItem('leadId', '68466c220a17c9d47472fee5');
+}, []);
+
+
   const [formData, setFormData] = useState({
     enquiryId: `ENQ-${Date.now()}`,
     teamMember: '',
@@ -148,7 +154,7 @@ export default function EnquiryForm() {
   setLoading(true);
 
   const user = JSON.parse(localStorage.getItem('user'));
-  const createdBy = user?._id; 
+  const createdBy = user?._id;
 
   if (!createdBy) {
     toast.error('User not logged in.');
@@ -156,8 +162,43 @@ export default function EnquiryForm() {
     return;
   }
 
-const leadId = localStorage.getItem('leadId');
+  let leadId = localStorage.getItem('leadId');
+  if (!leadId || leadId === 'null' || leadId === '') {
+    // Build lead payload
+    const leadDetails = {
+      clientName: formData.customerName,
+      companyName: formData.companyDetails,
+      contacts: [{ number: formData.customerPhone, label: 'Primary' }],
+      location: formData.city,
+      email: formData.customerEmail,
+    };
+    try {
+      const token = localStorage.getItem('token'); // your auth token, if any
+      const leadRes = await fetch(`${BASE_URL}/api/leads/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ leadDetails }),
+      });
+      const leadResult = await leadRes.json();
+      if (leadRes.ok) {
+        leadId = leadResult.lead._id;
+        localStorage.setItem('leadId', leadId);
+      } else {
+        toast.error("Failed to create lead. " + leadResult.message);
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      toast.error("Failed to create lead.");
+      setLoading(false);
+      return;
+    }
+  }
 
+  // Now submit the enquiry
   const combinedData = {
     ...formData,
     category,
@@ -165,26 +206,21 @@ const leadId = localStorage.getItem('leadId');
     leadId,
   };
 
-  console.log('🚀 Submitting Combined Data:', combinedData);
-
   try {
     const res = await fetch(`${BASE_URL}/api/enquiry`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(combinedData),
     });
-
     const result = await res.json();
-
     if (res.ok) {
       toast.success(`✅ ${result.message || 'Enquiry submitted successfully!'}`);
       localStorage.setItem("leadId", result.leadId); 
       setSubmittedData(combinedData);
       router.push(`/enquiry/pdf/${result.leadId}`);  
-
       resetForm();
     } else {
-      toast.error(`❌ ${result.message || 'Submission failed.'}`);
+      toast.error(`❌ ${result.message || result.error || 'Submission failed.'}`);
     }
   } catch (error) {
     console.error('❌ Submission error:', error);
@@ -193,9 +229,6 @@ const leadId = localStorage.getItem('leadId');
     setLoading(false);
   }
 };
-
-
-  
 
   const resetForm = () => {
     setFormData({
