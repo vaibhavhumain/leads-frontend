@@ -21,43 +21,56 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Unauthorized: Please log in.');
-        setLoading(false);
-        return;
-      }
-
-      const payload = { leadDetails };
-
-      const response = await axios.post(
-        `${BASE_URL}/api/leads/create`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      onLeadCreated(response.data.lead);
-      setLeadDetails({
-        clientName: '',
-        contact: '',
-        companyName: '',
-        location: '',
-      });
-      toast.success('Lead created successfully!');
-      if (closeModal) closeModal();
-    } catch (err) {
-      console.error('Lead creation error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Error creating lead. Please try again.');
-      toast.error('Failed to create lead.');
-    } finally {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Unauthorized: Please log in.');
       setLoading(false);
+      return;
     }
-  };
+
+    // Create contacts array as backend expects
+    const payload = {
+      leadDetails: {
+        ...leadDetails,
+        contacts: [
+          {
+            number: leadDetails.contact,
+            label: 'Primary'
+          }
+        ]
+      }
+    };
+    // Optionally remove .contact from the payload
+    delete payload.leadDetails.contact;
+
+    const response = await axios.post(
+      `${BASE_URL}/api/leads/create`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    onLeadCreated(response.data.lead);
+    setLeadDetails({
+      clientName: '',
+      contact: '',
+      companyName: '',
+      location: '',
+    });
+    toast.success('Lead created successfully!');
+    if (closeModal) closeModal();
+  } catch (err) {
+    console.error('Lead creation error:', err.response?.data || err.message);
+    setError(err.response?.data?.message || 'Error creating lead. Please try again.');
+    toast.error('Failed to create lead.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-200">

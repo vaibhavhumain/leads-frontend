@@ -155,7 +155,8 @@ export default function EnquiryForm() {
     setLoading(false);
     return;
   }
-    const leadId = localStorage.getItem('leadId'); 
+
+const leadId = localStorage.getItem('leadId');
 
   const combinedData = {
     ...formData,
