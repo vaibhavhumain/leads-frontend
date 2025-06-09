@@ -116,271 +116,229 @@ const Admin = () => {
   return (
   <ProtectedRoute>
     <Navbar loggedInUser={loggedInUser} />
-    <div className="p-8">
+    <div className="p-4 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-blue-50 min-h-screen">
       <motion.h1
-        className="text-4xl font-extrabold text-blue-600 text-center"
-        initial={{ opacity: 0, y: -20 }}
+        className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-pink-500 to-blue-600 text-center drop-shadow-lg mb-8"
+        initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        Admin Dashboard
+        <span className="inline-flex items-center gap-2">
+          <FaUser className="text-pink-500 drop-shadow" size={38} />
+          Admin 
+        </span>
       </motion.h1>
 
-      <div className="mb-6 flex items-center gap-2">
-        {/* Toggle Button */}
-        <button
-          className="rounded-full bg-blue-100 hover:bg-blue-200 p-2 transition"
-          onClick={() => setSearchOpen(open => !open)}
-          aria-label="Toggle search"
-          type="button"
-        >
-          {searchOpen ? (
-            <FaTimes className="text-blue-600" size={18} />
-          ) : (
-            <FaSearch className="text-blue-600" size={18} />
-          )}
-        </button>
+      {/* LEAD DETAILS TABLE */}
+      <motion.div
+        className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-indigo-100"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+      >
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-10">
+  <div className="flex items-center gap-3 mb-5">
+    <FaUser className="text-indigo-500 text-2xl" />
+    <span className="text-2xl font-bold text-indigo-700">Lead Details</span>
+  </div>
+  <div className="overflow-x-auto">
+    <table className="min-w-full text-left rounded-2xl">
+      <thead>
+        <tr className="bg-indigo-100 text-indigo-700">
+          <th className="p-4 font-semibold">Lead Name</th>
+          <th className="p-4 font-semibold">Created By</th>
+          <th className="p-4 font-semibold">Status</th>
+          <th className="p-4 font-semibold">Follow-Ups</th>
+          <th className="p-4 font-semibold">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filteredLeads.map((lead, leadIdx) => (
+          <tr key={lead._id} className={leadIdx % 2 === 0 ? "bg-white" : "bg-indigo-50"}>
+            <td className="p-4 font-bold">{lead.leadDetails?.clientName || 'N/A'}</td>
+            <td className="p-4">{lead.createdBy?.name || 'N/A'}</td>
+            <td className="p-4">{lead.status || 'N/A'}</td>
+            <td className="p-4 align-top">
+              {lead.followUps && lead.followUps.length > 0 ? (
+                <div className="bg-indigo-50 rounded-xl px-3 py-2">
+                  <ul className="space-y-1 text-sm">
+                    {lead.followUps.map((fup, idx) => (
+                      <li key={idx}>
+                        <span className="text-indigo-500 font-semibold">
+                          {fup.date ? `• ${new Date(fup.date).toLocaleDateString()}:` : ""}
+                        </span>
+                        <span className="ml-2">{fup.notes}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="bg-gray-50 italic text-gray-400 rounded-xl px-3 py-2 text-center">No follow-ups</div>
+              )}
+            </td>
+            <td className="p-4 align-top">
+              {lead.remarksHistory && lead.remarksHistory.length > 0 ? (
+                <div className="bg-blue-50 rounded-xl px-3 py-2">
+                  <ul className="space-y-2 text-sm">
+                    {lead.remarksHistory.map((remark, rIdx) => (
+                      <li key={rIdx}>
+                        <div className="font-semibold text-indigo-600">
+                          {remark.updatedBy?.name || 'Forwarded User'}{" "}
+                          <span className="text-gray-500 font-normal text-xs">
+                            {remark.date
+                              ? new Date(remark.date).toLocaleString()
+                              : (remark.createdAt
+                                  ? new Date(remark.createdAt).toLocaleString()
+                                  : "")}
+                          </span>
+                        </div>
+                        <div className="text-gray-700">{remark.remarks}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="bg-gray-50 italic text-gray-400 rounded-xl px-3 py-2 text-center">No remarks</div>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div> 
+      </motion.div>
 
-        {/* Animated Search Input */}
-        <AnimatePresence>
-          {searchOpen && (
-            <motion.div
-              key="search"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 192, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 24 }}
-              className="relative overflow-hidden"
-            >
-              <input
-                ref={inputRef}
-                id="creatorSearch"
-                type="text"
-                className="border pl-9 pr-3 py-2 rounded w-48 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200 text-gray-800 shadow"
-                placeholder="Enter creator name..."
-                value={creatorSearch}
-                onChange={e => setCreatorSearch(e.target.value)}
-                style={{ fontWeight: 500, fontSize: "1rem" }}
-              />
-              <FaSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-300 pointer-events-none" size={16} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Lead Details Table */}
-      <div className="bg-white rounded-lg shadow-md p-4 overflow-auto">
-        <div className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
-          <FaUser />
-          <span className='text-red-600'>Lead Details</span>
-        </div>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-indigo-50">
-              <th className="p-2 border">Lead Name</th>
-              <th className="p-2 border">Created By</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Follow-Ups</th>
-              <th className="p-2 border">Remarks</th>
+      {/* LEAD TIMER STOP LOGS */}
+      <motion.div
+        className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-blue-100"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="bg-white rounded-2xl shadow-lg p-6 mt-10 mb-10">
+  <div className="flex items-center gap-3 mb-5">
+    <MdAlarm className="text-pink-500 text-2xl" />
+    <span className="text-2xl font-bold text-pink-500">Lead Timer Stop Logs</span>
+  </div>
+  <div className="overflow-x-auto">
+    {timerLogs.length === 0 ? (
+      <div className="italic text-gray-400 text-center py-8">No timer logs yet.</div>
+    ) : (
+      <table className="min-w-full text-left rounded-2xl">
+        <thead>
+          <tr className="bg-pink-100 text-pink-700">
+            <th className="p-4 font-semibold">Lead</th>
+            <th className="p-4 font-semibold">Stopped By</th>
+            <th className="p-4 font-semibold">Time Spent</th>
+            <th className="p-4 font-semibold">Date/Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {timerLogs.map((log, i) => (
+            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-pink-50"}>
+              <td className="p-4">
+                <div className="bg-pink-50 rounded-xl px-3 py-2 font-semibold">{log.leadName}</div>
+              </td>
+              <td className="p-4">
+                <div className="bg-pink-50 rounded-xl px-3 py-2">{log.stoppedByName}</div>
+              </td>
+              <td className="p-4">
+                <div className="bg-pink-50 rounded-xl px-3 py-2">{formatDuration(log.duration)}</div>
+              </td>
+              <td className="p-4">
+                <div className="bg-pink-50 rounded-xl px-3 py-2">{new Date(log.createdAt).toLocaleString()}</div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {filteredLeads.map((lead, leadIdx) => (
-              <tr key={lead._id} className="even:bg-indigo-50 align-top">
-                <td className="p-2 border font-semibold">{lead.leadDetails?.clientName || 'N/A'}</td>
-                <td className="p-2 border">{lead.createdBy?.name || 'N/A'}</td>
-                <td className="p-2 border">{lead.status || 'N/A'}</td>
-                <td className="p-2 border max-w-xs">
-                  {lead.followUps && lead.followUps.length > 0 ? (
-                    <ul className="list-disc pl-5 max-h-32 overflow-y-auto text-xs text-gray-700">
-                      {lead.followUps.map((fup, idx) => (
-                        <li key={idx}>
-                          <strong>{fup.date ? new Date(fup.date).toLocaleDateString() : 'No Date'}:</strong>{' '}
-                          {fup.notes}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-gray-400 italic">No follow-ups</span>
-                  )}
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+</div>
+
+      </motion.div>
+
+      {/* USER PAUSE/RESUME SESSION LOGS */}
+      <motion.div
+        className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-blue-100"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.33 }}
+      >
+        <div className="bg-white rounded-2xl shadow-lg p-6 mt-10 mb-10">
+  <div className="flex items-center gap-3 mb-5">
+    <MdAlarm className="text-indigo-500 text-2xl" />
+    <span className="text-2xl font-bold text-indigo-700">User Pause/Resume Session Logs</span>
+  </div>
+  <div className="mb-4 flex items-center gap-2">
+    <AnimatePresence>
+      <motion.input
+        key="pauseSearch"
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: 230, opacity: 1 }}
+        exit={{ width: 0, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        type="text"
+        placeholder="🔍 Search by user name..."
+        value={pauseSearch}
+        onChange={e => setPauseSearch(e.target.value)}
+        className="border px-3 py-2 rounded w-60 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition text-gray-700 shadow"
+      />
+    </AnimatePresence>
+  </div>
+  <div className="overflow-x-auto">
+    {pauseLogs.length === 0 ? (
+      <div className="italic text-gray-400 text-center py-8">No pause/resume logs yet.</div>
+    ) : (
+      <table className="min-w-full text-left rounded-2xl">
+        <thead>
+          <tr className="bg-indigo-100 text-indigo-700">
+            <th className="p-4 font-semibold">User</th>
+            <th className="p-4 font-semibold">Paused At</th>
+            <th className="p-4 font-semibold">Resumed At</th>
+            <th className="p-4 font-semibold">Paused Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pauseLogs
+            .filter(log => log.pausedAt && log.resumedAt)
+            .filter(log =>
+              log.user?.name?.toLowerCase().includes(pauseSearch.toLowerCase())
+            )
+            .map((log, i) => (
+              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-indigo-50"}>
+                <td className="p-4">
+                  <div className="bg-indigo-50 rounded-xl px-3 py-2 font-semibold flex items-center gap-2">
+                    <FaUser className="text-indigo-400" /> {log.user?.name || "N/A"}
+                  </div>
                 </td>
-                <td className="p-2 border text-center">
-                  {lead.remarksHistory && lead.remarksHistory.length > 0 ? (
-                    <div className="max-h-40 overflow-y-auto bg-blue-50 rounded p-2 text-left shadow-inner">
-                      <ul>
-                        {lead.remarksHistory.map((remark, rIdx) => (
-                          <li key={rIdx} className="mb-2 border-b border-blue-200 pb-1">
-                            <div className="font-semibold text-sm text-blue-800">
-                              {remark.updatedBy?.name || 'Forwarded User'}
-                              <span className="ml-2 text-gray-500 text-xs">
-                                {remark.date
-                                  ? new Date(remark.date).toLocaleString()
-                                  : (remark.createdAt
-                                    ? new Date(remark.createdAt).toLocaleString()
-                                    : '')}
-                              </span>
-                            </div>
-                            <div className="text-gray-800 text-sm">
-                              {remark.remarks}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 italic">No remarks</span>
-                  )}
+                <td className="p-4">
+                  <div className="bg-indigo-50 rounded-xl px-3 py-2 flex items-center gap-2">
+                    <MdPauseCircle className="text-yellow-500" />
+                    {new Date(log.pausedAt).toLocaleString()}
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="bg-indigo-50 rounded-xl px-3 py-2 flex items-center gap-2">
+                    <MdPlayCircle className="text-green-500" />
+                    {new Date(log.resumedAt).toLocaleString()}
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="bg-indigo-50 rounded-xl px-3 py-2 flex items-center gap-2">
+                    <MdAccessTime className="text-blue-500" />
+                    {formatDuration(log.pausedDuration)}
+                  </div>
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Lead Timer Stop Logs */}
-      <div className="bg-white rounded-lg shadow-md p-4 mt-8">
-        <div className="text-2xl font-bold mb-4 text-blue-700 flex items-center gap-2">
-          <MdAlarm />
-          <span className='text-red-700'>Lead Timer Stop Logs</span>
-        </div>
-        {timerLogs.length === 0 ? (
-          <p className="text-gray-500">No timer logs yet.</p>
-        ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-indigo-50">
-                <th className="p-2 border">Lead</th>
-                <th className="p-2 border">Stopped By</th>
-                <th className="p-2 border">Time Spent</th>
-                <th className="p-2 border">Date/Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timerLogs.map((log, i) => (
-                <tr key={i} className="even:bg-indigo-50">
-                  <td className="p-2 border font-semibold">{log.leadName}</td>
-                  <td className="p-2 border">{log.stoppedByName}</td>
-                  <td className="p-2 border">{formatDuration(log.duration)}</td>
-                  <td className="p-2 border">{new Date(log.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-     {/* User Pause/Resume Session Logs */}
-      <div className="bg-white rounded-lg shadow-md p-4 mt-8">
-        <div className="text-2xl font-bold mb-4 text-indigo-700 flex items-center gap-2">
-          <MdAlarm />
-          <span className="text-blue-700">User Pause/Resume Session Logs</span>
-        </div>
-
-        {/* Animated Search Input for pause logs */}
-        <div className="mb-4 flex items-center gap-2">
-          <AnimatePresence>
-            <motion.input
-              key="pauseSearch"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 230, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 350, damping: 25 }}
-              type="text"
-              placeholder="🔍 Search by user name..."
-              value={pauseSearch}
-              onChange={e => setPauseSearch(e.target.value)}
-              className="border px-3 py-2 rounded w-60 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition text-gray-700 shadow"
-            />
-          </AnimatePresence>
-        </div>
-
-        <div className="overflow-x-auto">
-          {pauseLogs.length === 0 ? (
-            <motion.p
-              className="text-gray-500"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              No pause/resume logs yet.
-            </motion.p>
-          ) : (
-            <motion.table
-              className="w-full border-collapse"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <thead>
-                <tr className="bg-indigo-50">
-                  <th className="p-2 border text-left">
-                    <span className="inline-flex items-center gap-1">
-                      <FaUser className="text-indigo-500" /> User
-                    </span>
-                  </th>
-                  <th className="p-2 border text-left">
-                    <span className="inline-flex items-center gap-1">
-                      <MdPauseCircle className="text-yellow-500" /> Paused At
-                    </span>
-                  </th>
-                  <th className="p-2 border text-left">
-                    <span className="inline-flex items-center gap-1">
-                      <MdPlayCircle className="text-green-500" /> Resumed At
-                    </span>
-                  </th>
-                  <th className="p-2 border text-left">
-                    <span className="inline-flex items-center gap-1">
-                      <MdAccessTime className="text-blue-500" /> Paused Duration
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {pauseLogs
-                  .filter(log => log.pausedAt && log.resumedAt)
-                  .filter(log =>
-                    log.user?.name?.toLowerCase().includes(pauseSearch.toLowerCase())
-                  )
-                  .map((log, i) => (
-                    <motion.tr
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ delay: 0.03 * i }}
-                      className="even:bg-indigo-50"
-                    >
-                      <td className="p-2 border font-semibold">
-                        <span className="inline-flex items-center gap-2">
-                          <FaUser className="text-indigo-400" />
-                          {log.user?.name || "N/A"}
-                        </span>
-                      </td>
-                      <td className="p-2 border">
-                        <span className="inline-flex items-center gap-2">
-                          <MdPauseCircle className="text-yellow-500" />
-                          {new Date(log.pausedAt).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="p-2 border">
-                        <span className="inline-flex items-center gap-2">
-                          <MdPlayCircle className="text-green-500" />
-                          {new Date(log.resumedAt).toLocaleString()}
-                        </span>
-                      </td>
-                      <td className="p-2 border">
-                        <span className="inline-flex items-center gap-2">
-                          <MdAccessTime className="text-blue-500" />
-                          {formatDuration(log.pausedDuration)}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))}
-              </tbody>
-            </motion.table>
-          )}
-        </div>
-      </div>
+        </tbody>
+      </table>
+    )}
+  </div>
+</div>
+      </motion.div>
     </div>
   </ProtectedRoute>
 );
