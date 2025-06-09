@@ -27,6 +27,8 @@ const LeadDetails = () => {
   const [showFollowUps, setShowFollowUps] = useState(true);
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [leadTimers, setLeadTimers] = useState({});
+  const [timer, setTimer] = useState({ running: false, time: 0, startTime: null, intervalId: null });
+
 
 
 useEffect(() => {
@@ -50,23 +52,26 @@ const initializeTimers = (leads) => {
   setLeadTimers(timers);
 };
 
+// At timer start
+// At timer start
+// 
 
-const startimer = (leadId) => {
-  if (leadTimers[leadId]?.running) return;
-  const intervalId = setInterval(() => {
-    setLeadTimers(prev => ({
-      ...prev,
-      [leadId]: {
-        ...prev[leadId],
-        time: prev[leadId].time + 1,
-        running: true,
-        paused: false,
-        stopped: false,
-        intervalId,
-      }
-    }));
-  }, 1000);
-};
+ const startimer = () => {
+    if (timer.running) return;
+    const intervalId = setInterval(() => {
+      setTimer(prev => ({
+        ...prev,
+        time: prev.time + 1,
+      }));
+    }, 1000);
+    setTimer({
+      running: true,
+      time: 0,
+      startTime: new Date(),
+      intervalId
+    });
+  };
+
 
 const pauseTimer = (leadId) => {
   const { intervalId } = leadTimers[leadId] || {};
@@ -88,21 +93,16 @@ const resumeTimer = (leadId) => {
   startTimer(leadId);
 };
 
-const stopTimer = (leadId) => {
-  const { intervalId } = leadTimers[leadId] || {};
-  if (intervalId) clearInterval(intervalId);
-
-  setLeadTimers(prev => ({
-    ...prev,
-    [leadId]: {
-      ...prev[leadId],
+const stopTimer = () => {
+    if (!timer.running) return;
+    clearInterval(timer.intervalId);
+    setTimer({
       running: false,
-      paused: false,
-      stopped: true,
-      intervalId: null,
-    }
-  }));
-};
+      time: timer.time,
+      startTime: timer.startTime,
+      intervalId: null
+    });
+  };
 
 
 const formatTime = (seconds) => {
@@ -287,7 +287,21 @@ useEffect(() => {
 
       <div className="text-sm text-gray-800 space-y-2 mb-6">
         <p><FaUser className="inline mr-2 text-blue-600" /> <strong>Client:</strong> {lead.leadDetails?.clientName || 'N/A'}</p>
-        <p><FaPhone className="inline mr-2 text-green-600" /> <strong>Contact:</strong> {lead.leadDetails?.contact || 'N/A'}</p>
+        {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0 ? (
+  <p>
+    <FaPhone className="inline mr-2 text-green-600" /> <strong>Contact:</strong>{" "}
+    {lead.leadDetails.contacts.map((c, idx) => (
+      <span key={idx} className="mr-2">
+        {c.number} <span className="text-xs text-gray-500">({c.label || 'Other'})</span>
+      </span>
+    ))}
+  </p>
+) : (
+  <p>
+    <FaPhone className="inline mr-2 text-green-600" /> <strong>Contact:</strong> {lead.leadDetails?.contact || 'N/A'}
+  </p>
+)}
+
         <p><FaEnvelope className="inline mr-2 text-red-600" /> <strong>Email:</strong> {lead.leadDetails?.email || 'N/A'}</p>
         <p><FaBuilding className="inline mr-2 text-indigo-600" /> <strong>Company:</strong> {lead.leadDetails?.companyName || 'N/A'}</p>
         <p><FaMapMarkerAlt className="inline mr-2 text-pink-600" /> <strong>Location:</strong> {lead.leadDetails?.location || 'N/A'}</p>
@@ -302,7 +316,7 @@ useEffect(() => {
   <button onClick={() => resumeTimer(lead._id)} className="px-2 py-1 bg-blue-500 text-white rounded">Resume</button>
   <button onClick={() => stopTimer(lead._id)} className="px-2 py-1 bg-red-600 text-white rounded">Stop</button>
 </div>
-
+ 
       {/* Status */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">🎯 Status</label>

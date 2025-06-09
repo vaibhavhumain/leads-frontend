@@ -65,6 +65,16 @@ export default function EnquiryForm() {
     cabinType: '',
     specificRequirement: '',
     suggestedModel: '',
+    businessTypeOfBuses: '',      
+  businessNumberOfBuses: '',     
+  businessPreviousBodyBuilder: '',
+  businessBusesPerYear: '',      
+  businessEmployees: '',        
+  businessExpertiseArea: '',     
+  education: '',                
+  hobbies: '',                   
+  behavior: '',                  
+  customerType: '', 
 
     optionalFeatures: [],  
     fitmentProvided: [],   
@@ -321,6 +331,35 @@ export default function EnquiryForm() {
     />
   </div>
 </div>
+            {/* --- BUSINESS DETAILS --- */}
+<h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Business Details</h3>
+<InputField label="Type of Buses in Fleet" name="businessTypeOfBuses" value={formData.businessTypeOfBuses} onChange={handleChange} />
+<InputField label="Number of Buses in Fleet" name="businessNumberOfBuses" value={formData.businessNumberOfBuses} onChange={handleChange} type="number" />
+<InputField label="Previous Bus Body Builder" name="businessPreviousBodyBuilder" value={formData.businessPreviousBodyBuilder} onChange={handleChange} />
+<InputField label="Number of Buses Made in a Year" name="businessBusesPerYear" value={formData.businessBusesPerYear} onChange={handleChange} type="number" />
+<InputField label="Number of Employees" name="businessEmployees" value={formData.businessEmployees} onChange={handleChange} type="number" />
+<InputField label="Area of Expertise" name="businessExpertiseArea" value={formData.businessExpertiseArea} onChange={handleChange} />
+
+{/* --- PERSONAL --- */}
+<h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Personal Details</h3>
+<InputField label="Education" name="education" value={formData.education} onChange={handleChange} />
+<InputField label="Hobbies" name="hobbies" value={formData.hobbies} onChange={handleChange} />
+<InputField label="Behavior" name="behavior" value={formData.behavior} onChange={handleChange} />
+
+{/* --- CUSTOMER TYPE (auto-decide or manual for now) --- */}
+<SelectField
+  label="Customer Type"
+  name="customerType"
+  value={formData.customerType}
+  onChange={handleChange}
+  options={[
+    'Amazing',
+    'Bread winning',
+    'Convenience',
+    'Dangerous'
+  ]}
+/>
+
 
             <InputField label="Phone Number" name="customerPhone" value={formData.customerPhone} onChange={handleChange} required />
             <InputField label="Email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} type="email" />

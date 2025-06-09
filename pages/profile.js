@@ -212,7 +212,18 @@ const toggleDropdown = (leadId) => {
     {forwardedLeads.map((lead) => (
       <tr key={lead._id} className="border-t hover:bg-gray-50 transition-all">
         <td className="px-4 py-2">{lead.leadDetails?.clientName}</td>
-        <td className="px-4 py-2">{lead.leadDetails?.contact || 'N/A'}</td>
+        <td className="px-4 py-2">
+  {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0
+    ? lead.leadDetails.contacts.map((c, idx) => (
+        <span key={idx}>
+          {c.number}
+          {c.label ? <span className="ml-1 text-xs text-gray-500">({c.label})</span> : null}
+          {idx !== lead.leadDetails.contacts.length - 1 && <span>, </span>}
+        </span>
+      ))
+    : lead.leadDetails?.contact || 'N/A'}
+</td>
+
         <td className="px-4 py-2">{lead.createdBy?.name}</td>
         <td className="px-4 py-2">
   To: <strong>{lead.forwardedTo?.user?.name || 'You'}</strong><br />

@@ -130,7 +130,17 @@ const LeadDetailsPage = () => {
           <tbody>
             <tr>
               <td className="px-6 py-4">{lead.leadDetails?.clientName || '—'}</td>
-              <td className="px-6 py-4">{lead.leadDetails?.contact || '—'}</td>
+<td className="px-6 py-4">
+  {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0
+    ? lead.leadDetails.contacts.map((c, idx) => (
+        <span key={idx}>
+          {c.number}
+          {c.label ? <span className="ml-1 text-xs text-gray-500">({c.label})</span> : null}
+          {idx !== lead.leadDetails.contacts.length - 1 && <span>, </span>}
+        </span>
+      ))
+    : lead.leadDetails?.contact || '—'}
+</td>
               <td className="px-6 py-4">{lead.leadDetails?.company || '—'}</td>
               <td className="px-6 py-4">{lead.status || '—'}</td>
               {/* <td className="px-6 py-4">{lead.remarks || '—'}</td> */}
