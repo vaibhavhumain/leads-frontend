@@ -394,87 +394,56 @@ const handleBulkUpload = async () => {
   <div className="flex flex-col items-center gap-2">
     <div className="text-3xl font-bold text-blue-600">{loginDuration}</div>
     <button
-  onClick={() => {
-    const now = new Date();
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
+  onClick={async () => {
+  const now = new Date();
+  const token = localStorage.getItem('token');
+  const headers = { Authorization: `Bearer ${token}` };
 
-   if (!isPaused) {
-  // --- PAUSE: Log pause ---
-  axios.post(`${BASE_URL}/api/pause-logs/save`, {
-    pausedAt: now.toISOString()
-  }, { headers })
-    .then(() => toast.info('⏸️ Paused'))
-    .catch(err => {
-      console.error('Pause error:', err);
+  if (!isPaused) {
+    // --- PAUSE: Log pause ---
+    try {
+      await axios.post(`${BASE_URL}/api/pause-logs/save`, {
+        pausedAt: now.toISOString()
+      }, { headers });
+
+      toast.info('⏸️ Session Paused');
+      setPauseHistory(prev => [...prev, { pausedAt: now.toISOString() }]);
+    } catch (err) {
       toast.error('Pause failed');
-    });
-
-  // Calculate duration from lead timer start (example)
-  const leadTimerStartString = localStorage.getItem('leadTimerStart'); // or state variable
-  if (leadTimerStartString) {
-    const leadTimerStart = new Date(leadTimerStartString);
-    const durationSeconds = Math.floor((now - leadTimerStart) / 1000);
-
-    // Get current lead info (replace this with your actual current lead info)
-    const currentLeadId = localStorage.getItem('currentLeadId');
-    const currentLeadName = localStorage.getItem('currentLeadName');
-    const stoppedByName = loggedInUser.name;
-
-    if (currentLeadId && currentLeadName) {
-      axios.post(`${BASE_URL}/api/timer-logs/save`, {
-        leadId: currentLeadId,
-        leadName: currentLeadName,
-        stoppedByName,
-        duration: durationSeconds,
-      }, { headers })
-      .then(() => toast.info('Timer log saved'))
-      .catch(() => toast.error('Failed to save timer log'));
+      return;
     }
-  }
-      // Increment paused sessions counter
-      let total = 0;
-      if (typeof window !== "undefined") {
-        total = parseInt(localStorage.getItem('totalPausedSessions') || '0', 10);
-        total += 1;
-        localStorage.setItem('totalPausedSessions', total);
-      }
-      setTotalPausedSessions(total);
-
-    } else {
-      // --- RESUME: Log resume + paused duration ---
-      const last = pauseHistory[pauseHistory.length - 1];
-      if (last && !last.resumedAt) {
-        const pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
-        axios.post(`${BASE_URL}/api/pause-logs/save`, {
+  } else {
+    // --- RESUME: Log resume ---
+    const last = pauseHistory[pauseHistory.length - 1];
+    if (last && !last.resumedAt) {
+      const pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
+      try {
+        await axios.post(`${BASE_URL}/api/pause-logs/save`, {
           resumedAt: now.toISOString(),
           pausedAt: last.pausedAt,
           pausedDuration
-        }, { headers })
-          .then(() => toast.success('▶️ Resumed'))
-          .catch(err => {
-            console.error('Resume error:', err);
-            toast.error('Resume failed');
-          });
+        }, { headers });
+
+        toast.success('▶️ Session Resumed');
+        setPauseHistory(prev => {
+          const updated = [...prev];
+          const lastLog = updated[updated.length - 1];
+          if (lastLog && !lastLog.resumedAt) {
+            lastLog.resumedAt = now.toISOString();
+            lastLog.pausedDuration = pausedDuration;
+          }
+          return updated;
+        });
+      } catch (err) {
+        toast.error('Resume failed');
+        return;
       }
     }
+  }
 
-    // Update pauseHistory state locally
-    setPauseHistory(prev => {
-      const updated = [...prev];
-      if (!isPaused) {
-        updated.push({ pausedAt: now.toISOString() });
-      } else {
-        const last = updated[updated.length - 1];
-        if (last && !last.resumedAt) {
-          last.resumedAt = now.toISOString();
-          last.pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
-        }
-      }
-      return updated;
-    });
-    setIsPaused(prev => !prev);
-  }}
+  setIsPaused(prev => !prev);
+}}
+
   className={`mt-1 px-4 py-1 rounded-full text-xs font-bold shadow transition ${
     isPaused
       ? "bg-yellow-400 hover:bg-yellow-500 text-white"
