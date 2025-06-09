@@ -44,12 +44,8 @@ const [contactPicker, setContactPicker] = useState({
   onSelect: null,  // callback for when a contact is selected
   actionLabel: '',
 });
-  const [selectedImages, setSelectedImages] = useState(new Set()); // Or useState([])
-
-
-;
-
-
+const [showActionsSidebar , setShowActionsSidebar] = useState(false)
+  const [selectedImages, setSelectedImages] = useState(new Set()); 
 
   const leadsPerPage = 3;
 
@@ -602,27 +598,87 @@ return (
       </div>
     )}
 
-    <div className="flex justify-center relative">
-      {filteredLeads.length > 0 && (() => {
-        const lead = filteredLeads[currentLeadIndex];
-        const isFrozenByCreator =
-          lead.createdBy?._id === loggedInUser?._id &&
-          lead.forwardedTo?.user?._id &&
-          lead.isFrozen;
+   <div className="flex justify-center relative px-6 py-8 bg-[#e9f0ff] rounded-3xl shadow-lg max-w-6xl mx-auto">
+  {filteredLeads.length > 0 && (() => {
+    const lead = filteredLeads[currentLeadIndex];
+    const isFrozenByCreator =
+      lead.createdBy?._id === loggedInUser?._id &&
+      lead.forwardedTo?.user?._id &&
+      lead.isFrozen;
 
-        return (
-          <div className="relative">
-            {isFrozenByCreator && (
-              <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-3xl border border-red-200">
-                <div className="text-center px-4">
-                  <p className="text-red-600 font-semibold text-lg mb-1">
-                    🔒 This lead has been forwarded and is now frozen.
-                  </p>
-                  <p className="text-gray-600 text-sm">You cannot make any changes.</p>
-                </div>
-              </div>
-            )}
+    return (
+      <div className="relative flex gap-12 w-full max-w-5xl">
+        {/* Frozen Overlay */}
+        {isFrozenByCreator && (
+          <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-3xl border border-red-300">
+            <div className="text-center px-4">
+              <p className="text-red-600 font-semibold text-lg mb-1">
+                🔒 This lead has been forwarded and is now frozen.
+              </p>
+              <p className="text-gray-600 text-sm">You cannot make any changes.</p>
+            </div>
+          </div>
+        )}
 
+        {/* Sidebar */}
+        <div className="flex flex-col gap-6 py-2 min-w-[200px]">
+          <button
+            onClick={() => {
+              const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+              if (validContacts.length === 0) {
+                toast.error("No valid 10-digit contact found!");
+                return;
+              }
+              if (validContacts.length === 1) {
+                sendWhatsAppMessage(validContacts[0].number, lead.leadDetails?.clientName || '');
+              } else {
+                setContactPicker({
+                  open: true,
+                  options: validContacts,
+                  onSelect: (number) => sendWhatsAppMessage(number, lead.leadDetails?.clientName || ''),
+                  actionLabel: "Send WhatsApp Message",
+                });
+              }
+            }}
+            className="flex items-center justify-center gap-3 rounded-xl px-8 py-4 text-lg font-semibold text-white bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg transition hover:scale-105"
+          >
+            <span role="img" aria-label="whatsapp" className="text-2xl">📩</span> WhatsApp
+          </button>
+
+          <button
+            onClick={() => {
+              const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+              if (validContacts.length === 0) {
+                toast.error("No valid 10-digit contact found!");
+                return;
+              }
+              if (validContacts.length === 1) {
+                sendWhatsAppPdf(validContacts[0].number, lead.leadDetails?.clientName || '', 'gcb.pdf');
+              } else {
+                setContactPicker({
+                  open: true,
+                  options: validContacts,
+                  onSelect: (number) => sendWhatsAppPdf(number, lead.leadDetails?.clientName || '', 'gcb.pdf'),
+                  actionLabel: "Send PDF",
+                });
+              }
+            }}
+            className="flex items-center justify-center gap-3 rounded-xl px-8 py-4 text-lg font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg transition hover:scale-105"
+          >
+            <span role="img" aria-label="pdf" className="text-2xl">📄</span> PDF
+          </button>
+
+          <Link href="/gallery" passHref legacyBehavior>
+            <a>
+              <button
+                className="flex items-center justify-center gap-3 rounded-xl px-8 py-4 text-lg font-semibold text-white bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-lg transition hover:scale-105"
+              >
+                <span role="img" aria-label="photos" className="text-2xl">🖼️</span> Photos
+              </button>
+            </a>
+          </Link>
+        </div>
+        
             <div
               key={lead._id}
               className={`bg-gradient-to-br from-white via-[#f3f8ff] to-[#d9e9ff] p-6 rounded-3xl shadow-2xl border border-blue-100 w-full max-w-xl transition duration-300 hover:shadow-blue-200 relative z-10 ${
@@ -819,6 +875,22 @@ return (
       />
     </div>
   )}
+  <div className="flex justify-end mt-auto">
+    <button
+      onClick={() => {
+        localStorage.setItem(
+          "selectedLead",
+          JSON.stringify(lead)
+        );
+        window.location.href = "/LeadDetails";
+      }}
+      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl shadow text-xs font-medium transition"
+    >
+      <span role="img" aria-label="card">🗂️</span>
+      View Lead Card
+    </button>
+
+  </div>
 </div>
   </div>
   </div>
@@ -835,69 +907,66 @@ return (
   >
     📝 Questions Form
   </button>
-<div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mx-auto mt-4">
- <button
-  onClick={() => {
-    const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
-    if (validContacts.length === 0) {
-      toast.error("No valid 10-digit contact found!");
-      return;
-    }
-    if (validContacts.length === 1) {
-      sendWhatsAppMessage(validContacts[0].number, lead.leadDetails?.clientName || '');
-    } else {
-      setContactPicker({
-        open: true,
-        options: validContacts,
-        onSelect: (number) => sendWhatsAppMessage(number, lead.leadDetails?.clientName || ''),
-        actionLabel: "Send WhatsApp Message",
-      });
-    }
-  }}
-  className="flex-1 flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-lg font-semibold text-white bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-2xl hover:from-green-500 hover:to-green-700 active:scale-95 focus:outline-none"
->
-  <span role="img" aria-label="whatsapp">📩</span>
-  WhatsApp Message
-</button>
-
-
- <button
-  onClick={() => {
-    const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
-    if (validContacts.length === 0) {
-      toast.error("No valid 10-digit contact found!");
-      return;
-    }
-    if (validContacts.length === 1) {
-      sendWhatsAppPdf(validContacts[0].number, lead.leadDetails?.clientName || '', 'gcb.pdf');
-    } else {
-      setContactPicker({
-        open: true,
-        options: validContacts,
-        onSelect: (number) => sendWhatsAppPdf(number, lead.leadDetails?.clientName || '', 'gcb.pdf'),
-        actionLabel: "Send PDF",
-      });
-    }
-  }}
-  className="flex-1 flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-lg font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-2xl hover:from-yellow-500 hover:to-yellow-700 active:scale-95 focus:outline-none"
->
-  <span role="img" aria-label="pdf">📄</span>
-  Share PDF
-</button>
-
-  {/* Send Photos */}
+{/* --- Fixed Left Sidebar ---
+<div className="flex flex-row gap-8 relative">
+<div className="flex flex-col gap-4 py-2" style={{maxWidth:200}}>
+  <button
+    onClick={() => {
+      const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+      if (validContacts.length === 0) {
+        toast.error("No valid 10-digit contact found!");
+        return;
+      }
+      if (validContacts.length === 1) {
+        sendWhatsAppMessage(validContacts[0].number, lead.leadDetails?.clientName || '');
+      } else {
+        setContactPicker({
+          open: true,
+          options: validContacts,
+          onSelect: (number) => sendWhatsAppMessage(number, lead.leadDetails?.clientName || ''),
+          actionLabel: "Send WhatsApp Message",
+        });
+      }
+    }}
+    className="flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg transition hover:scale-105"
+  >
+    <span role="img" aria-label="whatsapp">📩</span> WhatsApp
+  </button>
+  <button
+    onClick={() => {
+      const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+      if (validContacts.length === 0) {
+        toast.error("No valid 10-digit contact found!");
+        return;
+      }
+      if (validContacts.length === 1) {
+        sendWhatsAppPdf(validContacts[0].number, lead.leadDetails?.clientName || '', 'gcb.pdf');
+      } else {
+        setContactPicker({
+          open: true,
+          options: validContacts,
+          onSelect: (number) => sendWhatsAppPdf(number, lead.leadDetails?.clientName || '', 'gcb.pdf'),
+          actionLabel: "Send PDF",
+        });
+      }
+    }}
+    className="flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg transition hover:scale-105"
+  >
+    <span role="img" aria-label="pdf">📄</span> PDF
+  </button>
   <Link href="/gallery" passHref legacyBehavior>
-    <a className="flex-1">
+    <a>
       <button
-        className="w-full flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-lg font-semibold text-white bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-2xl hover:from-blue-500 hover:to-blue-700 active:scale-95 focus:outline-none"
+        className="flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-lg transition hover:scale-105"
       >
-        <span role="img" aria-label="photos">🖼️</span>
-        Send Photos
+        <span role="img" aria-label="photos">🖼️</span> Photos
       </button>
     </a>
   </Link>
+
 </div>
 
+</div> */}
 
 </div>
 
@@ -980,18 +1049,7 @@ return (
   Reminder
 </button>
   
-  <button
-    onClick={() => {
-      localStorage.setItem(
-        "selectedLead",
-        JSON.stringify(filteredLeads[currentLeadIndex])
-      );
-      window.location.href = "/LeadDetails";
-    }}
-    className="flex items-center bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-2xl shadow-md text-base font-semibold transition gap-2"
-  >
-    📋 View Full Lead Card
-  </button>
+  
 </div>
 
 {/* Lead Navigation */}

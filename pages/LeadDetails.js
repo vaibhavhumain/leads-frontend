@@ -28,9 +28,12 @@ const LeadDetails = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [leadTimers, setLeadTimers] = useState({});
   const [timer, setTimer] = useState({ running: false, time: 0, startTime: null, intervalId: null });
-
-
-
+  const [contactPicker, setContactPicker] = useState({
+    open: false,
+    options: [],
+    onSelect: null,  // callback for when a contact is selected
+    actionLabel: '',
+  });
 useEffect(() => {
   const storedUser = localStorage.getItem('user');
   if (storedUser) {
@@ -152,6 +155,53 @@ const formatTime = (seconds) => {
     console.error("Failed to fetch lead", err);
   }
 };
+
+
+function copyToClipboard(text) {
+  try {
+    navigator.clipboard.writeText(text);
+    toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
+  } catch {
+    // Fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
+  }
+}
+
+
+const sendWhatsAppMessage = (number, clientName = '') => {
+  const text = `Dear ${clientName || 'Customer'}, It was a pleasure speaking with you today! Thank you for considering Gobind Coach Builders for your bus body requirements. We're excited about the opportunity to bring your vision to life with our durable designs and unmatched craftsmanship.`;
+  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
+  console.log('WA URL:', url);
+  window.open(url, '_blank');
+  copyToClipboard(text); 
+};
+
+const sendWhatsAppPdf = (number, clientName = '', pdfFileName) => {
+  const origin = window.location.origin;
+  const pdfUrl = `${origin}/${pdfFileName}`;
+  const text = `Dear ${clientName || 'Customer'},\n\nPlease find the PDF here:\n${pdfUrl}`;
+  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+  copyToClipboard(text); 
+};
+
+
+const sendWhatsAppPhotos = (number, clientName = '', selectedImages) => {
+  const origin = window.location.origin;
+  const imageLinks = Array.from(selectedImages).map((id, idx) => `${origin}/images/${id}.jpg`);
+  const imageText = imageLinks.map((link, idx) => `Image ${idx + 1}: ${link}`).join('\n');
+  const text = `Dear ${clientName || 'Customer'},\n\nHere are your requested bus images:\n${imageText}`;
+  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+  copyToClipboard(text); 
+};
+
 
 
 useEffect(() => {
@@ -483,6 +533,107 @@ useEffect(() => {
           📨 Forward Lead
         </button>
       </div>
+      {/* Share Buttons */}
+<div className="flex flex-col gap-4 mb-6 max-w-xs">
+   <button
+    onClick={() => {
+      const validContacts = (lead.leadDetails?.contacts || [])
+        .filter(c => c.number)
+        .map(c => ({ number: c.number, label: c.label })) || [];
+
+      if (validContacts.length === 0) {
+        toast.error("No valid 10-digit contact found!");
+        return;
+      }
+
+      if (validContacts.length === 1) {
+        sendWhatsAppMessage(validContacts[0].number, lead.leadDetails?.clientName || '');
+      } else {
+        setContactPicker({
+          open: true,
+          options: validContacts,
+          onSelect: (number) => {
+            sendWhatsAppMessage(number, lead.leadDetails?.clientName || '');
+            setContactPicker(prev => ({ ...prev, open: false }));
+          },
+          actionLabel: "Send WhatsApp Message",
+        });
+      }
+    }}
+    className="flex items-center gap-3 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg transition hover:scale-105"
+  >
+    📩 WhatsApp
+  </button>
+
+  {/* PDF button */}
+  <button
+    onClick={() => {
+      const validContacts = (lead.leadDetails?.contacts || [])
+        .filter(c => c.number)
+        .map(c => ({ number: c.number, label: c.label })) || [];
+
+      if (validContacts.length === 0) {
+        toast.error("No valid 10-digit contact found!");
+        return;
+      }
+
+      if (validContacts.length === 1) {
+        sendWhatsAppPdf(validContacts[0].number, lead.leadDetails?.clientName || '', 'gcb.pdf');
+      } else {
+        setContactPicker({
+          open: true,
+          options: validContacts,
+          onSelect: (number) => {
+            sendWhatsAppPdf(number, lead.leadDetails?.clientName || '', 'gcb.pdf');
+            setContactPicker(prev => ({ ...prev, open: false }));
+          },
+          actionLabel: "Send PDF",
+        });
+      }
+    }}
+    className="flex items-center gap-3 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg transition hover:scale-105"
+  >
+    📄 PDF
+  </button>
+
+  {/* Photos button */}
+  <Link href="/gallery" passHref legacyBehavior>
+    <a>
+      <button
+        className="flex items-center gap-3 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-lg transition hover:scale-105"
+      >
+        🖼️ Photos
+      </button>
+    </a>
+  </Link>
+</div>
+{contactPicker.open && (
+  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs flex flex-col items-center border border-indigo-200">
+      <div className="mb-4 text-lg font-semibold text-indigo-700">
+        Select number to {contactPicker.actionLabel}
+      </div>
+      {contactPicker.options.map((c, idx) => (
+        <button
+          key={idx}
+          className="w-full my-1 px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-200 text-indigo-800 font-medium transition"
+          onClick={() => {
+            contactPicker.onSelect(c.number);
+          }}
+        >
+          {c.label}: {c.number}
+        </button>
+      ))}
+      <button
+        onClick={() => setContactPicker(prev => ({ ...prev, open: false }))}
+        className="mt-4 text-xs text-gray-400 hover:text-rose-500"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   </div>
 );
