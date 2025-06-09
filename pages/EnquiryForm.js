@@ -147,20 +147,21 @@ export default function EnquiryForm() {
   e.preventDefault();
   setLoading(true);
 
-  // ✅ Get logged-in user from localStorage
   const user = JSON.parse(localStorage.getItem('user'));
-  const createdBy = user?._id; // or user?.id based on your backend
+  const createdBy = user?._id; 
 
   if (!createdBy) {
     toast.error('User not logged in.');
     setLoading(false);
     return;
   }
+    const leadId = localStorage.getItem('leadId'); 
 
   const combinedData = {
     ...formData,
     category,
     createdBy, 
+    leadId,
   };
 
   console.log('🚀 Submitting Combined Data:', combinedData);
@@ -267,7 +268,6 @@ export default function EnquiryForm() {
 </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Stage 1 */}
         {stage === 1 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -279,7 +279,6 @@ export default function EnquiryForm() {
             <InputField label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
             <InputField label="Company Details" name="companyDetails" value={formData.companyDetails} onChange={handleChange} />
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-  {/* Address */}
   <div>
     <label className="block text-sm font-semibold mb-1 text-gray-700">Address</label>
     <input
@@ -404,7 +403,7 @@ export default function EnquiryForm() {
   {/* 1. Window */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Window</label>
-    <select
+    <select 
       name="windowType"
       onChange={handleChange}
       value={formData.windowType}
