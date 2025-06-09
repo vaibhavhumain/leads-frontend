@@ -35,11 +35,9 @@ const Dashboard = () => {
   const [isPaused, setIsPaused] = useState(false);
   const router = useRouter();
   const [pauseHistory, setPauseHistory] = useState([]);
-   const [sidebarOpen, setSidebarOpen] = useState(false);
-   const [totalPausedSessions, setTotalPausedSessions] = useState(0);
-
-
-const [totalLeadsUploaded, setTotalLeadsUploaded] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [totalPausedSessions, setTotalPausedSessions] = useState(0);
+  const [totalLeadsUploaded, setTotalLeadsUploaded] = useState(0);
 
 
 useEffect(() => {
@@ -126,7 +124,6 @@ const leadsByDay = Object.entries(
   count: leads.length,
 }));
 
-// Calculate leads by status (for bar chart)
 const leadsByStatus = Object.entries(
   myLeads.reduce((acc, cur) => {
     const status = cur.status || "Unknown";
@@ -142,9 +139,6 @@ function handleLeadUploaded(countToAdd = 1) {
   localStorage.setItem('totalLeadsUploaded', newTotal);
   setTotalLeadsUploaded(newTotal);
 }
-
-
-
 
 // When you pause a session
 function handlePausedSession() {
@@ -405,28 +399,50 @@ const handleBulkUpload = async () => {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    if (!isPaused) {
-      // --- PAUSE: Log pause, increment all-time counter ---
-      axios.post(`${BASE_URL}/api/pause-logs/save`, {
-        pausedAt: now.toISOString()
-      }, { headers })
-        .then(() => toast.info('⏸️ Paused'))
-        .catch(err => {
-          console.error('Pause error:', err);
-          toast.error('Pause failed');
-        });
+   if (!isPaused) {
+  // --- PAUSE: Log pause ---
+  axios.post(`${BASE_URL}/api/pause-logs/save`, {
+    pausedAt: now.toISOString()
+  }, { headers })
+    .then(() => toast.info('⏸️ Paused'))
+    .catch(err => {
+      console.error('Pause error:', err);
+      toast.error('Pause failed');
+    });
 
-      // Increment the all-time paused sessions counter
-  let total = 0;
-  if (typeof window !== "undefined") {
-    total = parseInt(localStorage.getItem('totalPausedSessions') || '0', 10);
-    total += 1;
-    localStorage.setItem('totalPausedSessions', total);
+  // Calculate duration from lead timer start (example)
+  const leadTimerStartString = localStorage.getItem('leadTimerStart'); // or state variable
+  if (leadTimerStartString) {
+    const leadTimerStart = new Date(leadTimerStartString);
+    const durationSeconds = Math.floor((now - leadTimerStart) / 1000);
+
+    // Get current lead info (replace this with your actual current lead info)
+    const currentLeadId = localStorage.getItem('currentLeadId');
+    const currentLeadName = localStorage.getItem('currentLeadName');
+    const stoppedByName = loggedInUser.name;
+
+    if (currentLeadId && currentLeadName) {
+      axios.post(`${BASE_URL}/api/timer-logs/save`, {
+        leadId: currentLeadId,
+        leadName: currentLeadName,
+        stoppedByName,
+        duration: durationSeconds,
+      }, { headers })
+      .then(() => toast.info('Timer log saved'))
+      .catch(() => toast.error('Failed to save timer log'));
+    }
   }
-  setTotalPausedSessions(total);
+      // Increment paused sessions counter
+      let total = 0;
+      if (typeof window !== "undefined") {
+        total = parseInt(localStorage.getItem('totalPausedSessions') || '0', 10);
+        total += 1;
+        localStorage.setItem('totalPausedSessions', total);
+      }
+      setTotalPausedSessions(total);
 
     } else {
-      // --- RESUME: Log resume, but don't touch the counter ---
+      // --- RESUME: Log resume + paused duration ---
       const last = pauseHistory[pauseHistory.length - 1];
       if (last && !last.resumedAt) {
         const pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
@@ -443,7 +459,7 @@ const handleBulkUpload = async () => {
       }
     }
 
-    // --- Always update pauseHistory & toggle isPaused ---
+    // Update pauseHistory state locally
     setPauseHistory(prev => {
       const updated = [...prev];
       if (!isPaused) {

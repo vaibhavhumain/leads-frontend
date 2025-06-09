@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState , useRef} from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
 import { toast } from 'react-toastify';
@@ -34,6 +34,8 @@ const LeadDetails = () => {
     onSelect: null,  // callback for when a contact is selected
     actionLabel: '',
   });
+  const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const intervalRefs = useRef({});
 useEffect(() => {
   const storedUser = localStorage.getItem('user');
   if (storedUser) {
@@ -54,60 +56,122 @@ const initializeTimers = (leads) => {
   });
   setLeadTimers(timers);
 };
+const startTimer = (leadId) => {
+  // If timer running, do nothing
+  if (intervalRefs.current[leadId]) return;
 
-// At timer start
-// At timer start
-// 
+  intervalRefs.current[leadId] = setInterval(() => {
+    setLeadTimers(prev => ({
+      ...prev,
+      [leadId]: {
+        ...prev[leadId],
+        time: (prev[leadId]?.time || 0) + 1,
+        running: true,
+        paused: false,
+      },
+    }));
+  }, 1000);
 
- const startimer = () => {
-    if (timer.running) return;
-    const intervalId = setInterval(() => {
-      setTimer(prev => ({
-        ...prev,
-        time: prev.time + 1,
-      }));
-    }, 1000);
-    setTimer({
+  setLeadTimers(prev => ({
+    ...prev,
+    [leadId]: {
+      ...prev[leadId],
       running: true,
-      time: 0,
-      startTime: new Date(),
-      intervalId
-    });
-  };
-
+      paused: false,
+    },
+  }));
+};
 
 const pauseTimer = (leadId) => {
-  const { intervalId } = leadTimers[leadId] || {};
-  if (intervalId) clearInterval(intervalId);
-
+  if (intervalRefs.current[leadId]) {
+    clearInterval(intervalRefs.current[leadId]);
+    intervalRefs.current[leadId] = null;
+  }
   setLeadTimers(prev => ({
     ...prev,
     [leadId]: {
       ...prev[leadId],
       running: false,
       paused: true,
-      intervalId: null,
-    }
+    },
   }));
 };
 
 const resumeTimer = (leadId) => {
-  if (!leadTimers[leadId]?.paused) return;
-  startTimer(leadId);
+  if (intervalRefs.current[leadId]) return; // already running
+  if (!leadTimers[leadId]?.paused) return; // only resume if paused
+
+  intervalRefs.current[leadId] = setInterval(() => {
+    setLeadTimers(prev => ({
+      ...prev,
+      [leadId]: {
+        ...prev[leadId],
+        time: (prev[leadId]?.time || 0) + 1,
+        running: true,
+        paused: false,
+      },
+    }));
+  }, 1000);
+
+  setLeadTimers(prev => ({
+    ...prev,
+    [leadId]: {
+      ...prev[leadId],
+      running: true,
+      paused: false,
+    },
+  }));
 };
 
-const stopTimer = () => {
-    if (!timer.running) return;
-    clearInterval(timer.intervalId);
-    setTimer({
+
+const stopTimer = async (leadId) => {
+  if (intervalRefs.current[leadId]) {
+    clearInterval(intervalRefs.current[leadId]);
+    intervalRefs.current[leadId] = null;
+  }
+
+  // Get the current time spent on this lead's timer
+  const duration = leadTimers[leadId]?.time || 0;
+
+  setLeadTimers(prev => ({
+    ...prev,
+    [leadId]: {
+      time: 0,
       running: false,
-      time: timer.time,
-      startTime: timer.startTime,
-      intervalId: null
+      paused: false,
+    },
+  }));
+
+  if (duration > 0) {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${BASE_URL}/api/timer-logs/save`, {
+        leadId,
+        leadName: lead.leadDetails?.clientName || 'Unknown',
+        stoppedByName: loggedInUser.name || 'Unknown',
+        duration,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Optionally, notify success or refresh logs
+      // e.g. toast.success('Timer log saved successfully');
+    } catch (err) {
+      console.error('Failed to save timer log:', err);
+      // Optionally notify user about failure
+    }
+  }
+};
+// Cleanup on unmount:
+useEffect(() => {
+  return () => {
+    Object.values(intervalRefs.current).forEach(intervalId => {
+      if (intervalId) clearInterval(intervalId);
     });
   };
+}, []);
 
-
+ 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -361,11 +425,12 @@ useEffect(() => {
   ⏱️ {formatTime(leadTimers[lead._id]?.time || 0)}
 </div>
 <div className="flex gap-2 mt-2">
-  <button onClick={() => startimer(lead._id)} className="px-2 py-1 bg-green-500 text-white rounded">Start</button>
-  <button onClick={() => pauseTimer(lead._id)} className="px-2 py-1 bg-yellow-400 text-white rounded">Pause</button>
-  <button onClick={() => resumeTimer(lead._id)} className="px-2 py-1 bg-blue-500 text-white rounded">Resume</button>
-  <button onClick={() => stopTimer(lead._id)} className="px-2 py-1 bg-red-600 text-white rounded">Stop</button>
-</div>
+  <button onClick={() => startTimer(lead._id)} className="px-2 py-1 bg-green-500 text-white rounded">Start</button>
+<button onClick={() => pauseTimer(lead._id)} className="px-2 py-1 bg-yellow-400 text-white rounded">Pause</button>
+<button onClick={() => resumeTimer(lead._id)} className="px-2 py-1 bg-blue-500 text-white rounded">Resume</button>
+<button onClick={() => stopTimer(lead._id)} className="px-2 py-1 bg-red-600 text-white rounded">Stop</button>
+
+</div>    
  
       {/* Status */}
       <div className="mb-6">
