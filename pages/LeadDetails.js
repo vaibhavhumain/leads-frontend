@@ -435,8 +435,29 @@ useEffect(() => {
 <button onClick={() => stopTimer(lead._id)} className="px-2 py-1 bg-red-600 text-white rounded">Stop</button>
 
 </div>    
- 
-      {/* Status */}
+       
+      {/* Connection */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-1">🔌 Connection</label>
+        <select
+          value={selectedConnection}
+          onChange={(e) => setSelectedConnection(e.target.value)}
+          className="w-full border border-green-300 px-3 py-2 rounded focus:ring-2 focus:ring-green-400"
+        >
+          <option value="">-- Select Connection --</option>
+          <option value="Connected">✅ Connected</option>
+          <option value="Not Connected">❌ Not Connected</option>
+        </select>
+        <button
+          onClick={handleConnectionUpdate}
+          className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded shadow-md font-semibold"
+        >
+          💾 Save Connection
+        </button>
+      </div>
+
+      {/*Status*/}
+
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">🎯 Status</label>
         <select
@@ -457,25 +478,6 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Connection */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">🔌 Connection</label>
-        <select
-          value={selectedConnection}
-          onChange={(e) => setSelectedConnection(e.target.value)}
-          className="w-full border border-green-300 px-3 py-2 rounded focus:ring-2 focus:ring-green-400"
-        >
-          <option value="">-- Select Connection --</option>
-          <option value="Connected">✅ Connected</option>
-          <option value="Not Connected">❌ Not Connected</option>
-        </select>
-        <button
-          onClick={handleConnectionUpdate}
-          className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded shadow-md font-semibold"
-        >
-          💾 Save Connection
-        </button>
-      </div>
 
       {/* Follow-Up Section */}
       <div className="mb-8">
