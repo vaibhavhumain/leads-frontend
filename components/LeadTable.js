@@ -963,15 +963,23 @@ return (
       toast.error("No valid 10-digit contact found!");
       return;
     }
-    sendWeeklyReminder(validContacts[0].number, lead.leadDetails?.clientName || '');
+    if (validContacts.length === 1) {
+      sendWeeklyReminder(validContacts[0].number, lead.leadDetails?.clientName || '');
+    } else {
+      setContactPicker({
+        open: true,
+        options: validContacts,
+        onSelect: (number) => sendWeeklyReminder(number, lead.leadDetails?.clientName || ''),
+        actionLabel: "Send Weekly Reminder",
+      });
+    }
   }}
   className="flex items-center gap-2 rounded-xl px-5 py-2 text-base font-semibold text-white bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-500 shadow-lg transition-all duration-150 hover:scale-105 hover:shadow-xl active:scale-97 focus:outline-none whitespace-nowrap"
 >
   <span role="img" aria-label="reminder">⏰</span>
   Reminder
 </button>
-
-
+  
   <button
     onClick={() => {
       localStorage.setItem(
