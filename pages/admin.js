@@ -4,6 +4,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
 import BASE_URL from '../utils/api';
 import { motion } from 'framer-motion';
+import {FaUser} from 'react-icons/fa';
+import { MdAlarm } from 'react-icons/md';
 
 const Admin = () => {
   const [leads, setLeads] = useState([]);
@@ -11,6 +13,8 @@ const Admin = () => {
   const [error, setError] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [timerLogs, setTimerLogs] = useState([]);
+  const [openRemarksIdx, setOpenRemarksIdx] = useState(null);
+
 
   useEffect(() => {
     const fetchAdminLeads = async () => {
@@ -103,6 +107,10 @@ const getCreatorNameFromLog = (log) => {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-md p-4 overflow-auto">
+              <h2 className="text-2xl font-bold text-blue-700 mb-4 flex items-center gap-2">
+  <FaUser />
+  <h2 className='text-red-600'>Lead Details</h2>
+</h2>
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-indigo-50">
@@ -115,37 +123,76 @@ const getCreatorNameFromLog = (log) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {leads.map((lead) => (
-                    <tr key={lead._id} className="even:bg-indigo-50 align-top">
-                      <td className="p-2 border font-semibold">{lead.leadDetails?.clientName || 'N/A'}</td>
-                      <td className="p-2 border">{lead.createdBy?.name || 'N/A'}</td>
-                      <td className="p-2 border">
-                        {formatDuration(timerDurationByLead[lead._id]?.totalDuration || 0)}
-                      </td>
-                      <td className="p-2 border">{lead.status || 'N/A'}</td>
-                      <td className="p-2 border max-w-xs">
-                        {lead.followUps && lead.followUps.length > 0 ? (
-                          <ul className="list-disc pl-5 max-h-32 overflow-y-auto text-xs text-gray-700">
-                            {lead.followUps.map((fup, idx) => (
-                              <li key={idx}>
-                                <strong>{fup.date ? new Date(fup.date).toLocaleDateString() : 'No Date'}:</strong>{' '}
-                                {fup.notes}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <span className="text-gray-400 italic">No follow-ups</span>
-                        )}
-                      </td>
-                      <td className="p-2 border text-center">{lead.remarksHistory ? lead.remarksHistory.length : 0}</td>
-                    </tr>
+  {leads.map((lead, leadIdx) => (
+    <tr key={lead._id} className="even:bg-indigo-50 align-top">
+      <td className="p-2 border font-semibold">{lead.leadDetails?.clientName || 'N/A'}</td>
+      <td className="p-2 border">{lead.createdBy?.name || 'N/A'}</td>
+      <td className="p-2 border">
+        {formatDuration(timerDurationByLead[lead._id]?.totalDuration || 0)}
+      </td>
+      <td className="p-2 border">{lead.status || 'N/A'}</td>
+      <td className="p-2 border max-w-xs">
+        {lead.followUps && lead.followUps.length > 0 ? (
+          <ul className="list-disc pl-5 max-h-32 overflow-y-auto text-xs text-gray-700">
+            {lead.followUps.map((fup, idx) => (
+              <li key={idx}>
+                <strong>{fup.date ? new Date(fup.date).toLocaleDateString() : 'No Date'}:</strong>{' '}
+                {fup.notes}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="text-gray-400 italic">No follow-ups</span>
+        )}
+      </td>
+      <td className="p-2 border text-center">
+        {lead.remarksHistory && lead.remarksHistory.length > 0 ? (
+          <>
+            <button
+              className="text-blue-600 underline"
+              onClick={() => setOpenRemarksIdx(openRemarksIdx === leadIdx ? null : leadIdx)}
+            >
+              {lead.remarksHistory.length} remarks
+            </button>
+            {openRemarksIdx === leadIdx && (
+              <div className="mt-2 max-h-40 overflow-y-auto bg-blue-50 rounded p-2 text-left shadow-inner">
+                <ul>
+                  {lead.remarksHistory.map((remark, rIdx) => (
+                    <li key={rIdx} className="mb-2 border-b border-blue-200 pb-1">
+                      <div className="font-semibold text-sm text-blue-800">
+                        {remark.user?.name || 'Forwarded User'}
+                        <span className="ml-2 text-gray-500 text-xs">
+                          {remark.date
+                            ? new Date(remark.date).toLocaleString()
+                            : (remark.createdAt
+                                ? new Date(remark.createdAt).toLocaleString()
+                                : '')}
+                        </span>
+                      </div>
+                      <div className="text-gray-800 text-sm">
+                        {remark.remark}
+                      </div>
+                    </li>
                   ))}
-                </tbody>
+                </ul>
+              </div>
+            )}
+          </>
+        ) : (
+          <span className="text-gray-400 italic">No remarks</span>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
               </table>
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-4 mt-8">
-              <h2 className="text-2xl font-bold text-blue-700 mb-4">⏰ Lead Timer Stop Logs</h2>
+              <h2 className="text-2xl font-bold mb-4 text-blue-700 flex items-center gap-2">
+  <MdAlarm />
+  <h2 className='text-red-700'>Lead Timer Stop Logs</h2>
+</h2>
               {timerLogs.length === 0 ? (
                 <p className="text-gray-500">No timer logs yet.</p>
               ) : (
