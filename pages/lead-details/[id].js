@@ -4,6 +4,8 @@ import axios from 'axios';
 import BASE_URL from '../../utils/api';
 import { motion } from 'framer-motion';
 import {  toast } from 'react-toastify';
+import ProtectedRoute from '../../components/ProtectedRoute';
+import Navbar from '../../components/Navbar';
 const LeadDetailsPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -13,6 +15,7 @@ const LeadDetailsPage = () => {
   const [updating, setUpdating] = useState(false);
   const [remarkDate, setRemarkDate] = useState(new Date().toISOString().split("T")[0]); 
   const [users, setUsers] = useState([]);
+  const [totalLeadsUploaded , setTotalLeadsUploaded] = useState();
 
 
   useEffect(() => {
@@ -91,38 +94,40 @@ const LeadDetailsPage = () => {
   };
 
   return (
+    <ProtectedRoute>
+      <Navbar/>
     <motion.div
-      className="p-6 max-w-6xl mx-auto text-left bg-white rounded-lg shadow-lg"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.h1
-        className="text-3xl font-bold mb-6 text-indigo-600 shadow-lg shadow-indigo-200 p-3 rounded-lg bg-white w-fit mx-auto"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-      >
-        Lead Details
-      </motion.h1>
+  className="p-6 max-w-6xl mx-auto text-left bg-gradient-to-br from-white to-indigo-50 rounded-2xl shadow-xl"
+  initial={{ opacity: 0, y: 40 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5 }}
+>
+  <motion.h1
+    className="text-4xl font-bold mb-8 text-indigo-700 p-4 bg-white rounded-xl shadow-lg w-fit mx-auto tracking-tight"
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.6, ease: 'easeOut' }}
+  >
+    🚀 Lead Details
+  </motion.h1>
 
       {/* Details Table */}
-      <div className="overflow-x-auto rounded-xl shadow border border-gray-200">
-        <table className="min-w-full text-sm text-gray-700">
-          <thead className="bg-indigo-100 text-indigo-700">
-            <tr>
-              {['Name', 'Phone', 'Company', 'Status', 'Date', 'Created By'].map(
-                (label, i) => (
-                  <motion.th
-                    key={label}
-                    className="px-6 py-4 text-left font-semibold"
-                    initial="hidden"
-                    animate="visible"
-                    custom={i}
-                    variants={headingVariants}
-                  >
-                    {label}
-                  </motion.th>
+<div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-200 bg-white">
+  <table className="min-w-full text-sm text-gray-800">
+    <thead className="bg-indigo-100 text-indigo-800">
+      <tr>
+        {['Name', 'Phone', 'Company', 'Status', 'Date', 'Created By'].map(
+          (label, i) => (
+            <motion.th
+              key={label}
+              className="px-6 py-4 text-left font-semibold tracking-wide"
+              initial="hidden"
+              animate="visible"
+              custom={i}
+              variants={headingVariants}
+            >
+              {label}
+            </motion.th>
                 )
               )}
             </tr>
@@ -141,7 +146,7 @@ const LeadDetailsPage = () => {
       ))
     : lead.leadDetails?.contact || '—'}
 </td>
-              <td className="px-6 py-4">{lead.leadDetails?.company || '—'}</td>
+              <td className="px-6 py-4">{lead.leadDetails?.companyName || '—'}</td>
               <td className="px-6 py-4">{lead.status || '—'}</td>
               {/* <td className="px-6 py-4">{lead.remarks || '—'}</td> */}
               <td className="px-6 py-4">
@@ -154,78 +159,80 @@ const LeadDetailsPage = () => {
       </div>
 
       {/* Remarks Input Section */}
-      <div className="mt-6 bg-gray-50 p-4 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-2">Add Remarks</h2>
-        <textarea
-          className="w-full p-2 border rounded resize-none mb-3"
-          rows="3"
-          placeholder="Enter your remarks..."
-          value={remarkInput}
-          onChange={(e) => setRemarkInput(e.target.value)}
-        ></textarea>
-        <input
-  type="date"
-  className="mb-3 border rounded px-2 py-1"
-  value={remarkDate}
-  onChange={(e) => setRemarkDate(e.target.value)}
-/>
+      <div className="mt-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+  <h2 className="text-xl font-semibold mb-4 text-indigo-700">🗒️ Add Remarks</h2>
+  <textarea
+    className="w-full p-3 border rounded-lg resize-none mb-4 focus:ring-2 focus:ring-indigo-300"
+    rows="3"
+    placeholder="Enter your remarks..."
+    value={remarkInput}
+    onChange={(e) => setRemarkInput(e.target.value)}
+  ></textarea>
+  <input
+    type="date"
+    className="mb-4 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300"
+    value={remarkDate}
+    onChange={(e) => setRemarkDate(e.target.value)}
+  />
+  <button
+    onClick={handleRemarkSubmit}
+    disabled={updating}
+    className="px-5 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 disabled:bg-gray-400 transition"
+  >
+    {updating ? 'Saving...' : 'Submit Remark'}
+  </button>
 
-
-        <button
-          onClick={handleRemarkSubmit}
-          disabled={updating}
-          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400 mx-4"
-        >
-          {updating ? 'Saving...' : 'Submit Remark'}
-        </button>
-
+{/* lead remarks history */}
 {lead?.remarksHistory?.length > 0 && (
-  <div className="mt-10 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 rounded-xl shadow-inner border border-indigo-100">
-    <h3 className="text-lg font-semibold text-indigo-700 mb-4">📝 Remarks History</h3>
-    <div className="space-y-3 max-h-60 overflow-y-auto">
+  <div className="mt-10 p-6 rounded-2xl bg-indigo-50 border border-indigo-200 shadow-inner">
+    <h3 className="text-lg font-semibold text-indigo-800 mb-4">📜 Remarks History</h3>
+    
+    <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
       {lead.remarksHistory.map((entry, idx) => (
         <div
           key={idx}
-          className="border-b pb-2 last:border-none text-sm text-gray-700 bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200"
-        > 
-          <p className="font-medium text-indigo-600">By: {entry.updatedBy?.name || 'Unknown'}</p>
-          <p className="italic text-gray-800">"{entry.remarks}"</p>
+          className="p-4 bg-white border rounded-xl shadow-sm text-sm"
+        >
+          <p className="flex items-center gap-2 font-semibold text-blue-600 mb-1">
+            👤 {entry.updatedBy?.name || 'Unknown'}
+          </p>
+          <p className="text-gray-800 italic mb-1">"{entry.remarks}"</p>
           <p className="text-xs text-gray-500">📅 {new Date(entry.date).toLocaleDateString()}</p>
         </div>
       ))}
     </div>
-  </div>
-)}
 
-{/* Follow-ups by the person who forwarded the lead */}
-{lead.createdBy && (
-  <div className="mt-6">
-    <h4 className="text-sm font-semibold text-orange-600 mb-2">📤 By {lead.createdBy.name} (Forwarded the lead)</h4>
-    {lead.followUps.filter(fu => fu.by?._id === lead.createdBy._id).length === 0 ? (
-      <p className="text-xs text-gray-500 italic">No follow-ups by {lead.createdBy.name}</p>
-    ) : (
-      lead.followUps
-        .filter(fu => fu.by?._id === lead.createdBy._id)
-        .map((fup, idx) => (
-          <div key={idx} className="flex items-start gap-3 text-sm bg-white px-4 py-3 mb-2 rounded-lg shadow-sm border border-gray-200">
-            <span className="font-medium text-gray-800">{fup.date.split('T')[0]}</span>
-            <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
-          </div>
-        ))
+    {/* Forwarded By Section inside Remarks History */}
+    {lead.createdBy && (
+      <div className="mt-8">
+        <h4 className="text-sm font-semibold text-orange-600 mb-2">📤 Forwarded by {lead.createdBy.name}</h4>
+        {lead.followUps.filter(fu => fu.by?._id === lead.createdBy._id).length === 0 ? (
+          <p className="text-xs text-gray-500 italic">No follow-ups by {lead.createdBy.name}</p>
+        ) : (
+          lead.followUps
+            .filter(fu => fu.by?._id === lead.createdBy._id)
+            .map((fup, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-4 text-sm bg-white p-4 mb-2 rounded-xl border border-gray-200 shadow-sm"
+              >
+                <span className="font-medium text-gray-800">{fup.date.split('T')[0]}</span>
+                <span className="text-gray-600 text-xs">📝 {fup.notes}</span>
+              </div>
+            ))
+        )}
+      </div>
     )}
   </div>
 )}
 
 
-
         {lead?.isFrozen === false && (
-          <p className="text-green-600 mt-3 font-medium">Lead is now unfrozen.</p>
-        )}
+  <p className="text-green-600 mt-4 font-medium italic">✅ Lead is now unfrozen.</p>
+)}
       </div>
-       {/* <div className="min-h-screen p-6 bg-gray-50">
-      <LeadDetailsCard lead={lead} users={users} setLeads={() => {}} />
-    </div> */}
     </motion.div>
+    </ProtectedRoute>
   );
 };
 

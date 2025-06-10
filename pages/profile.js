@@ -144,28 +144,8 @@ const toggleDropdown = (leadId) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          My Profile
+          Sales Profile
         </motion.h1>
-
-        
-        {loadingUser ? (
-          <div className="flex justify-center items-center h-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600"></div>
-          </div>
-        ) : user ? (
-          <motion.div
-            className="bg-white shadow-lg rounded p-6 mb-8"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <p className="text-lg"><strong>Name:</strong> {user.name}</p>
-            <p className="text-lg"><strong>Email:</strong> {user.email}</p>
-            
-          </motion.div>
-        ) : (
-          <p>Error loading user info.</p>
-        )}
 
         <motion.h2
           className="text-2xl font-semibold mb-4 text-gray-700"
