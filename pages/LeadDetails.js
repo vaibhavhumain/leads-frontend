@@ -28,6 +28,7 @@ const LeadDetails = () => {
   const [loggedInUserId, setLoggedInUserId] = useState(null);
   const [leadTimers, setLeadTimers] = useState({});
   const [timer, setTimer] = useState({ running: false, time: 0, startTime: null, intervalId: null });
+  const intervalRefs = useRef({});
   const [contactPicker, setContactPicker] = useState({
     open: false,
     options: [],
