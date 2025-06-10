@@ -16,6 +16,8 @@ const Navbar = ({ loggedInUser }) => {
   const [userName, setUserName] = useState('');
   const [randomEmoji, setRandomEmoji] = useState('');
   const router = useRouter();
+  const isProfilePage = router.pathname === '/profile';
+
 
   const emojis = [
     '😄', '😁', '😎', '🤩', '🥳', '😇', '😊', '🙌', '👋', '👍',
@@ -102,13 +104,15 @@ useEffect(() => {
   </Link>
 )}
 
-              {/* Profile */}
-              <Link href="/profile" legacyBehavior>
-                <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-blue-500 hover:text-white hover:scale-105">
-                  <UserCircleIcon className="w-5 h-5" />
-                  <span className="hidden sm:inline">Profile</span>
-                </a>
-              </Link>
+             {!isProfilePage && (
+  <Link href="/profile" legacyBehavior>
+    <a className="flex items-center gap-1 px-3 py-1 rounded transition-all duration-200 ease-in-out hover:bg-blue-500 hover:text-white hover:scale-105">
+      <UserCircleIcon className="w-5 h-5" />
+      <span className="hidden sm:inline">Profile</span>
+    </a>
+  </Link>
+)}
+
 
               {/* Logout */}
               <button

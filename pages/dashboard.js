@@ -333,9 +333,7 @@ const handleBulkUpload = async () => {
   {loggedInUser?.name || 'User'} 
 </div>
 
-              <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-indigo-600 font-semibold hover:bg-indigo-50">
-                <FiHome /> Dashboard
-              </a>
+             
               <button
   onClick={() => router.push('/profile')}
   className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-gray-700 font-semibold hover:bg-indigo-50"

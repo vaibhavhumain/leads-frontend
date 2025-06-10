@@ -6,6 +6,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BASE_URL from '../utils/api'; 
 import { HomeIcon } from '@heroicons/react/24/solid';
+import ProtectedRoute from '../components/ProtectedRoute';
+import Navbar from '../components/Navbar';
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
@@ -118,9 +120,10 @@ const toggleDropdown = (leadId) => {
 };
 
   return (
+    <ProtectedRoute>
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-200">
       <ToastContainer />
-
+      <Navbar/>
       {/* Background */}
       <motion.div
         className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-purple-300 opacity-30 rounded-full blur-3xl z-0"
@@ -144,17 +147,7 @@ const toggleDropdown = (leadId) => {
           My Profile
         </motion.h1>
 
-        {/* Dashboard Button with Icon */}
-        <motion.button
-          onClick={() => router.push('/dashboard')}
-          className="mb-6 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm shadow-md"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <HomeIcon className="w-5 h-5" />
-          Go to Dashboard
-        </motion.button>
-
+        
         {loadingUser ? (
           <div className="flex justify-center items-center h-20">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600"></div>
@@ -271,6 +264,7 @@ const toggleDropdown = (leadId) => {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 };
 export default ProfilePage;
