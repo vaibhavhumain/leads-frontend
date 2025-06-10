@@ -16,6 +16,43 @@ const LeadDetailsPage = () => {
   const [remarkDate, setRemarkDate] = useState(new Date().toISOString().split("T")[0]); 
   const [users, setUsers] = useState([]);
   const [totalLeadsUploaded , setTotalLeadsUploaded] = useState();
+  const [activities, setActivities] = useState([]); 
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityForm, setActivityForm] = useState({
+  type: '',
+  date: '',
+  location: '',
+  remarks: '',
+  outcome: '',
+});
+const [addingActivity, setAddingActivity] = useState(false);
+
+const handleAddActivity = async () => {
+  const token = localStorage.getItem('token');
+  if (!activityForm.type || !activityForm.date) {
+    toast.warning('Please select a type and date');
+    return;
+  }
+  try {
+    setAddingActivity(true);
+    await axios.post(`${BASE_URL}/api/leads/${id}/activities`, activityForm, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    toast.success('Activity added!');
+    setActivityForm({ type: '', date: '', location: '', remarks: '', outcome: '' });
+
+    // Refresh activities
+    const res = await axios.get(`${BASE_URL}/api/leads/${id}/activities`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setActivities(res.data.activities || []);
+  } catch (err) {
+    toast.error('Failed to add activity');
+    console.error(err);
+  } finally {
+    setAddingActivity(false);
+  }
+};
 
 
   useEffect(() => {
@@ -42,6 +79,25 @@ const LeadDetailsPage = () => {
   };
 
   fetchLead();
+}, [id]);
+
+useEffect(() => {
+  if (!id) return;
+  const fetchActivities = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/leads/${id}/activities`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setActivities(res.data.activities || []);
+    } catch (err) {
+      console.error('Error fetching activities:', err);
+      setActivities([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+  fetchActivities();
 }, [id]);
 
 
@@ -116,47 +172,198 @@ const LeadDetailsPage = () => {
   <table className="min-w-full text-sm text-gray-800">
     <thead className="bg-indigo-100 text-indigo-800">
       <tr>
-        {['Name', 'Phone', 'Company', 'Status', 'Date', 'Created By'].map(
-          (label, i) => (
-            <motion.th
-              key={label}
-              className="px-6 py-4 text-left font-semibold tracking-wide"
-              initial="hidden"
-              animate="visible"
-              custom={i}
-              variants={headingVariants}
-            >
-              {label}
-            </motion.th>
-                )
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="px-6 py-4">{lead.leadDetails?.clientName || '—'}</td>
-<td className="px-6 py-4">
-  {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0
-    ? lead.leadDetails.contacts.map((c, idx) => (
-        <span key={idx}>
-          {c.number}
-          {c.label ? <span className="ml-1 text-xs text-gray-500">({c.label})</span> : null}
-          {idx !== lead.leadDetails.contacts.length - 1 && <span>, </span>}
-        </span>
-      ))
-    : lead.leadDetails?.contact || '—'}
-</td>
-              <td className="px-6 py-4">{lead.leadDetails?.companyName || '—'}</td>
-              <td className="px-6 py-4">{lead.status || '—'}</td>
-              {/* <td className="px-6 py-4">{lead.remarks || '—'}</td> */}
-              <td className="px-6 py-4">
-                {lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}
-              </td>
-              <td className="px-6 py-4">{lead.createdBy?.name || '—'}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={0}
+          variants={headingVariants}
+        >Name</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={1}
+          variants={headingVariants}
+        >Phone</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={2}
+          variants={headingVariants}
+        >Company</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={3}
+          variants={headingVariants}
+        >Status</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={4}
+          variants={headingVariants}
+        >Date</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={5}
+          variants={headingVariants}
+        >Created By</motion.th>
+        {/* Add columns for Activity below */}
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={6}
+          variants={headingVariants}
+        >Activity Type</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={7}
+          variants={headingVariants}
+        >By</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={8}
+          variants={headingVariants}
+        >Location</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={9}
+          variants={headingVariants}
+        >Outcome</motion.th>
+        <motion.th
+          className="px-6 py-4 text-left font-semibold tracking-wide"
+          initial="hidden"
+          animate="visible"
+          custom={10}
+          variants={headingVariants}
+        >Remarks</motion.th>
+      </tr>
+    </thead>
+    <tbody>
+  {(activities && activities.length > 0 ? activities : [null]).map((activity, idx) => (
+    <tr key={idx} className={activity ? "bg-blue-50" : "bg-white"}>
+      {/* Name */}
+      <td className="px-6 py-4 font-bold text-indigo-900">
+        {lead.leadDetails?.clientName || '—'}
+      </td>
+      {/* Phone */}
+      <td className="px-6 py-4">
+        {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0
+          ? lead.leadDetails.contacts.map((c, i) => (
+              <div key={i} style={{ whiteSpace: 'nowrap' }}>
+                <span
+                  style={{
+                    fontWeight: i === 0 ? 700 : 400,
+                    display: 'inline-block',
+                  }}
+                >
+                  {c.number}
+                </span>
+                <span className="ml-1 text-xs text-gray-500">
+                  ({c.label})
+                </span>
+                {i === 0 && <br />}
+              </div>
+            ))
+          : lead.leadDetails?.contact || '—'}
+      </td>
+      {/* Company */}
+      <td className="px-6 py-4">{lead.leadDetails?.companyName || '—'}</td>
+      {/* Status */}
+      <td className="px-6 py-4">{lead.status || '—'}</td>
+      {/* Date */}
+      <td className="px-6 py-4">
+        {lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}
+      </td>
+      {/* Created By */}
+      <td className="px-6 py-4">{lead.createdBy?.name || '—'}</td>
+      {/* Activity Type */}
+      <td className="px-6 py-4 font-semibold">
+        {activity
+          ? activity.type === 'factory_visit'
+            ? (<span>🏭 <b>Factory Visit</b></span>)
+            : (<span>🤝 <b>In-Person Meeting</b></span>)
+          : <span className="text-gray-400">No activity</span>
+        }
+      </td>
+      {/* By */}
+      <td className="px-6 py-4">{activity?.conductedBy?.name || '-'}</td>
+      {/* Location */}
+      <td className="px-6 py-4">{activity?.location || '-'}</td>
+      {/* Outcome */}
+      <td className="px-6 py-4">{activity?.outcome || '-'}</td>
+      {/* Remarks */}
+      <td className="px-6 py-4">{activity?.remarks || '-'}</td>
+    </tr>
+  ))}
+</tbody>
+  </table>
+</div>
+
+
+      {/* Add Factory Visit / Meeting */}
+<div className="mt-8 mb-8 bg-white p-6 rounded-2xl border border-blue-100 shadow-md">
+  <h2 className="text-lg font-semibold text-indigo-700 mb-4">➕ Add Visit / Meeting</h2>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <select
+      className="border rounded-lg px-3 py-2"
+      value={activityForm?.type || ''}
+      onChange={e => setActivityForm(prev => ({ ...prev, type: e.target.value }))}
+    >
+      <option value="">-- Select Type --</option>
+      <option value="factory_visit">🏭 Factory Visit</option>
+      <option value="in_person_meeting">🤝 In-Person Meeting</option>
+    </select>
+    <input
+      type="date"
+      className="border rounded-lg px-3 py-2"
+      value={activityForm?.date || ''}
+      onChange={e => setActivityForm(prev => ({ ...prev, date: e.target.value }))}
+    />
+    <input
+      type="text"
+      className="border rounded-lg px-3 py-2"
+      placeholder="Location (optional)"
+      value={activityForm?.location || ''}
+      onChange={e => setActivityForm(prev => ({ ...prev, location: e.target.value }))}
+    />
+    <input
+      type="text"
+      className="border rounded-lg px-3 py-2"
+      placeholder="Outcome (optional)"
+      value={activityForm?.outcome || ''}
+      onChange={e => setActivityForm(prev => ({ ...prev, outcome: e.target.value }))}
+    />
+  </div>
+  <textarea
+    className="w-full mt-4 p-3 border rounded-lg resize-none"
+    rows="2"
+    placeholder="Remarks (optional)"
+    value={activityForm?.remarks || ''}
+    onChange={e => setActivityForm(prev => ({ ...prev, remarks: e.target.value }))}
+  />
+  <button
+    className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-lg shadow"
+    onClick={handleAddActivity}
+    disabled={addingActivity}
+  >
+    {addingActivity ? 'Adding...' : 'Add Activity'}
+  </button>
+</div>
+
 
       {/* Remarks Input Section */}
       <div className="mt-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">

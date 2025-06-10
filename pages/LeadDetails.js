@@ -38,7 +38,28 @@ const LeadDetails = () => {
     actionLabel: '',
   });
   const [loggedInUser, setLoggedInUser] = useState(null);
-  
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
+  useEffect(() => {
+  if (!lead || !lead._id) return;
+  setActivityLoading(true);
+  const fetchActivities = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/leads/${lead._id}/activities`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setActivities(res.data.activities || []);
+    } catch (err) {
+      setActivities([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+  fetchActivities();
+}, [lead]);
+
 useEffect(() => {
   if (typeof window !== 'undefined') {
     const storedUser = localStorage.getItem('user');
@@ -578,6 +599,50 @@ useEffect(() => {
     )}
   </div>
 )}
+
+{/* Visits & Meetings Section */}
+<div className="mb-8">
+  <h3 className="text-lg font-bold text-indigo-700 mb-3 flex items-center gap-2">
+    🏭🤝 Visits & Meetings
+  </h3>
+  {activityLoading ? (
+    <div className="text-gray-500 text-sm">Loading activities...</div>
+  ) : activities.length === 0 ? (
+    <div className="italic text-gray-400">No activities recorded for this lead.</div>
+  ) : (
+    <table className="min-w-full text-sm bg-white border border-indigo-100 rounded-xl overflow-hidden">
+      <thead>
+        <tr className="bg-indigo-50 text-indigo-900">
+          <th className="px-3 py-2 font-semibold text-left">Type</th>
+          <th className="px-3 py-2 font-semibold text-left">By</th>
+          <th className="px-3 py-2 font-semibold text-left">Date</th>
+          <th className="px-3 py-2 font-semibold text-left">Location</th>
+          <th className="px-3 py-2 font-semibold text-left">Outcome</th>
+          <th className="px-3 py-2 font-semibold text-left">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {activities
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .map((act, idx) => (
+          <tr key={idx} className="border-b last:border-b-0">
+            <td className="px-3 py-2 font-semibold">
+              {act.type === 'factory_visit'
+                ? <span>🏭 Factory Visit</span>
+                : <span>🤝 In-Person Meeting</span>}
+            </td>
+            <td className="px-3 py-2">{act.conductedBy?.name || '-'}</td>
+            <td className="px-3 py-2">{act.date ? new Date(act.date).toLocaleDateString() : '-'}</td>
+            <td className="px-3 py-2">{act.location || '-'}</td>
+            <td className="px-3 py-2">{act.outcome || '-'}</td>
+            <td className="px-3 py-2">{act.remarks || '-'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
 
       {/* Forward Section */}
       <div className="mb-2">
