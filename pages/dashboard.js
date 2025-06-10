@@ -13,6 +13,7 @@ import * as XLSX from 'xlsx';
 import {useRouter} from 'next/router';
 import { toast } from 'react-toastify';
 import { BiImport } from "react-icons/bi";
+import NotificationBell from "../components/NotificationBell";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell
@@ -324,7 +325,9 @@ const handleBulkUpload = async () => {
               <span className="text-lg font-bold">Leads Portal</span>
             </div>
             <div className="flex gap-3 items-center">
+               <NotificationBell/>  
               <div className="bg-white px-4 py-2 rounded-2xl shadow flex items-center gap-2 text-gray-700 font-semibold">
+               
   <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
     {/* User's First Initial */}
     {loggedInUser?.name ? loggedInUser.name.charAt(0).toUpperCase() : 'U'}

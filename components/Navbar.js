@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import BASE_URL from '../utils/api';
+import NotificationBell from './NotificationBell'
 import {
   HomeIcon,
   UserCircleIcon,
@@ -82,6 +83,9 @@ useEffect(() => {
 
         {/* Nav Links */}
         <div className="flex items-center gap-5 text-sm font-medium">
+          {isAuthenticated && loggedInUser?.role !== 'admin' && (
+    <NotificationBell />
+  )}
           {isAuthenticated ? (
             <>
               {/* Avatar + Name */}
