@@ -169,148 +169,86 @@ useEffect(() => {
 
       {/* Details Table */}
 <div className="overflow-x-auto rounded-2xl shadow-lg border border-gray-200 bg-white">
-  <table className="min-w-full text-sm text-gray-800">
-    <thead className="bg-indigo-100 text-indigo-800">
-      <tr>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={0}
-          variants={headingVariants}
-        >Name</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={1}
-          variants={headingVariants}
-        >Phone</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={2}
-          variants={headingVariants}
-        >Company</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={3}
-          variants={headingVariants}
-        >Status</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={4}
-          variants={headingVariants}
-        >Date</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={5}
-          variants={headingVariants}
-        >Created By</motion.th>
-        {/* Add columns for Activity below */}
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={6}
-          variants={headingVariants}
-        >Activity Type</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={7}
-          variants={headingVariants}
-        >By</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={8}
-          variants={headingVariants}
-        >Location</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={9}
-          variants={headingVariants}
-        >Outcome</motion.th>
-        <motion.th
-          className="px-6 py-4 text-left font-semibold tracking-wide"
-          initial="hidden"
-          animate="visible"
-          custom={10}
-          variants={headingVariants}
-        >Remarks</motion.th>
-      </tr>
-    </thead>
-    <tbody>
-  {(activities && activities.length > 0 ? activities : [null]).map((activity, idx) => (
-    <tr key={idx} className={activity ? "bg-blue-50" : "bg-white"}>
-      {/* Name */}
-      <td className="px-6 py-4 font-bold text-indigo-900">
-        {lead.leadDetails?.clientName || '—'}
-      </td>
-      {/* Phone */}
-      <td className="px-6 py-4">
-        {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0
-          ? lead.leadDetails.contacts.map((c, i) => (
-              <div key={i} style={{ whiteSpace: 'nowrap' }}>
-                <span
-                  style={{
-                    fontWeight: i === 0 ? 700 : 400,
-                    display: 'inline-block',
-                  }}
-                >
-                  {c.number}
-                </span>
-                <span className="ml-1 text-xs text-gray-500">
-                  ({c.label})
-                </span>
-                {i === 0 && <br />}
-              </div>
-            ))
-          : lead.leadDetails?.contact || '—'}
-      </td>
-      {/* Company */}
-      <td className="px-6 py-4">{lead.leadDetails?.companyName || '—'}</td>
-      {/* Status */}
-      <td className="px-6 py-4">{lead.status || '—'}</td>
-      {/* Date */}
-      <td className="px-6 py-4">
-        {lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}
-      </td>
-      {/* Created By */}
-      <td className="px-6 py-4">{lead.createdBy?.name || '—'}</td>
-      {/* Activity Type */}
-      <td className="px-6 py-4 font-semibold">
-        {activity
-          ? activity.type === 'factory_visit'
-            ? (<span>🏭 <b>Factory Visit</b></span>)
-            : (<span>🤝 <b>In-Person Meeting</b></span>)
-          : <span className="text-gray-400">No activity</span>
-        }
-      </td>
-      {/* By */}
-      <td className="px-6 py-4">{activity?.conductedBy?.name || '-'}</td>
-      {/* Location */}
-      <td className="px-6 py-4">{activity?.location || '-'}</td>
-      {/* Outcome */}
-      <td className="px-6 py-4">{activity?.outcome || '-'}</td>
-      {/* Remarks */}
-      <td className="px-6 py-4">{activity?.remarks || '-'}</td>
-    </tr>
-  ))}
-</tbody>
-  </table>
+ {/* Lead Profile Card */}
+<motion.div
+  className="flex flex-col md:flex-row items-center gap-8 p-8 mb-8 rounded-2xl shadow-lg bg-gradient-to-r from-indigo-100 to-white border border-indigo-200"
+  initial={{ opacity: 0, y: 40 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4, delay: 0.1 }}
+>
+  <div className="flex-shrink-0 w-24 h-24 rounded-full bg-indigo-200 flex items-center justify-center text-3xl font-bold text-indigo-700 shadow-inner">
+    {lead.leadDetails?.clientName?.[0] || "?"}
+  </div>
+  <div className="flex-1 space-y-2">
+    <h2 className="text-2xl font-bold text-indigo-700">{lead.leadDetails?.clientName || '—'}</h2>
+    <div className="flex flex-wrap gap-4 text-sm text-gray-700">
+      <span className="font-semibold">📞 {lead.leadDetails?.contacts?.[0]?.number || '—'}</span>
+      <span>🏢 {lead.leadDetails?.companyName || '—'}</span>
+      <span className="bg-indigo-600/10 text-indigo-700 px-2 py-1 rounded-lg font-medium">
+        {lead.status || '—'}
+      </span>
+      <span>🗓️ {lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}</span>
+      <span>👤 {lead.createdBy?.name || '—'}</span>
+    </div>
+  </div>
+</motion.div>
+
+{/* Activities as Cards */}
+<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+  {(activities && activities.length > 0) ? activities.map((activity, idx) => (
+    <motion.div
+      key={idx}
+      className={`rounded-2xl border-l-4 ${
+        activity?.type === 'factory_visit'
+          ? 'border-indigo-400 bg-indigo-50'
+          : 'border-green-400 bg-green-50'
+      } shadow p-6 group hover:scale-[1.025] transition-all duration-200`}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: idx * 0.07 + 0.2 }}
+      whileHover={{ boxShadow: "0 8px 32px rgba(80,0,220,0.12)", scale: 1.03 }}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <span className={`text-2xl`}>
+          {activity?.type === 'factory_visit' ? '🏭' : '🤝'}
+        </span>
+        <span className="text-lg font-bold text-indigo-700">
+          {activity?.type === 'factory_visit' ? 'Factory Visit' : 'In-Person Meeting'}
+        </span>
+      </div>
+      <div className="space-y-2 text-sm">
+        <div>
+          <span className="font-medium text-gray-600">By: </span>
+          {activity?.conductedBy?.name || '-'}
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Location: </span>
+          {activity?.location || '-'}
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Outcome: </span>
+          {activity?.outcome || '-'}
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Remarks: </span>
+          {activity?.remarks || '-'}
+        </div>
+        <div>
+          <span className="font-medium text-gray-600">Date: </span>
+          {activity?.date ? new Date(activity.date).toLocaleDateString() : '-'}
+        </div>
+      </div>
+    </motion.div>
+  )) : (
+    <motion.div
+      className="col-span-full rounded-2xl bg-gray-50 border border-gray-200 text-center p-12 text-gray-400 text-lg"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      No activities yet.
+    </motion.div>
+  )}
+</div>
 </div>
 
 

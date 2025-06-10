@@ -654,12 +654,14 @@ useEffect(() => {
 >
   <option value="">-- Select User --</option>
   {users
-    .filter((user) => user._id !== loggedInUserId)
-    .map((user) => (
-      <option key={user._id} value={user._id}>
-        {user.name}
-      </option>
-    ))}
+  .filter(
+    (user) => user._id !== loggedInUserId && user.role !== "admin"
+  )
+  .map((user) => (
+    <option key={user._id} value={user._id}>
+      {user.name}
+    </option>
+  ))}
 </select>
 
         <button

@@ -8,6 +8,7 @@ import BASE_URL from '../utils/api';
 import { HomeIcon } from '@heroicons/react/24/solid';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
+import { PhoneIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
@@ -17,6 +18,7 @@ const ProfilePage = () => {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const router = useRouter();
   const [dropdownVisible, setDropdownVisible] = useState({});
+  const [searchTerm , setSearchTerm] = useState('');
 
   const statusOptions = ['Hot', 'Warm', 'Cold'];
   
@@ -119,6 +121,16 @@ const toggleDropdown = (leadId) => {
   }));
 };
 
+
+const filteredLeads = searchTerm
+  ? forwardedLeads.filter((lead) =>
+      (lead.leadDetails?.contacts || [])
+        .some(c =>
+          c.number?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''))
+        )
+    )
+  : forwardedLeads;
+
   return (
     <ProtectedRoute>
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-200">
@@ -135,7 +147,6 @@ const toggleDropdown = (leadId) => {
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 12, repeat: Infinity }}
       />
-
       {/* Main Content */}
       <div className="relative z-10 w-full px-6 py-10">
         <motion.h1
@@ -155,6 +166,40 @@ const toggleDropdown = (leadId) => {
         >
           Leads Forwarded To Me
         </motion.h2>
+
+       <div className="flex justify-start mb-4">
+  <motion.div
+    initial={{ boxShadow: '0 1px 4px 0 rgba(99,102,241,0.10)' }}
+    whileFocus={{
+      boxShadow: '0 0 0 3px rgba(99,102,241,0.25), 0 6px 32px 0 rgba(99,102,241,0.10)',
+      scale: 1.01,
+    }}
+    className="relative w-[280px]"
+  >
+    <PhoneIcon className="w-5 h-5 text-indigo-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+    <input
+      type="text"
+      placeholder="Search by Phone Number"
+      className="pl-10 pr-10 py-2 border border-indigo-300 rounded-lg shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-800 w-full"
+      value={searchTerm}
+      onChange={e => setSearchTerm(e.target.value)}
+      maxLength={15}
+      style={{ transition: 'box-shadow 0.3s' }}
+    />
+    {/* Clear (X) button */}
+    {searchTerm && (
+      <button
+        type="button"
+        onClick={() => setSearchTerm('')}
+        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full hover:bg-gray-100 p-1 transition"
+        aria-label="Clear search"
+        tabIndex={-1}
+      >
+        <XCircleIcon className="w-5 h-5 text-gray-400 hover:text-indigo-500 transition" />
+      </button>
+    )}
+  </motion.div>
+</div>
 
         {loadingLeads ? (
           <div className="flex justify-center items-center h-20">
@@ -182,7 +227,7 @@ const toggleDropdown = (leadId) => {
     </tr>
   </thead>
   <tbody>
-    {forwardedLeads.map((lead) => (
+    {filteredLeads.map((lead) => (
       <tr key={lead._id} className="border-t hover:bg-gray-50 transition-all">
         <td className="px-4 py-2">{lead.leadDetails?.clientName}</td>
         <td className="px-4 py-2">
