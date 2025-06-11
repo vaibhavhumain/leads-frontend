@@ -32,8 +32,6 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
       setLoading(false);
       return;
     }
-
-    // Create contacts array as backend expects
     const payload = {
       leadDetails: {
         ...leadDetails,
@@ -45,7 +43,6 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
         ]
       }
     };
-    // Optionally remove .contact from the payload
     delete payload.leadDetails.contact;
 
     const response = await axios.post(

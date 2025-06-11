@@ -10,7 +10,6 @@ export default function NotificationBell() {
   const [token, setToken] = useState('');
   const bellRef = useRef();
 
-  // Only read localStorage in useEffect (client-side)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setToken(localStorage.getItem('token') || '');

@@ -187,7 +187,6 @@ useEffect(() => {
       <span className="bg-indigo-600/10 text-indigo-700 px-2 py-1 rounded-lg font-medium">
         {lead.status || '—'}
       </span>
-      <span>🗓️ {lead.date ? new Date(lead.date).toLocaleDateString() : 'N/A'}</span>
       <span>👤 {lead.createdBy?.name || '—'}</span>
     </div>
   </div>

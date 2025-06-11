@@ -1,13 +1,10 @@
-// import Sidebar from '../components/Sidebar'; 
 import { groupBy } from "lodash";
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import LeadTable from '../components/LeadTable';
-import Navbar from '../components/Navbar';
 import ProtectedRoute from '../components/ProtectedRoute';
 import LeadForm from '../components/LeadForm';
 import { FiSearch , FiMenu , FiHome , FiUsers} from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
 import BASE_URL from '../utils/api';
 import * as XLSX from 'xlsx';
 import {useRouter} from 'next/router';
@@ -16,7 +13,7 @@ import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell
+  BarChart, Bar,
 } from 'recharts';
 
   
@@ -32,7 +29,6 @@ const Dashboard = () => {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [isClient, setIsClient] = useState(false);
   const [uploadedLeads, setUploadedLeads] = useState([]);
-  const [seconds, setSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const router = useRouter();
   const [pauseHistory, setPauseHistory] = useState([]);
@@ -49,13 +45,10 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  // Only runs in browser
   const count = parseInt(localStorage.getItem('totalLeadsUploaded') || '0', 10);
   setTotalLeadsUploaded(count);
 }, []);
 
-
-  
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -133,7 +126,6 @@ const leadsByStatus = Object.entries(
   }, {})
 ).map(([status, count]) => ({ status, count }));
 
-// When a new lead is uploaded successfully
 function handleLeadUploaded(countToAdd = 1) {
   const prev = parseInt(localStorage.getItem('totalLeadsUploaded') || '0', 10);
   const newTotal = prev + countToAdd;
@@ -141,22 +133,17 @@ function handleLeadUploaded(countToAdd = 1) {
   setTotalLeadsUploaded(newTotal);
 }
 
-// When you pause a session
 function handlePausedSession() {
   const count = parseInt(localStorage.getItem('pausedSessions') || '0', 10);
   localStorage.setItem('pausedSessions', count + 1);
   setTotalPausedSessions(count + 1);
 }
 
-// On mount
 useEffect(() => {
   const count = parseInt(localStorage.getItem('pausedSessions') || '0', 10);
   setTotalPausedSessions(count);
 }, []);
 
-    const goToSendImageForm = () => {
-    router.push('/SendImageForm');
-  };
   useEffect(() => {
   const fetchSearchResults = async () => {
     const token = localStorage.getItem('token');
@@ -173,8 +160,6 @@ useEffect(() => {
       }
       return;
     }
-
-    // On search, query global results
     try {
       const response = await axios.get(
         `${BASE_URL}/api/leads/search?phone=${searchTerm}`,
@@ -231,8 +216,6 @@ useEffect(() => {
         const normalized = normalizeKey(key);
         keys[normalized] = row[key];
       });
-
-      // Flexible mappings
       const phone =
         keys['phonenumber'] ||
         keys['contactnumber'] ||
@@ -259,7 +242,7 @@ useEffect(() => {
 
       return {
         leadDetails: {
-          clientName: '', // leave blank to edit later
+          clientName: '', 
           contact: String(phone).trim(),
           companyName: String(company).trim(),
           location: String(location).trim(),
@@ -285,40 +268,30 @@ const handleBulkUpload = async () => {
   try {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
-
-    // Upload leads to backend
     const res = await axios.post(`${BASE_URL}/api/leads/bulk`, { leads: uploadedLeads }, { headers });
     toast.success(`${res.data.leads.length} leads uploaded successfully ✅`);
-
-    // 🚩 Fetch the updated leads created by the user so that all uploaded leads are shown
     const updated = await axios.get(`${BASE_URL}/api/leads/my-leads`, { headers });
     setMyLeads(updated.data);
     setFilteredLeads(updated.data);
 
     setUploadedLeads([]);
-    handleLeadUploaded(res.data.leads.length); // Optionally update your stat counter
+    handleLeadUploaded(res.data.leads.length); 
   } catch (err) {
     console.error('Upload failed:', err);
     toast.error('Upload failed');
   }
 };
 
-
   return (
     <ProtectedRoute>
       <div className="flex min-h-screen bg-gradient-to-br from-[#f7f8fa] via-[#f9f5fa] to-[#faf8f6] relative">
-        {/* Hamburger for mobile */}
         <button
           className="fixed top-4 left-4 z-50 p-2 bg-white shadow md:hidden rounded-lg"
           onClick={() => setSidebarOpen(true)}
         >
           <FiMenu size={26} />
         </button>
-        {/* <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
-
-        {/* Main content */}
 <div className="flex-1 flex flex-col min-h-screen px-2 sm:px-4 md:px-8 lg:px-14 py-6 bg-transparent">
-          {/* HEADER */}
           <div className="w-full flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
             <div className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-500 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg">
               <span className="text-2xl">💼</span>
@@ -329,10 +302,8 @@ const handleBulkUpload = async () => {
               <div className="bg-white px-4 py-2 rounded-2xl shadow flex items-center gap-2 text-gray-700 font-semibold">
                
   <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
-    {/* User's First Initial */}
     {loggedInUser?.name ? loggedInUser.name.charAt(0).toUpperCase() : 'U'}
   </span>
-  {/* User's Name */}
   {loggedInUser?.name || 'User'} 
 </div>
 
@@ -346,13 +317,11 @@ const handleBulkUpload = async () => {
 
               <button
   onClick={() => {
-    // Remove sensitive info
     if (typeof window !== "undefined") {
       localStorage.removeItem('token');
       localStorage.removeItem('loginTime');
-      // remove any other user-specific items here
     }
-    router.push('/login'); // or your actual login page route
+    router.push('/login'); 
   }}
   className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow font-semibold transition"
 >
@@ -361,8 +330,6 @@ const handleBulkUpload = async () => {
 
             </div>
           </div>
-
-          {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 mb-8">
             <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
               <span className="bg-indigo-50 text-indigo-500 p-2 rounded-full mb-2">
@@ -401,7 +368,6 @@ const handleBulkUpload = async () => {
   const headers = { Authorization: `Bearer ${token}` };
 
   if (!isPaused) {
-    // --- PAUSE: Log pause ---
     try {
       await axios.post(`${BASE_URL}/api/pause-logs/save`, {
         pausedAt: now.toISOString()
@@ -414,7 +380,6 @@ const handleBulkUpload = async () => {
       return;
     }
   } else {
-    // --- RESUME: Log resume ---
     const last = pauseHistory[pauseHistory.length - 1];
     if (last && !last.resumedAt) {
       const pausedDuration = Math.floor((now - new Date(last.pausedAt)) / 1000);
@@ -458,8 +423,6 @@ const handleBulkUpload = async () => {
 </div>
             </div>
           </div>
-
-          {/* Action Bar */}
           <div className="flex flex-col sm:flex-row items-center gap-3 mb-7">
             <button
               onClick={() => setSearchVisible((prev) => !prev)}
@@ -498,7 +461,6 @@ const handleBulkUpload = async () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-8">
-  {/* Area/Line Chart: Leads by Day */}
   <div className="bg-white/70 border rounded-2xl shadow-xl p-6 min-h-[250px] flex flex-col">
     <div className="font-bold mb-2 text-gray-600">Leads by Day</div>
     <ResponsiveContainer width="100%" height={200}>
@@ -511,8 +473,6 @@ const handleBulkUpload = async () => {
       </LineChart>
     </ResponsiveContainer>
   </div>
-
-  {/* Bar Chart: Leads by Status */}
   <div className="bg-white/70 border rounded-2xl shadow-xl p-6 min-h-[250px] flex flex-col">
     <div className="font-bold mb-2 text-gray-600">Leads by Status</div>
     <ResponsiveContainer width="100%" height={200}>
@@ -536,8 +496,6 @@ const handleBulkUpload = async () => {
     </ResponsiveContainer>
   </div>
 </div>
-
-          {/* Leads Table */}
           {!loading && !error && (
             <div className="bg-white/90 rounded-3xl shadow-xl p-6 mb-8 border">
               <LeadTable
@@ -550,33 +508,6 @@ const handleBulkUpload = async () => {
             </div>
           )}
 
-        {/* Admin Pause Logs */}
-        {loggedInUser?.role === 'admin' && pauseHistory.length > 0 && (
-          <div className="mt-6 bg-white border p-4 rounded-lg shadow max-w-xl">
-            <h2 className="text-lg font-bold mb-2 text-indigo-600">⏳ User Pause Logs</h2>
-            <ul className="text-sm text-gray-700 space-y-2 max-h-[250px] overflow-y-auto">
-              {pauseHistory.map((entry, idx) => (
-                <li key={idx} className="border-b pb-1">
-                  <div>🛑 Paused At: <strong>{new Date(entry.pausedAt).toLocaleString()}</strong></div>
-                  {entry.resumedAt && (
-                    <>
-                      <div>▶️ Resumed At: <strong>{new Date(entry.resumedAt).toLocaleString()}</strong></div>
-                      <div>
-                        ⏱️ Paused Duration: <strong>
-                          {Math.floor(entry.pausedDuration / 3600) > 0 && `${Math.floor(entry.pausedDuration / 3600)}h `}
-                          {Math.floor((entry.pausedDuration % 3600) / 60) > 0 && `${Math.floor((entry.pausedDuration % 3600) / 60)}m `}
-                          {entry.pausedDuration % 60}s
-                        </strong>
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Loading/Error States */}
         {loading && (
           <div className="text-center text-indigo-600 font-medium text-sm mt-4">
             🔄 Loading leads...
@@ -588,7 +519,6 @@ const handleBulkUpload = async () => {
           </div>
         )}
 
-        {/* Lead Form Modal */}
         {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
           <div ref={formRef} className="mt-10">
             <LeadForm

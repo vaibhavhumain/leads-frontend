@@ -41,7 +41,7 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
 const [contactPicker, setContactPicker] = useState({
   open: false,
   options: [],
-  onSelect: null,  // callback for when a contact is selected
+  onSelect: null,  
   actionLabel: '',
 });
 const [showActionsSidebar , setShowActionsSidebar] = useState(false)
@@ -153,8 +153,6 @@ const filteredLeads = leads;
     });
   };
 
- 
- 
 const updateEmail = async (leadId) => {
   const token = localStorage.getItem('token');
   if (!editedEmail.trim()) {
@@ -427,9 +425,6 @@ const handleWhatsAppPhotoShare = (contactsArr, singleContact, clientName = '', s
   window.open(url, '_blank');
 };
 
-
-
-
 const handleWeeklyReminderMessage = (contactsArr, singleContact, clientName = '') => {
   const number = getValidContact(contactsArr, singleContact);
   if (!number) {
@@ -443,9 +438,7 @@ const handleWeeklyReminderMessage = (contactsArr, singleContact, clientName = ''
     toast.error("Please enter a valid 10-digit contact number.");
     return;
   }
-  
-  // Check if a weekly reminder was sent in the last 7 days
-  const storageKey = `weeklyReminder-${cleanedContact}`;
+    const storageKey = `weeklyReminder-${cleanedContact}`;
   const lastSent = localStorage.getItem(storageKey);
   const oneWeek = 7 * 24 * 60 * 60 * 1000;
 
@@ -473,11 +466,8 @@ const handleAddContact = async (leadId) => {
     return;
   }
   
-  // All contacts, including those imported from Excel
   const allContacts = leads.find(l => l._id === leadId)?.leadDetails?.contacts || [];
   const existingNumbers = allContacts.map(c => c.number.replace(/\D/g, '').slice(-10));
-
-  // Prevent duplicate
   if (existingNumbers.includes(newNum)) {
     toast.error('This number already exists in contacts!');
     return;
@@ -493,8 +483,6 @@ const handleAddContact = async (leadId) => {
         headers: { Authorization: `Bearer ${token}` }
       }
     );
-
-    // Update the local state leads array with new number:
     setLeads((prev) =>
       prev.map((lead) =>
         lead._id === leadId
@@ -517,13 +505,11 @@ const handleAddContact = async (leadId) => {
   }
 };
 
-
 function copyToClipboard(text) {
   try {
     navigator.clipboard.writeText(text);
     toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
   } catch {
-    // Fallback for older browsers
     const textarea = document.createElement('textarea');
     textarea.value = text;
     document.body.appendChild(textarea);
@@ -533,7 +519,6 @@ function copyToClipboard(text) {
     toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
   }
 }
-
 
 const sendWhatsAppMessage = (number, clientName = '') => {
   const text = `Dear ${clientName || 'Customer'}, It was a pleasure speaking with you today! Thank you for considering Gobind Coach Builders for your bus body requirements. We're excited about the opportunity to bring your vision to life with our durable designs and unmatched craftsmanship.`;
@@ -551,18 +536,6 @@ const sendWhatsAppPdf = (number, clientName = '', pdfFileName) => {
   window.open(url, '_blank');
   copyToClipboard(text); 
 };
-
-
-const sendWhatsAppPhotos = (number, clientName = '', selectedImages) => {
-  const origin = window.location.origin;
-  const imageLinks = Array.from(selectedImages).map((id, idx) => `${origin}/images/${id}.jpg`);
-  const imageText = imageLinks.map((link, idx) => `Image ${idx + 1}: ${link}`).join('\n');
-  const text = `Dear ${clientName || 'Customer'},\n\nHere are your requested bus images:\n${imageText}`;
-  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
-  copyToClipboard(text); 
-};
-
 
 const sendWeeklyReminder = (number, clientName = '') => {
   const storageKey = `weeklyReminder-${number}`;
@@ -907,67 +880,6 @@ return (
   >
     📝 Questions Form
   </button>
-{/* --- Fixed Left Sidebar ---
-<div className="flex flex-row gap-8 relative">
-<div className="flex flex-col gap-4 py-2" style={{maxWidth:200}}>
-  <button
-    onClick={() => {
-      const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
-      if (validContacts.length === 0) {
-        toast.error("No valid 10-digit contact found!");
-        return;
-      }
-      if (validContacts.length === 1) {
-        sendWhatsAppMessage(validContacts[0].number, lead.leadDetails?.clientName || '');
-      } else {
-        setContactPicker({
-          open: true,
-          options: validContacts,
-          onSelect: (number) => sendWhatsAppMessage(number, lead.leadDetails?.clientName || ''),
-          actionLabel: "Send WhatsApp Message",
-        });
-      }
-    }}
-    className="flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-green-400 via-green-500 to-green-600 shadow-lg transition hover:scale-105"
-  >
-    <span role="img" aria-label="whatsapp">📩</span> WhatsApp
-  </button>
-  <button
-    onClick={() => {
-      const validContacts = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
-      if (validContacts.length === 0) {
-        toast.error("No valid 10-digit contact found!");
-        return;
-      }
-      if (validContacts.length === 1) {
-        sendWhatsAppPdf(validContacts[0].number, lead.leadDetails?.clientName || '', 'gcb.pdf');
-      } else {
-        setContactPicker({
-          open: true,
-          options: validContacts,
-          onSelect: (number) => sendWhatsAppPdf(number, lead.leadDetails?.clientName || '', 'gcb.pdf'),
-          actionLabel: "Send PDF",
-        });
-      }
-    }}
-    className="flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg transition hover:scale-105"
-  >
-    <span role="img" aria-label="pdf">📄</span> PDF
-  </button>
-  <Link href="/gallery" passHref legacyBehavior>
-    <a>
-      <button
-        className="flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 shadow-lg transition hover:scale-105"
-      >
-        <span role="img" aria-label="photos">🖼️</span> Photos
-      </button>
-    </a>
-  </Link>
-
-</div>
-
-</div> */}
-
 </div>
 
 {/* Toggle Button */}
@@ -1048,8 +960,6 @@ return (
   <span role="img" aria-label="reminder">⏰</span>
   Reminder
 </button>
-  
-  
 </div>
 
 {/* Lead Navigation */}
@@ -1080,12 +990,11 @@ return (
     <FaArrowRight />
   </button>
 </div>
-
     <div className="text-center text-xs text-gray-500 mt-2">
       Showing {currentLeadIndex + 1} of {filteredLeads.length}
     </div>
   </div>
 );
-
 }
 export default LeadTable;
+ 

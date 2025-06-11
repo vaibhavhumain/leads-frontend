@@ -1,4 +1,3 @@
-// components/EnquirySummary.js
 import { generateEnquiryPDF } from '@/utils/pdfGenerator';
 
 const EnquirySummary = ({ data }) => {

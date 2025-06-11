@@ -4,10 +4,9 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
 import BASE_URL from '../utils/api';
 import { motion , AnimatePresence} from 'framer-motion';
-import { FaUser } from 'react-icons/fa';
-import { FaSearch , FaTimes} from 'react-icons/fa';
+import { FaUser , FaChevronLeft , FaChevronRight , FaUserTie , FaPhoneAlt , FaBuilding , FaMapMarkerAlt  } from 'react-icons/fa';
 import { MdAlarm } from 'react-icons/md';
-import { useRef } from 'react'
+import { toast } from 'react-toastify';
 import { MdPauseCircle , MdPlayCircle , MdAccessTime } from 'react-icons/md';
 import {
   PieChart,
@@ -43,8 +42,19 @@ const Admin = () => {
   const inputRef = useState(null);
   const [pauseLogs, setPauseLogs] = useState([]);
   const [pauseSearch, setPauseSearch] = useState("");
+  const [filteredIdx , setFilteredIdx] = useState(0);
+  const [leadIdx , setLeadIdx] = useState(0);
+    const filteredLeads = leads.filter(lead =>
+    lead.createdBy?.name?.toLowerCase().includes(creatorSearch.toLowerCase())
+  );
+  const filteredCount =  filteredLeads.length;
+  const totalLeads = leads.length;
 
+  const handlePrevFiltered = () => setFilteredIdx(i => (i === 0 ? filteredCount - 1 : i-1));
+  const handleNextFiltered = () => setFilteredIdx(i => (i === filteredCount - 1 ? 0 : i+1));
 
+  const handlePrevAll = () => setLeadIdx(i => (i === 0 ? totalLeads - 1 : i - 1));
+  const handleNextAll = () => setLeadIdx(i => (i === totalLeads - 1 ? 0 : i + 1));
 
   useEffect(() => {
   if (searchOpen && inputRef.current) {
@@ -58,19 +68,15 @@ const Admin = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Get current user details
       const userRes = await axios.get(`${BASE_URL}/api/users/me`, { headers });
       setLoggedInUser(userRes.data);
 
-      // Fetch all leads for admin
       const leadsRes = await axios.get(`${BASE_URL}/api/leads/all`, { headers });
       setLeads(leadsRes.data);
 
-      // Fetch all timer logs
       const timerRes = await axios.get(`${BASE_URL}/api/timer-logs/all`, { headers });
       setTimerLogs(timerRes.data);
 
-      // Fetch all pause logs
       const pauseRes = await axios.get(`${BASE_URL}/api/pause-logs/all`, { headers });
       setPauseLogs(pauseRes.data);
 
@@ -110,8 +116,6 @@ const getUserDurationDistribution = (timerLogs) => {
   }));
 };
 
-
-  // Format seconds to hh:mm:ss
   function formatDuration(seconds) {
     if (!seconds || seconds <= 0) return '0s';
     const h = Math.floor(seconds / 3600);
@@ -160,7 +164,7 @@ const getUserDurationDistribution = (timerLogs) => {
     if (lead && lead.createdBy && lead.createdBy.name) {
       return lead.createdBy.name;
     }
-    return 'N/A'; // fallback if no match
+    return 'N/A'; 
   };
 
   const getCreatorNameFromLog = (log) => {
@@ -168,10 +172,7 @@ const getUserDurationDistribution = (timerLogs) => {
     return getCreatorNameByLeadId(log.leadId);
   };
 
-  // Filter leads based on creator name (case insensitive)
-  const filteredLeads = leads.filter(lead =>
-    lead.createdBy?.name?.toLowerCase().includes(creatorSearch.toLowerCase())
-  );
+
 
   return (
   <ProtectedRoute>
@@ -189,7 +190,6 @@ const getUserDurationDistribution = (timerLogs) => {
         </span>
       </motion.h1>
 
-      {/* --- PIE & DONUT CHART SECTION --- */}
 <div className="grid sm:grid-cols-2 gap-8 mb-12">
   {/* Pie Chart for Lead Status */}
   <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -264,85 +264,136 @@ const getUserDurationDistribution = (timerLogs) => {
     </ResponsiveContainer>
   </div>
 
-      {/* LEAD DETAILS TABLE */}
       <motion.div
-        className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-indigo-100"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-      >
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-10">
+  className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-indigo-100 flex flex-col items-center"
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.25 }}
+>
   <div className="flex items-center gap-3 mb-5">
     <FaUser className="text-indigo-500 text-2xl" />
     <span className="text-2xl font-bold text-indigo-700">Lead Details</span>
   </div>
-  <div className="overflow-x-auto">
-    <table className="min-w-full text-left rounded-2xl">
-      <thead>
-        <tr className="bg-indigo-100 text-indigo-700">
-          <th className="p-4 font-semibold">Lead Name</th>
-          <th className="p-4 font-semibold">Created By</th>
-          <th className="p-4 font-semibold">Status</th>
-          <th className="p-4 font-semibold">Follow-Ups</th>
-          <th className="p-4 font-semibold">Remarks</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredLeads.map((lead, leadIdx) => (
-          <tr key={lead._id} className={leadIdx % 2 === 0 ? "bg-white" : "bg-indigo-50"}>
-            <td className="p-4 font-bold">{lead.leadDetails?.clientName || 'N/A'}</td>
-            <td className="p-4">{lead.createdBy?.name || 'N/A'}</td>
-            <td className="p-4">{lead.status || 'N/A'}</td>
-            <td className="p-4 align-top">
-              {lead.followUps && lead.followUps.length > 0 ? (
-                <div className="bg-indigo-50 rounded-xl px-3 py-2">
-                  <ul className="space-y-1 text-sm">
-                    {lead.followUps.map((fup, idx) => (
-                      <li key={idx}>
-                        <span className="text-indigo-500 font-semibold">
-                          {fup.date ? `• ${new Date(fup.date).toLocaleDateString()}:` : ""}
-                        </span>
-                        <span className="ml-2">{fup.notes}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="bg-gray-50 italic text-gray-400 rounded-xl px-3 py-2 text-center">No follow-ups</div>
-              )}
-            </td>
-            <td className="p-4 align-top">
-              {lead.remarksHistory && lead.remarksHistory.length > 0 ? (
-                <div className="bg-blue-50 rounded-xl px-3 py-2">
-                  <ul className="space-y-2 text-sm">
-                    {lead.remarksHistory.map((remark, rIdx) => (
-                      <li key={rIdx}>
-                        <div className="font-semibold text-indigo-600">
-                          {remark.updatedBy?.name || 'Forwarded User'}{" "}
-                          <span className="text-gray-500 font-normal text-xs">
-                            {remark.date
-                              ? new Date(remark.date).toLocaleString()
-                              : (remark.createdAt
-                                  ? new Date(remark.createdAt).toLocaleString()
-                                  : "")}
-                          </span>
-                        </div>
-                        <div className="text-gray-700">{remark.remarks}</div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="bg-gray-50 italic text-gray-400 rounded-xl px-3 py-2 text-center">No remarks</div>
-              )}
-            </td>
-          </tr>
+  {filteredCount === 0 ? (
+    <div className="italic text-gray-400 py-10">No leads found.</div>
+  ) : (
+    <>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={handlePrevFiltered}
+          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition"
+        >
+          <FaChevronLeft size={22} className="text-indigo-600" />
+        </button>
+        <span className="font-semibold text-indigo-700 text-lg">{filteredIdx + 1} / {filteredCount}</span>
+        <button
+          onClick={handleNextFiltered}
+          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition"
+        >
+          <FaChevronRight size={22} className="text-indigo-600" />
+        </button>
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={filteredLeads[filteredIdx]._id}
+          className="w-full max-w-xl bg-gradient-to-br from-indigo-50 via-white to-pink-50 rounded-3xl shadow-2xl p-8 border border-indigo-100 flex flex-col gap-5 relative"
+          initial={{ opacity: 0, scale: 0.96, y: 60 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: -60 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        >
+          {/* Card Content */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="inline-flex items-center gap-2 text-indigo-700 font-bold text-lg">
+              <FaUserTie className="text-indigo-500" />
+              {filteredLeads[filteredIdx].leadDetails?.clientName || 'N/A'}
+            </span>
+            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-500 font-semibold tracking-wide">
+              {filteredLeads[filteredIdx].status || 'N/A'}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <FaUser className="text-indigo-400" />
+              <span className="font-semibold">Created By:</span>
+              <span>{filteredLeads[filteredIdx].createdBy?.name || 'N/A'}</span>
+            </div>
+             <div className="mt-2">
+    <span className="font-bold text-indigo-700">Meetings & Visits:</span>
+    {filteredLeads[filteredIdx].activities && filteredLeads[filteredIdx].activities.length > 0 ? (
+      <ul className="mt-1 space-y-1">
+        {filteredLeads[filteredIdx].activities.map((activity, idx) => (
+          <li key={idx} className="flex flex-col bg-indigo-50 rounded px-3 py-2 text-xs">
+            <span>
+              <span className="font-semibold text-pink-500">
+                {activity.type === 'factory_visit' ? 'Factory Visit' : activity.type === 'in_person_meeting' ? 'In-Person Meeting' : 'Activity'}
+              </span>
+              {" • "}
+              {activity.date ? new Date(activity.date).toLocaleDateString() : 'No Date'}
+              {" • "}
+              <span className="text-gray-500">
+                {activity.location || 'No Location'}
+              </span>
+            </span>
+            {activity.remarks && (
+              <span className="text-gray-700">
+                Remarks: {activity.remarks}
+              </span>
+            )}
+            {activity.outcome && (
+              <span className="text-gray-600 italic">
+                Outcome: {activity.outcome}
+              </span>
+            )}
+          </li>
         ))}
-      </tbody>
-    </table>
+      </ul>
+    ) : (
+      <div className="italic text-gray-400 bg-indigo-50 px-3 py-2 rounded text-xs">No meetings or visits</div>
+    )}
   </div>
-</div> 
-      </motion.div>
+            {/* add more fields as you want */}
+          </div>
+          {/* Follow-Ups */} 
+          <div className="font-bold text-indigo-700 mt-3">Follow-Ups:</div>
+          <div>
+            {filteredLeads[filteredIdx].followUps && filteredLeads[filteredIdx].followUps.length > 0 ? (
+              <ul className="space-y-1">
+                {filteredLeads[filteredIdx].followUps.map((fup, i) => (
+                  <li key={i} className="bg-indigo-50 text-xs rounded px-3 py-1 flex items-center">
+                    <span className="text-indigo-400 font-semibold mr-2">
+                      {fup.date ? new Date(fup.date).toLocaleDateString() : ""}
+                    </span>
+                    <span>{fup.notes}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="italic text-gray-400 bg-indigo-50 px-3 py-1 rounded text-xs">No follow-ups</div>
+            )}
+          </div>
+          {/* Remarks */}
+          <div className="font-bold text-pink-500 mt-3">Remarks:</div>
+          <div>
+            {filteredLeads[filteredIdx].remarksHistory && filteredLeads[filteredIdx].remarksHistory.length > 0 ? (
+              <ul className="space-y-1">
+                {filteredLeads[filteredIdx].remarksHistory.map((remark, rIdx) => (
+                  <li key={rIdx} className="bg-pink-50 text-xs rounded px-3 py-1">
+                    <span className="font-semibold text-indigo-600">{remark.updatedBy?.name || 'User'}</span>
+                    <span className="text-gray-500 ml-2">{remark.date ? new Date(remark.date).toLocaleString() : ""}</span>
+                    <div className="text-gray-700">{remark.remarks}</div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="italic text-gray-400 bg-pink-50 px-3 py-1 rounded text-xs">No remarks</div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </>
+  )}
+</motion.div>
 
       {/* LEAD TIMER STOP LOGS */}
       <motion.div
@@ -473,7 +524,109 @@ const getUserDurationDistribution = (timerLogs) => {
     )}
   </div>
 </div>
+
       </motion.div>
+
+      <button
+  onClick={async () => {
+    if (!window.confirm("Are you sure you want to delete ALL leads?")) return;
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    try {
+      await axios.delete(`${BASE_URL}/api/leads/`, { headers });
+      setLeads([]); // Clear state
+      toast.success('All leads deleted!');
+    } catch (err) {
+      toast.error('Delete failed');
+    }
+  }}
+  className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white px-5 py-2 rounded-md text-sm font-semibold shadow-lg mb-6"
+>
+  Delete All Leads
+</button>
+
+
+      <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 flex flex-col items-center">
+        
+  <div className="flex items-center gap-3 mb-5">
+    <FaUser className="text-indigo-500 text-2xl" />
+    <span className="text-2xl font-bold text-indigo-700">All Leads</span>
+  </div>
+  {totalLeads === 0 ? (
+    <div className="italic text-gray-400 py-10">No leads found.</div>
+  ) : (
+    <>
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={handlePrevAll}
+          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition"
+        >
+          <FaChevronLeft size={22} className="text-indigo-600" />
+        </button>
+        <span className="font-semibold text-indigo-700 text-lg">{leadIdx + 1} / {totalLeads}</span>
+        <button
+          onClick={handleNextAll}
+          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition"
+        >
+          <FaChevronRight size={22} className="text-indigo-600" />
+        </button>
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={leads[leadIdx]._id}
+          className="w-full max-w-xl bg-gradient-to-br from-indigo-50 via-white to-pink-50 rounded-3xl shadow-2xl p-8 border border-indigo-100 flex flex-col gap-5 relative"
+          initial={{ opacity: 0, scale: 0.96, y: 60 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: -60 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="inline-flex items-center gap-2 text-indigo-700 font-bold text-lg">
+              <FaUserTie className="text-indigo-500" />
+              {leads[leadIdx].leadDetails?.clientName || 'N/A'}
+            </span>
+            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-500 font-semibold tracking-wide">
+              {leads[leadIdx].status || 'N/A'}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <FaUser className="text-indigo-400" />
+              <span className="font-semibold">Created By:</span>
+              <span>{leads[leadIdx].createdBy?.name || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FaPhoneAlt className="text-pink-400" />
+              <span className="font-semibold">Phone:</span>
+              <span>
+                {Array.isArray(leads[leadIdx].leadDetails?.contacts) 
+                  ? leads[leadIdx].leadDetails.contacts.map((c, i) => (
+                      <span key={i} className="inline-block mr-1">{c.number}</span>
+                    ))
+                  : (leads[leadIdx].leadDetails?.contact || 'N/A')
+                }
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FaBuilding className="text-green-400" />
+              <span className="font-semibold">Company:</span>
+              <span>{leads[leadIdx].leadDetails?.companyName || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FaMapMarkerAlt className="text-blue-400" />
+              <span className="font-semibold">Location:</span>
+              <span>{leads[leadIdx].leadDetails?.location || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">Email:</span>
+              <span>{leads[leadIdx].leadDetails?.email || 'N/A'}</span>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </>
+  )}
+</div>
     </div>
   </ProtectedRoute>
 );
