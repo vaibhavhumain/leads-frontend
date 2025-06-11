@@ -1,6 +1,6 @@
 {
-  "name": "Your App Name",
-  "short_name": "AppName",
+  "name": "Leads Managing",
+  "short_name": "LeMa",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
