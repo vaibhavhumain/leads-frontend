@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import BASE_URL from '../utils/api';
@@ -143,7 +143,31 @@ const handleEmailSave = () => {
     fetchUsersAndSelf();
   }, []);
 
-const filteredLeads = leads; 
+const filteredLeads = useMemo(() => {
+  if (!searchTerm || !searchTerm.trim()) return leads;
+
+  const term = searchTerm.toLowerCase().replace(/\D/g, ''); // for numbers, only digits
+  const termString = searchTerm.toLowerCase();
+
+  return leads.filter(lead => {
+    // Name search (case-insensitive)
+    const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
+    if (clientName.includes(termString)) return true;
+
+    // Main contact (can be string or number)
+    const mainContact = (lead.leadDetails?.contact || '').replace(/\D/g, '');
+    if (mainContact.includes(term)) return true;
+
+    // Contacts array (check every number)
+    const contacts = Array.isArray(lead.leadDetails?.contacts) ? lead.leadDetails.contacts : [];
+    for (let c of contacts) {
+      const num = (c?.number || '').replace(/\D/g, '');
+      if (num.includes(term)) return true;
+    }
+
+    return false;
+  });
+}, [leads, searchTerm]); 
 
   const formatDateTime = (isoString) => {
     return new Date(isoString).toLocaleDateString('en-US', {
@@ -997,4 +1021,3 @@ return (
 );
 }
 export default LeadTable;
- 
