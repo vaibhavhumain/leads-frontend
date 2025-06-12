@@ -38,6 +38,9 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [newContactLeadId, setNewContactLeadId] = useState(null); 
   const [newContactNumber, setNewContactNumber] = useState('');
   const [newContactLabel, setNewContactLabel] = useState('');
+  const [forwardModal , setForwardModal] = useState(false);
+  const [leadToForward , setLeadToForward] = useState(null);
+  const [forwardToUser , setForwardToUser] = useState("");    
 const [contactPicker, setContactPicker] = useState({
   open: false,
   options: [],
@@ -664,6 +667,7 @@ return (
           >
             <span role="img" aria-label="pdf" className="text-2xl">📄</span> PDF
           </button>
+          
 
           <Link href="/gallery" passHref legacyBehavior>
             <a>
@@ -872,6 +876,8 @@ return (
       />
     </div>
   )}
+
+
   <div className="flex justify-end mt-auto">
     <button
       onClick={() => {

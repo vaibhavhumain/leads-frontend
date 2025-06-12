@@ -645,32 +645,56 @@ useEffect(() => {
 
 
       {/* Forward Section */}
-      <div className="mb-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">📤 Forward Lead</label>
-        <select
-  value={selectedUserId}
-  onChange={(e) => setSelectedUserId(e.target.value)}
-  className="w-full border border-orange-300 px-3 py-2 rounded focus:ring-2 focus:ring-orange-400"
->
-  <option value="">-- Select User --</option>
-  {users
-  .filter(
-    (user) => user._id !== loggedInUserId && user.role !== "admin"
-  )
-  .map((user) => (
-    <option key={user._id} value={user._id}>
-      {user.name}
-    </option>
-  ))}
-</select>
+<div className="mb-2">
+  <label className="block text-sm font-medium text-gray-700 mb-1">📤 Forward Lead</label>
+  <select
+    value={selectedUserId}
+    onChange={(e) => setSelectedUserId(e.target.value)}
+    className="w-full border border-orange-300 px-3 py-2 rounded focus:ring-2 focus:ring-orange-400"
+  >
+    <option value="">-- Select User --</option>
+    {users
+      .filter(
+        (user) => user._id !== loggedInUserId && user.role !== "admin"
+      )
+      .map((user) => (
+        <option key={user._id} value={user._id}>
+          {user.name}
+        </option>
+      ))}
+  </select>
 
-        <button
-          onClick={handleForward}
-          className="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded shadow-md font-semibold"
-        >
-          📨 Forward Lead
-        </button>
-      </div>
+  <button
+    className="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded shadow-md font-semibold"
+    disabled={!selectedUserId}
+    onClick={async () => {
+  const token = localStorage.getItem('token');
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/api/leads/forward`,
+      { leadId: lead._id, userId: selectedUserId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const user = users.find(u => u._id === selectedUserId);
+    toast.success(`Lead forwarded to ${user?.name || "user"}! Email notification sent.`);
+    setSelectedUserId('');
+    fetchLead(lead._id);
+  } catch (err) {
+    if (err.response && err.response.status === 401) {
+      toast.error('Session expired. Please login again.');
+      localStorage.clear();
+      window.location.href = '/login'; // or your login page
+    } else {
+      toast.error("Forwarding failed");
+    }
+  }
+}}
+
+  >
+    📨 Forward Lead
+  </button>
+</div>
+
       {/* Share Buttons */}
 <div className="flex flex-col gap-4 mb-6 max-w-xs">
    <button
