@@ -14,23 +14,39 @@ export default function EnquiryForm() {
   const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const router = useRouter();
 
-  
 useEffect(() => {
-  localStorage.setItem('leadId', '68466c220a17c9d47472fee5');
+  const leadId = localStorage.getItem('leadId');
+  if (!leadId) return;
+
+  const fetchLead = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${BASE_URL}/api/leads/${leadId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const lead = data.lead || data;
+
+      setFormData((prev) => ({
+        ...prev,
+        teamMember: lead.assignedTo?.name || '',
+        customerName: lead.leadDetails?.clientName || '',
+        companyDetails: lead.leadDetails?.companyName || '',
+      }));
+    } catch (error) {
+    }
+  };
+
+  fetchLead();
 }, []);
 
 
   const [formData, setFormData] = useState({
     enquiryId: `ENQ-${Date.now()}`,
-    teamMember: '',
-    customerName: '',
-    companyDetails: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
-    customerPhone: '',
-    customerEmail: '',
     busType: '',
     otherBusType: '',
     featureRequirement: '',
@@ -47,9 +63,7 @@ useEffect(() => {
     numberOfSeats: '',
     additionalNote: '',
     referralSource: '',
-  
-    // Luxury fields (added arrays + other fields)
-    windowType: '',
+      windowType: '',
     requiredNoEachSide: '',
     tintOfShades: '',
     otherTint: '',
@@ -207,11 +221,16 @@ useEffect(() => {
   };
 
   try {
-    const res = await fetch(`${BASE_URL}/api/enquiry`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(combinedData),
-    });
+    const token = localStorage.getItem('token');
+const res = await fetch(`${BASE_URL}/api/enquiry`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  },
+  body: JSON.stringify(combinedData),
+});
+
     const result = await res.json();
     if (res.ok) {
       toast.success(`✅ ${result.message || 'Enquiry submitted successfully!'}`);
@@ -233,12 +252,6 @@ useEffect(() => {
   const resetForm = () => {
     setFormData({
       enquiryId: `ENQ-${Date.now()}`,
-      teamMember: '',
-      customerName: '',
-      companyDetails: '',
-      address: '',
-      customerPhone: '',
-      customerEmail: '',
       busType: '',
       otherBusType: '',
       featureRequirement: '',
@@ -302,68 +315,22 @@ useEffect(() => {
 </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {stage === 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            <InputField label="Team Member Name" name="teamMember" value={formData.teamMember} onChange={handleChange} required />
-            <InputField label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
-            <InputField label="Company Details" name="companyDetails" value={formData.companyDetails} onChange={handleChange} />
+  {stage === 1 && (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+    >
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-    <label className="block text-sm font-semibold mb-1 text-gray-700">Address</label>
-    <input
-      type="text"
-      name="address"
-      value={formData.address}
-      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-      placeholder="Street Address"
-      className="w-full border rounded p-2 text-sm"
-    />
-  </div>
-
-  {/* City */}
-  <div>
-    <label className="block text-sm font-semibold mb-1 text-gray-700">City</label>
-    <input
-      type="text"
-      name="city"
-      value={formData.city}
-      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-      placeholder="City"
-      className="w-full border rounded p-2 text-sm"
-    />
-  </div>
-
-  {/* State */}
-  <div>
-    <label className="block text-sm font-semibold mb-1 text-gray-700">State</label>
-    <input
-      type="text"
-      name="state"
-      value={formData.state}
-      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-      placeholder="State"
-      className="w-full border rounded p-2 text-sm"
-    />
-  </div>
-
-  {/* Pincode */}
-  <div>
-    <label className="block text-sm font-semibold mb-1 text-gray-700">Pincode</label>
-    <input
-      type="text"
-      name="pincode"
-      value={formData.pincode}
-      onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-      placeholder="Pincode"
-      className="w-full border rounded p-2 text-sm"
-    />
-  </div>
+ 
 </div>
+
+{/* --- PERSONAL --- */}
+<h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Personal Details</h3>
+<InputField label="Education" name="education" value={formData.education} onChange={handleChange} />
+<InputField label="Hobbies" name="hobbies" value={formData.hobbies} onChange={handleChange} />
+<InputField label="Behavior" name="behavior" value={formData.behavior} onChange={handleChange} />
             {/* --- BUSINESS DETAILS --- */}
 <h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Business Details</h3>
 <InputField label="Type of Buses in Fleet" name="businessTypeOfBuses" value={formData.businessTypeOfBuses} onChange={handleChange} />
@@ -373,11 +340,7 @@ useEffect(() => {
 <InputField label="Number of Employees" name="businessEmployees" value={formData.businessEmployees} onChange={handleChange} type="number" />
 <InputField label="Area of Expertise" name="businessExpertiseArea" value={formData.businessExpertiseArea} onChange={handleChange} />
 
-{/* --- PERSONAL --- */}
-<h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Personal Details</h3>
-<InputField label="Education" name="education" value={formData.education} onChange={handleChange} />
-<InputField label="Hobbies" name="hobbies" value={formData.hobbies} onChange={handleChange} />
-<InputField label="Behavior" name="behavior" value={formData.behavior} onChange={handleChange} />
+
 
 {/* --- CUSTOMER TYPE (auto-decide or manual for now) --- */}
 <SelectField

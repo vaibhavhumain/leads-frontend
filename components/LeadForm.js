@@ -51,6 +51,7 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
+    localStorage.setItem('leadId', response.data.lead._id);
     onLeadCreated(response.data.lead);
     setLeadDetails({
       clientName: '',
