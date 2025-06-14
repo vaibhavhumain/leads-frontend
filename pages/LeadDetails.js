@@ -225,7 +225,7 @@ const formatTime = (seconds) => {
     const res = await axios.get(`${BASE_URL}/api/leads/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    setLead(res.data);
+    setLead(res.data.lead);
     setSelectedStatus(res.data.status || '');
     setSelectedConnection(res.data.connectionStatus || '');
     localStorage.setItem('selectedLead', JSON.stringify(res.data));
@@ -330,7 +330,7 @@ useEffect(() => {
     });
 
     setFollowUp({ date: '', notes: '' });
-    setLead(res.data);
+    setLead(res.data.lead);
     localStorage.setItem('selectedLead', JSON.stringify(res.data));
 
   } catch (err) {

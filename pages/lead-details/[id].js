@@ -69,7 +69,7 @@ const handleAddActivity = async () => {
         axios.get(`${BASE_URL}/api/users`, { headers }),
       ]);
 
-      setLead(leadRes.data);
+      setLead(leadRes.data.lead || leadRes.data);
       setUsers(usersRes.data); 
     } catch (err) {
       console.error('Error fetching lead or users:', err);

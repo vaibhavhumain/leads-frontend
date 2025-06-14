@@ -13,39 +13,15 @@ export default function EnquiryForm() {
   const [submittedData, setSubmittedData] = useState(null);
   const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const router = useRouter();
-
-useEffect(() => {
-  const leadId = localStorage.getItem('leadId');
-  if (!leadId) return;
-
-  const fetchLead = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${BASE_URL}/api/leads/${leadId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const lead = data.lead || data;
-
-      setFormData((prev) => ({
-        ...prev,
-        teamMember: lead.assignedTo?.name || '',
-        customerName: lead.leadDetails?.clientName || '',
-        companyDetails: lead.leadDetails?.companyName || '',
-      }));
-    } catch (error) {
-    }
-  };
-
-  fetchLead();
-}, []);
-
-
+  const {leadId} = router.query;  
+  
   const [formData, setFormData] = useState({
+    customerName: '',
+    customerPhone: '',
+    customerEmail: '',
+    city: '',
+    teamMember: '',
+    companyDetails: '',
     enquiryId: `ENQ-${Date.now()}`,
     busType: '',
     otherBusType: '',
@@ -99,6 +75,50 @@ useEffect(() => {
     optionalFeatures: [],  
     fitmentProvided: [],   
   });
+
+useEffect(() => {
+  if (!router.isReady || !leadId) return;
+  console.log("✅ Router is ready");
+  console.log("➡️ leadId from query:", leadId);
+
+  const fetchLead = async () => {
+    try {
+      const token = localStorage.getItem('token');
+const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
+  headers: {
+    ...(token && { Authorization: `Bearer ${token}` }),
+    "Content-Type": "application/json",
+  },
+});
+
+      const data = await res.json();
+      console.log("📦 API Response:", data);
+
+      if (!data?.lead || !data.lead.leadDetails) {
+        console.warn("Lead data missing or malformed:", data);
+        return;
+      }
+
+      const lead = data.lead;
+      console.log("🧾 Pre-filling with lead:", data.lead);
+
+      setFormData((prev) => ({
+        ...prev,
+        customerName: lead.leadDetails.clientName || '',
+        customerPhone: lead.leadDetails.contacts?.[0]?.number || '',
+        customerEmail: lead.leadDetails.email || '',
+        city: lead.leadDetails.location || '',
+        teamMember: lead.createdBy?.name || '',
+        companyDetails: lead.leadDetails.companyName || '',
+      }));
+    } catch (error) {
+      console.error("❌ Error fetching lead:", error);
+    }
+  };
+
+  fetchLead();
+}, [router.isReady, leadId]);
+
   
   const windowImages = {
     'Sliding Glass': '/Sliding Glass.jpg',
@@ -162,7 +182,6 @@ useEffect(() => {
   };
 
   const [loading, setLoading] = useState(false);
-
   const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
@@ -300,6 +319,7 @@ const res = await fetch(`${BASE_URL}/api/enquiry`, {
     <div className="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Customer Enquiry Form</h2>
       <div className="mt-6 text-center">
+ <div className="mt-6 text-center">
   <button
   onClick={() => {
     const leadId = localStorage.getItem('leadId');
@@ -309,9 +329,12 @@ const res = await fetch(`${BASE_URL}/api/enquiry`, {
       alert("No lead ID found. Submit an enquiry first.");
     }
   }}
+  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
 >
-    View All PDFs for This Lead
-  </button>
+  View All PDFs for This Lead
+</button>
+
+</div>
 </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -326,11 +349,21 @@ const res = await fetch(`${BASE_URL}/api/enquiry`, {
  
 </div>
 
+<h3 className="md:col-span-2 text-xl font-semibold mt-4 mb-2">Lead Details</h3>
+
+<InputField label="Client Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
+<InputField label="Phone Number" name="customerPhone" value={formData.customerPhone} onChange={handleChange} required />
+<InputField label="Email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} />
+<InputField label="Company Name" name="companyDetails" value={formData.companyDetails} onChange={handleChange} />
+<InputField label="City" name="city" value={formData.city} onChange={handleChange} />
+<InputField label="Team Member (Created By)" name="teamMember" value={formData.teamMember} onChange={handleChange} readOnly />
+
+
 {/* --- PERSONAL --- */}
 <h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Personal Details</h3>
 <InputField label="Education" name="education" value={formData.education} onChange={handleChange} />
 <InputField label="Hobbies" name="hobbies" value={formData.hobbies} onChange={handleChange} />
-<InputField label="Behavior" name="behavior" value={formData.behavior} onChange={handleChange} />
+<InputField label="Behavior" name="behavior " value={formData.behavior} onChange={handleChange} />
             {/* --- BUSINESS DETAILS --- */}
 <h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Business Details</h3>
 <InputField label="Type of Buses in Fleet" name="businessTypeOfBuses" value={formData.businessTypeOfBuses} onChange={handleChange} />

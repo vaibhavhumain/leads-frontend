@@ -881,10 +881,7 @@ return (
   <div className="flex justify-end mt-auto">
     <button
       onClick={() => {
-        localStorage.setItem(
-          "selectedLead",
-          JSON.stringify(lead)
-        );
+        sessionStorage.setItem("selectedLead", JSON.stringify({ lead }));
         window.location.href = "/LeadDetails";
       }}
       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl shadow text-xs font-medium transition"
@@ -903,13 +900,15 @@ return (
     </div>
 
     <div className="flex flex-col gap-4 mt-6 w-full max-w-md mx-auto">
-  <button
-    onClick={handleCreateEnquiry}
-    className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-2xl text-base font-semibold shadow-lg transition"
-    style={{ minHeight: 48, fontSize: "1rem" }}
-  >
-    📝 Questions Form
-  </button>
+  <button>
+  <Link
+  href={`/EnquiryForm?leadId=${lead._id}`}
+  className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-3 rounded-2xl text-base font-semibold shadow-lg transition flex justify-center items-center"
+  style={{ minHeight: 48, fontSize: "1rem" }}
+>
+  📝 Questions Form
+</Link>
+</button>
 </div>
 
 {/* Toggle Button */}
