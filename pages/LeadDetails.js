@@ -18,8 +18,10 @@ import Link from 'next/link';
 import { FaArrowRight } from "react-icons/fa";
 import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
+import {useRouter} from 'next/router';
 
 const LeadDetails = () => {
+  const router=useRouter();
   const [lead, setLead] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedConnection, setSelectedConnection] = useState('');
@@ -220,34 +222,36 @@ const formatTime = (seconds) => {
   }, []);
 
   const fetchLead = async (id) => {
+  if (!id) {
+    console.error("❌ No lead ID provided to fetchLead");
+    setLoadingLead(false);
+    return;
+  }
+
+  setLoadingLead(true);
   try {
     const token = localStorage.getItem('token');
     const res = await axios.get(`${BASE_URL}/api/leads/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    setLead(res.data.lead);
-    setSelectedStatus(res.data.status || '');
-    setSelectedConnection(res.data.connectionStatus || '');
-    localStorage.setItem('selectedLead', JSON.stringify(res.data));
 
-    // ✅ Initialize timer for this lead if not already present
-    if (!leadTimers[res.data._id]) {
-      setLeadTimers(prev => ({
-        ...prev,
-        [res.data._id]: {
-          time: 0,
-          running: false,
-          paused: false,
-          intervalId: null,
-        }
-      }));
+    const data = res.data?.lead;
+    if (!data) {
+      console.error("❌ No lead data returned from server");
+      setLoadingLead(false);
+      return;
     }
 
-  } catch (err) {
-    console.error("Failed to fetch lead", err);
+    setLead(data);
+    setSelectedStatus(data.status || '');
+    setSelectedConnection(data.connectionStatus || '');
+    localStorage.setItem('selectedLead', JSON.stringify(data));
+  } catch (error) {
+    console.error("❌ Error fetching lead:", error);
+  } finally {
+    setLoadingLead(false);
   }
 };
-
 
 function copyToClipboard(text) {
   try {
@@ -294,17 +298,33 @@ const sendWhatsAppPhotos = (number, clientName = '', selectedImages) => {
   copyToClipboard(text); 
 };
 
-
-
 useEffect(() => {
-  const storedLead = localStorage.getItem('selectedLead');
-  if (storedLead) {
-    const parsedLead = JSON.parse(storedLead);
-    fetchLead(parsedLead._id); 
+  const loadLead = async () => {
+    const storedLead = localStorage.getItem('selectedLead');
+    const parsedLead = storedLead ? JSON.parse(storedLead) : null;
+    const idFromStorage = parsedLead?._id;
+    const idFromRouter = router.query?.leadId;
+
+    const finalId = idFromRouter || idFromStorage;
+
+    if (finalId) {
+      await fetchLead(finalId);
+    } else {
+      console.warn("❌ Lead ID not found in localStorage or URL");
+      setLoadingLead(false);
+    }
+  };
+
+  // Only run when router is ready
+  if (router.isReady) {
+    loadLead();
   }
-}, []);
+}, [router.isReady, router.query.leadId]);
 
 
+
+const [loadingLead, setLoadingLead] = useState(true);
+ 
   const handleAddFollowUp = async () => {
   const token = localStorage.getItem('token');
   if (!followUp.date || !followUp.notes) {
@@ -400,8 +420,8 @@ useEffect(() => {
     }
   };
 
-  if (!lead) return <p>Loading lead...</p>;
-
+  if (loadingLead) return <p>Loading lead...</p>;
+  if (!lead) return  <p>No lead found</p>
   return (
     <ProtectedRoute>
       <Navbar/>

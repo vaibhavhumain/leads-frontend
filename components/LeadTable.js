@@ -908,7 +908,7 @@ return (
   <div className="flex justify-end mt-auto">
     <button
       onClick={() => {
-        sessionStorage.setItem("selectedLead", JSON.stringify({ lead }));
+        localStorage.setItem("selectedLead", JSON.stringify( lead ));
         window.location.href = "/LeadDetails";
       }}
       className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl shadow text-xs font-medium transition"
