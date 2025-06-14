@@ -241,7 +241,8 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
 
   try {
     const token = localStorage.getItem('token');
-const res = await fetch(`${BASE_URL}/api/enquiry`, {
+    console.log("🔁 Sending to:", `${BASE_URL}/api/enquiry`);
+    const res = await fetch(`${BASE_URL}/api/enquiry`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
