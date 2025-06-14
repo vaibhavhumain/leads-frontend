@@ -546,22 +546,39 @@ function copyToClipboard(text) {
     toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
   }
 }
-
 const sendWhatsAppMessage = (number, clientName = '') => {
   const text = `Dear ${clientName || 'Customer'}, It was a pleasure speaking with you today! Thank you for considering Gobind Coach Builders for your bus body requirements. We're excited about the opportunity to bring your vision to life with our durable designs and unmatched craftsmanship.`;
-  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
+
+  const encodedText = encodeURIComponent(text);
+  const phoneNumber = `91${number}`;
+
+  const choice = window.confirm("Click OK to open in WhatsApp Web.\nClick Cancel to open in WhatsApp App.");
+
+  const url = choice
+    ? `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}` // Web
+    : `https://wa.me/${phoneNumber}?text=${encodedText}`; // App or fallback
+
   console.log('WA URL:', url);
   window.open(url, '_blank');
-  copyToClipboard(text); 
+  copyToClipboard(text);
 };
+
 
 const sendWhatsAppPdf = (number, clientName = '', pdfFileName) => {
   const origin = window.location.origin;
   const pdfUrl = `${origin}/${pdfFileName}`;
   const text = `Dear ${clientName || 'Customer'},\n\nPlease find the PDF here:\n${pdfUrl}`;
-  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
+  const encodedText = encodeURIComponent(text);
+  const phoneNumber = `91${number}`;
+
+  const choice = window.confirm("Click OK to open in WhatsApp Web.\nClick Cancel to open in WhatsApp App.");
+
+  const url = choice
+    ? `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`  // Web
+    : `https://wa.me/${phoneNumber}?text=${encodedText}`;                        // App
+
   window.open(url, '_blank');
-  copyToClipboard(text); 
+  copyToClipboard(text);
 };
 
 const sendWeeklyReminder = (number, clientName = '') => {
@@ -573,13 +590,23 @@ const sendWeeklyReminder = (number, clientName = '') => {
     toast.info("A weekly reminder was already sent in the last 7 days.");
     return;
   }
+
   const text = `Dear ${clientName || 'Customer'}, just a friendly reminder from Gobind Coach Builders! We're here to help with any updates or questions regarding your bus body needs. Feel free to reach out.`;
-  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
+  const encodedText = encodeURIComponent(text);
+  const phoneNumber = `91${number}`;
+
+  const choice = window.confirm("Click OK to open in WhatsApp Web.\nClick Cancel to open in WhatsApp App.");
+
+  const url = choice
+    ? `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`  // Web
+    : `https://wa.me/${phoneNumber}?text=${encodedText}`;                        // App
+
   window.open(url, '_blank');
   copyToClipboard(text);
   localStorage.setItem(storageKey, Date.now().toString());
   toast.success("Weekly reminder sent!");
 };
+
 
 if (!loggedInUser) return null;
 

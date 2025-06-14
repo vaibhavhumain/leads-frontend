@@ -82,47 +82,65 @@ export default function Gallery() {
 
   // WhatsApp share: Use Web Share API for images (mobile only, or prompt download for desktop)
   async function handleWhatsAppShareSelected() {
-    const imgs = images.filter((img) => selectedImages.has(img._id));
-    if (imgs.length === 0) return alert("No images selected!");
+  const imgs = images.filter((img) => selectedImages.has(img._id));
+  if (imgs.length === 0) return alert("No images selected!");
 
-    // Try native share (only on mobile and modern browsers)
-    if (
-      navigator.canShare &&
-      navigator.canShare({ files: [new File([], "a.jpg", { type: "image/jpeg" })] })
-    ) {
-      const files = [];
-      for (const img of imgs) {
-        const imgUrl = urlFor(img.image);
-        const response = await fetch(imgUrl);
-        const blob = await response.blob();
-        files.push(
-          new File([blob], `${img.label || "bus-image"}.jpg`, { type: blob.type })
-        );
-      }
-      try {
-        await navigator.share({
-          files,
-          title: "Bus Images from Gobind Coach",
-          text: "Here are some bus images!",
-        });
-        return;
-      } catch (e) {
-        alert("Native sharing cancelled or not available.");
-      }
-    }
-
-    // Fallback: ZIP and prompt download
-    const zip = new JSZip();
+  // ✅ Try native share (mobile)
+  if (
+    navigator.canShare &&
+    navigator.canShare({ files: [new File([], "a.jpg", { type: "image/jpeg" })] })
+  ) {
+    const files = [];
     for (const img of imgs) {
       const imgUrl = urlFor(img.image);
       const response = await fetch(imgUrl);
       const blob = await response.blob();
-      zip.file(`${img.label || "bus-image"}.jpg`, blob);
+      files.push(
+        new File([blob], `${img.label || "bus-image"}.jpg`, { type: blob.type })
+      );
     }
-    const zipBlob = await zip.generateAsync({ type: "blob" });
-    saveAs(zipBlob, "bus-images.zip");
-    alert("ZIP file downloaded. Please send it on WhatsApp manually.");
+    try {
+      await navigator.share({
+        files,
+        title: "Bus Images from Gobind Coach",
+        text: "Here are some bus images!",
+      });
+      return;
+    } catch (e) {
+      alert("Native sharing cancelled or not available.");
+    }
   }
+
+  // ❌ Fallback: ZIP and generate link
+  const zip = new JSZip();
+  for (const img of imgs) {
+    const imgUrl = urlFor(img.image);
+    const response = await fetch(imgUrl);
+    const blob = await response.blob();
+    zip.file(`${img.label || "bus-image"}.jpg`, blob);
+  }
+
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  const zipFile = new File([zipBlob], "bus-images.zip", { type: "application/zip" });
+
+  // ✅ Upload ZIP to a temporary endpoint or Blob URL
+  const zipUrl = URL.createObjectURL(zipFile);
+  const message = `Dear Customer,\n\nPlease find the selected bus images:\n${zipUrl}`;
+  const encodedMessage = encodeURIComponent(message);
+  const number = prompt("Enter customer number without +91:");
+
+  if (!number) return;
+
+  const choice = window.confirm("Click OK to open in WhatsApp Web.\nClick Cancel to open in WhatsApp App.");
+
+  const waUrl = choice
+    ? `https://web.whatsapp.com/send?phone=91${number}&text=${encodedMessage}`  // Web
+    : `https://wa.me/91${number}?text=${encodedMessage}`;                        // App
+
+  window.open(waUrl, '_blank');
+  copyToClipboard(message);
+  alert("WhatsApp message prepared. ZIP also ready for manual sending if needed.");
+}
 
   // Download an image
   async function handleDownloadImage(imgUrl, label = "bus-image") {

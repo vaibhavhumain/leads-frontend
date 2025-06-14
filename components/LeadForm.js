@@ -32,18 +32,18 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
       setLoading(false);
       return;
     }
-    const payload = {
-      leadDetails: {
-        ...leadDetails,
-        contacts: [
-          {
-            number: leadDetails.contact,
-            label: 'Primary'
-          }
-        ]
-      }
-    };
-    delete payload.leadDetails.contact;
+    const leadPayload = {
+  clientName: leadDetails.clientName,
+  companyName: leadDetails.companyName,
+  location: leadDetails.location,
+};
+
+if (leadDetails.contact && leadDetails.contact.trim() !== '') {
+  leadPayload.contacts = [{ number: leadDetails.contact.trim(), label: 'Primary' }];
+}
+
+const payload = { leadDetails: leadPayload };
+
 
     const response = await axios.post(
       `${BASE_URL}/api/leads/create`,
@@ -102,7 +102,6 @@ const LeadForm = ({ onLeadCreated, closeModal }) => {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={leadDetails.contact}
             onChange={handleChange}
-            required
             disabled={loading}
           />
         </div>
