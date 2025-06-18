@@ -6,7 +6,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import Select from 'react-select';
 import BASE_URL from '../utils/api';
 import { useRouter } from 'next/router'
-import Link from 'next/link';
 export default function EnquiryForm() {
   const [stage, setStage] = useState(1);
   const [category, setCategory] = useState('');
@@ -14,7 +13,6 @@ export default function EnquiryForm() {
   const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const router = useRouter();
   const {leadId} = router.query;  
-  
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -119,7 +117,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
   fetchLead();
 }, [router.isReady, leadId]);
 
-  
   const windowImages = {
     'Sliding Glass': '/Sliding Glass.jpg',
     'Pack Glass': '/Pack Glass.jpg',
@@ -137,7 +134,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     '2X1': '/2X1.JPG',
   };
 
-  // Dropdown Options
   const windowOptions = ['Sliding Glass', 'Pack Glass', 'Pack Slider Glass'];
   const tintOptions = ['Light Green', 'Other'];
   const seatingPatternOptions = ['3X2', '2X2', '2X1'];
@@ -197,7 +193,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
 
   let leadId = localStorage.getItem('leadId');
   if (!leadId || leadId === 'null' || leadId === '') {
-    // Build lead payload
     const leadDetails = {
       clientName: formData.customerName,
       companyName: formData.companyDetails,
@@ -206,7 +201,7 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
       email: formData.customerEmail,
     };
     try {
-      const token = localStorage.getItem('token'); // your auth token, if any
+      const token = localStorage.getItem('token'); 
       const leadRes = await fetch(`${BASE_URL}/api/leads/create`, {
         method: "POST",
         headers: {
@@ -231,7 +226,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     }
   }
 
-  // Now submit the enquiry
   const combinedData = {
     ...formData,
     category,
@@ -358,14 +352,10 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
 <InputField label="Company Name" name="companyDetails" value={formData.companyDetails} onChange={handleChange} />
 <InputField label="City" name="city" value={formData.city} onChange={handleChange} />
 <InputField label="Team Member (Created By)" name="teamMember" value={formData.teamMember} onChange={handleChange} readOnly />
-
-
-{/* --- PERSONAL --- */}
 <h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Personal Details</h3>
 <InputField label="Education" name="education" value={formData.education} onChange={handleChange} />
 <InputField label="Hobbies" name="hobbies" value={formData.hobbies} onChange={handleChange} />
 <InputField label="Behavior" name="behavior " value={formData.behavior} onChange={handleChange} />
-            {/* --- BUSINESS DETAILS --- */}
 <h3 className="md:col-span-2 text-xl font-semibold mt-8 mb-2">Business Details</h3>
 <InputField label="Type of Buses in Fleet" name="businessTypeOfBuses" value={formData.businessTypeOfBuses} onChange={handleChange} />
 <InputField label="Number of Buses in Fleet" name="businessNumberOfBuses" value={formData.businessNumberOfBuses} onChange={handleChange} type="number" />
@@ -374,9 +364,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
 <InputField label="Number of Employees" name="businessEmployees" value={formData.businessEmployees} onChange={handleChange} type="number" />
 <InputField label="Area of Expertise" name="businessExpertiseArea" value={formData.businessExpertiseArea} onChange={handleChange} />
 
-
-
-{/* --- CUSTOMER TYPE (auto-decide or manual for now) --- */}
 <SelectField
   label="Customer Type"
   name="customerType"
@@ -389,8 +376,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     'Dangerous'
   ]}
 />
-
-
             <InputField label="Phone Number" name="customerPhone" value={formData.customerPhone} onChange={handleChange} required />
             <InputField label="Email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} type="email" />
             <SelectField label="Bus Type" name="busType" value={formData.busType} onChange={handleChange} options={['Passenger/Route', 'Tourist', 'Sleeper', 'School', 'Staff', 'Other']} />
@@ -421,7 +406,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
           </motion.div>
         )}
 
-        {/* Stage 2 */}
         {stage === 2 && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
             <SelectField label="Bus Category" name="category" value={category} onChange={(e) => setCategory(e.target.value)} options={['Luxury', 'Sleeper', 'Semi-Deluxe']} />
@@ -431,7 +415,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
                 
 
 <form className="space-y-6" onSubmit={handleSubmit}>
-  {/* 1. Window */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Window</label>
     <select 
@@ -462,7 +445,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     )}
   </div>
 
-  {/* 2. Tint of Shades */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Tint of Shades</label>
     <select
@@ -486,7 +468,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     )}
   </div>
 
-  {/* Total Seats */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Total Seats</label>
     <input
@@ -498,7 +479,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     />
   </div>
 
-  {/* Seating Pattern */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Seating Pattern</label>
     <select
@@ -520,7 +500,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
       )}
   </div>
 
-  {/* Seat Type */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Seat Type</label>
     <select
@@ -534,7 +513,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     </select>
   </div>
 
-  {/* Seat Belt */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Seat Belt</label>
     <select
@@ -560,7 +538,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     )}
   </div>
 
-  {/* Remaining Dropdowns */}
   {[
     { label: 'Seat Material', name: 'seatMaterial', options: seatMaterialOptions },
     { label: 'Curtain', name: 'curtain', options: curtainOptions },
@@ -591,7 +568,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     </div>
   ))}
 
-  {/* Specific Requirement */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Specific Requirement</label>
     <textarea
@@ -603,7 +579,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     />
   </div>
 
-  {/* Suggested Model */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Suggested Model</label>
     <select
@@ -617,7 +592,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     </select>
   </div>
 
-  {/* Optional Features */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Optional Features</label>
     <Select
@@ -632,7 +606,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
     />
   </div>
 
-  {/* Fitment Provided */}
   <div>
     <label className="block font-medium mb-1 text-gray-700">Fitment Provided</label>
     <Select
@@ -693,7 +666,6 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
   );
 }
 
-// Reusable Input Field Component
 const InputField = ({ label, name, value, onChange, type = 'text', required = false }) => (
   <div>
     <label className="block text-sm font-semibold mb-1 text-gray-700">{label}</label>
@@ -707,8 +679,6 @@ const InputField = ({ label, name, value, onChange, type = 'text', required = fa
     />
   </div>
 );
-
-// Reusable Select Field Component
 const SelectField = ({ label, name, value, onChange, options }) => (
   <div>
     <label className="block text-sm font-semibold mb-1 text-gray-700">{label}</label>
@@ -718,6 +688,7 @@ const SelectField = ({ label, name, value, onChange, options }) => (
       onChange={onChange}
       className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
+      
       <option value="">Select</option>
       {options.map((opt) => (
         <option key={opt} value={opt}>{opt}</option>

@@ -76,19 +76,44 @@ export default function PdfViewer() {
                 <p className="text-sm text-gray-500">Created At: {new Date(pdf.createdAt).toLocaleString()}</p>
 
                 <button
-                  onClick={() => {
-                    const downloadUrl = `${BASE_URL}${pdf.pdfUrl}`;
-                    const link = document.createElement('a');
-                    link.href = downloadUrl;
-                    link.download = `${pdf.enquiryId}.pdf`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                  className="mt-4 bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition"
-                >
-                  Download PDF
-                </button>
+  onClick={async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Unauthorized. Please login again.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}${pdf.pdfUrl}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${pdf.enquiryId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert('Failed to download PDF.');
+    }
+  }}
+  className="mt-4 bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition"
+>
+  Download PDF
+</button>
+
               </div>
             ))}
           </div>
