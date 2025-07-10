@@ -177,22 +177,21 @@ const getUserDurationDistribution = (timerLogs) => {
   return (
   <ProtectedRoute>
     <Navbar loggedInUser={loggedInUser} />
-    <div className="p-4 sm:p-8 bg-gradient-to-br from-indigo-50 via-white to-blue-50 min-h-screen">
+      <div className="p-4 sm:p-8 bg-white min-h-screen">
       <motion.h1
-        className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-pink-500 to-blue-600 text-center drop-shadow-lg mb-8"
+  className="text-3xl sm:text-4xl font-bold text-center text-indigo-700 mb-8"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
         <span className="inline-flex items-center gap-2">
-          <FaUser className="text-pink-500 drop-shadow" size={38} />
           Admin Dashboard
         </span>
       </motion.h1>
 
 <div className="grid sm:grid-cols-2 gap-8 mb-12">
   {/* Pie Chart for Lead Status */}
-  <div className="bg-white rounded-2xl shadow-lg p-6">
+<div className="bg-white border rounded shadow p-5">
     <div className="text-lg font-bold mb-4 text-indigo-600">Lead Status Distribution</div>
     <ResponsiveContainer width="100%" height={260}>
       <PieChart>
@@ -216,7 +215,7 @@ const getUserDurationDistribution = (timerLogs) => {
   </div>
 
   {/* Donut Chart for Timer Log Distribution */}
-  <div className="bg-white rounded-2xl shadow-lg p-6">
+<div className="bg-white border rounded shadow p-5">
     <div className="text-lg font-bold mb-4 text-pink-500">Time Spent by User</div>
     <ResponsiveContainer width="100%" height={260}>
       <PieChart>
@@ -245,7 +244,7 @@ const getUserDurationDistribution = (timerLogs) => {
 
 
   {/* Bar Chart for User Pause Logs */}
-  <div className="bg-white rounded-2xl shadow-lg p-6">
+<div className="bg-white border rounded shadow p-5">
     <div className="text-lg font-bold mb-4 text-blue-500">Paused Sessions Per User</div>
     <ResponsiveContainer width="100%" height={260}>
       <BarChart
@@ -264,8 +263,7 @@ const getUserDurationDistribution = (timerLogs) => {
     </ResponsiveContainer>
   </div>
 
-      <motion.div
-  className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-indigo-100 flex flex-col items-center"
+ <motion.div className="bg-white border rounded shadow p-6 mb-12"
   initial={{ opacity: 0, y: 30 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ delay: 0.25 }}
@@ -296,7 +294,7 @@ const getUserDurationDistribution = (timerLogs) => {
       <AnimatePresence mode="wait">
         <motion.div
           key={filteredLeads[filteredIdx]._id}
-          className="w-full max-w-xl bg-gradient-to-br from-indigo-50 via-white to-pink-50 rounded-3xl shadow-2xl p-8 border border-indigo-100 flex flex-col gap-5 relative"
+          className="w-full max-w-xl bg-white border rounded shadow p-6"
           initial={{ opacity: 0, scale: 0.96, y: 60 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: -60 }}
@@ -413,7 +411,7 @@ const getUserDurationDistribution = (timerLogs) => {
     ) : (
       <table className="min-w-full text-left rounded-2xl">
         <thead>
-          <tr className="bg-pink-100 text-pink-700">
+          <tr className="bg-gray-100 text-gray-700">
             <th className="p-4 font-semibold">Lead</th>
             <th className="p-4 font-semibold">Stopped By</th>
             <th className="p-4 font-semibold">Time Spent</th>
@@ -422,7 +420,7 @@ const getUserDurationDistribution = (timerLogs) => {
         </thead>
         <tbody>
           {timerLogs.map((log, i) => (
-            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-pink-50"}>
+            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
               <td className="p-4">
                 <div className="bg-pink-50 rounded-xl px-3 py-2 font-semibold">{log.leadName}</div>
               </td>
@@ -540,11 +538,10 @@ const getUserDurationDistribution = (timerLogs) => {
       toast.error('Delete failed');
     }
   }}
-  className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white px-5 py-2 rounded-md text-sm font-semibold shadow-lg mb-6"
+className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font-semibold shadow"
 >
   Delete All Leads
 </button>
-
 
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 flex flex-col items-center">
         
