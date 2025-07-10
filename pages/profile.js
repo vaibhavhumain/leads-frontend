@@ -38,7 +38,7 @@ const ProfilePage = () => {
       const leads = response.data;
 
       if (leads.length > 0 && leads[0].forwardedTo?.user) {
-        setUser(leads[0].forwardedTo.user); // 👈 use first forwarded user's data
+        setUser(leads[0].forwardedTo.user); 
       } else {
         toast.warning('No forwarded leads, user info fallback unavailable');
       }
@@ -137,54 +137,21 @@ return (
       <ToastContainer />
       <Navbar />
 
-      {/* Animated Background Blobs */}
-      <motion.div
-        className="absolute top-[-90px] left-[-90px] w-[270px] h-[270px] bg-purple-300 opacity-40 rounded-full blur-3xl z-0"
-        animate={{ y: [0, 50, 0], x: [0, 60, 0] }}
-        transition={{ duration: 12, repeat: Infinity }}
-      />
-      <motion.div
-        className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] bg-indigo-400 opacity-30 rounded-full blur-3xl z-0"
-        animate={{ scale: [1, 1.18, 1] }}
-        transition={{ duration: 15, repeat: Infinity }}
-      />
-
       <div className="relative z-10 w-full px-4 py-10 md:px-8">
-        <motion.h1
-          className="text-5xl font-extrabold mb-7 text-center bg-gradient-to-br from-indigo-700 via-fuchsia-500 to-blue-400 bg-clip-text text-transparent drop-shadow-lg"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-        >
-          Sales Profile
-        </motion.h1>
-
         <motion.h2
-  className="
-    relative
-    text-3xl md:text-4xl font-extrabold tracking-tight
-    mb-10 text-center text-transparent
-    bg-clip-text bg-gradient-to-r from-indigo-700 via-blue-500 to-emerald-400
-    drop-shadow-xl
-  "
-  initial={{ opacity: 0, x: -25 }}
-  animate={{ opacity: 1, x: 0 }}
-  transition={{ delay: 0.2, duration: 0.6 }}
->
-  <span className="inline-flex items-center gap-2">
-    🚀
-    <span>Leads Forwarded To Me</span>
-    🌟
-  </span>
-  <span
-    className="
-      block mx-auto mt-3 w-24 h-1 rounded-full
-      bg-gradient-to-r from-indigo-400 via-blue-400 to-emerald-300
-      blur-[1px] opacity-70 shadow-lg
-    "
-  ></span>
-</motion.h2>
-
+          className="
+            text-3xl md:text-4xl font-extrabold tracking-tight
+            mb-10 text-center text-transparent
+            bg-clip-text bg-gradient-to-r from-indigo-700 via-blue-500 to-emerald-400
+            drop-shadow-xl"
+          initial={{ opacity: 0, x: -25 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+        >
+          <span className="inline-flex items-center gap-2">
+            <span>Leads Forwarded To Me</span>
+          </span>
+        </motion.h2>
 
         {/* Search */}
         <div className="flex justify-center mb-6">
@@ -201,13 +168,12 @@ return (
             <input
               type="text"
               placeholder="Search by Phone Number"
-              className="pl-10 pr-10 py-3 border-2 border-indigo-300 rounded-xl shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white/90 text-gray-800 w-full font-medium"
+              className="pl-10 pr-10 py-3 border-2 border-indigo-300 rounded-xl shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-800 w-full font-medium"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               maxLength={15}
               style={{ transition: 'box-shadow 0.3s' }}
             />
-            {/* Clear (X) button */}
             {searchTerm && (
               <button
                 type="button"
@@ -248,7 +214,7 @@ return (
             {filteredLeads.map((lead) => (
               <motion.div
                 key={lead._id}
-                className="group bg-white/60 backdrop-blur-md shadow-xl rounded-3xl border border-indigo-100 p-7 flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-indigo-300 relative"
+                className="group bg-white shadow-md rounded-3xl border border-indigo-200 p-7 flex flex-col transition-all duration-300 hover:shadow-lg hover:border-indigo-400"
                 whileHover={{ y: -6, scale: 1.015 }}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -258,10 +224,11 @@ return (
                   <span className="text-xs font-medium text-indigo-400 tracking-wide">
                     Lead
                   </span>
-                  <span className="bg-gradient-to-r from-pink-200 via-indigo-200 to-blue-200 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                  <span className="bg-indigo-100 text-indigo-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
                     {lead.leadDetails?.clientName || "No Name"}
                   </span>
                 </div>
+
                 {/* Phone Numbers */}
                 <div className="mb-3 text-base">
                   <span className="font-semibold text-gray-700">📱 </span>
@@ -285,6 +252,7 @@ return (
                         </span>
                       )}
                 </div>
+
                 {/* Meta Info */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-sm mb-3">
                   <span className="text-gray-600">
@@ -296,6 +264,7 @@ return (
                     {lead.forwardedTo?.user?.name || "You"}
                   </span>
                 </div>
+
                 {/* Follow-Ups */}
                 <div className="mb-3">
                   <button
@@ -327,6 +296,7 @@ return (
                     </motion.div>
                   )}
                 </div>
+
                 {/* View/Update */}
                 <div className="mt-auto flex justify-end">
                   <button

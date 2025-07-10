@@ -11,6 +11,7 @@ import {useRouter} from 'next/router';
 import { toast } from 'react-toastify';
 import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
+import StatCard from '../components/StatCard';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar,
@@ -281,88 +282,7 @@ const handleBulkUpload = async () => {
     toast.error('Upload failed');
   }
 };
-
-  return (
-    <ProtectedRoute>
-      <div className="flex min-h-screen bg-gradient-to-br from-[#f7f8fa] via-[#f9f5fa] to-[#faf8f6] relative">
-        <button
-          className="fixed top-4 left-4 z-50 p-2 bg-white shadow md:hidden rounded-lg"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <FiMenu size={26} />
-        </button>
-<div className="flex-1 flex flex-col min-h-screen px-2 sm:px-4 md:px-8 lg:px-14 py-6 bg-transparent">
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-            <div className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-500 text-white p-4 rounded-2xl flex items-center gap-4 shadow-lg">
-              <span className="text-2xl">💼</span>
-              <span className="text-lg font-bold">Leads Portal</span>
-            </div>
-            <div className="flex gap-3 items-center">
-               <NotificationBell/>  
-              <div className="bg-white px-4 py-2 rounded-2xl shadow flex items-center gap-2 text-gray-700 font-semibold">
-               
-  <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
-    {loggedInUser?.name ? loggedInUser.name.charAt(0).toUpperCase() : 'U'}
-  </span>
-  {loggedInUser?.name || 'User'} 
-</div>
-
-             
-              <button
-  onClick={() => router.push('/profile')}
-  className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl shadow text-gray-700 font-semibold hover:bg-indigo-50"
->
-  Profile
-</button>
-
-              <button
-  onClick={() => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem('token');
-      localStorage.removeItem('loginTime');
-    }
-    router.push('/login'); 
-  }}
-  className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow font-semibold transition"
->
-  Logout
-</button>
-
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7 mb-8">
-            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
-              <span className="bg-indigo-50 text-indigo-500 p-2 rounded-full mb-2">
-                <FiHome size={24} />
-              </span>
-              <div className="text-gray-400 text-xs mb-1">Total Leads</div>
-              <div className="text-3xl font-bold text-indigo-600">{myLeads.length}</div>
-            </div>
-            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
-              <span className="bg-green-50 text-green-500 p-2 rounded-full mb-2">
-                <BiImport size={24} />
-              </span>
-              <div className="text-gray-400 text-xs mb-1">Uploaded Today</div>
-              <div className="text-3xl font-bold text-indigo-600">{totalLeadsUploaded}</div>
-            </div>
-            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
-              <span className="bg-yellow-50 text-yellow-500 p-2 rounded-full mb-2">
-                <FiUsers size={24} />
-              </span>
-             <div className="text-gray-400 text-xs mb-1">Paused Sessions</div>
-<div className="text-xl font-bold text-yellow-500">{totalPausedSessions}</div>
-
-            </div>
-            <div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
-              <span className="bg-blue-50 text-blue-500 p-2 rounded-full mb-2">
-                <FiHome size={24} />
-              </span>
-              <div className="text-gray-400 text-xs mb-1">Login Time</div>
-<div className="bg-white/80 border rounded-2xl shadow-xl p-6 flex flex-col items-center">
-  <div className="flex flex-col items-center gap-2">
-    <div className="text-3xl font-bold text-blue-600">{loginDuration}</div>
-    <button
-  onClick={async () => {
+const handlePauseResume = async () => {
   const now = new Date();
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
@@ -373,8 +293,9 @@ const handleBulkUpload = async () => {
         pausedAt: now.toISOString()
       }, { headers });
 
-      toast.info('⏸️ Session Paused');
+      toast.info('Session Paused');
       setPauseHistory(prev => [...prev, { pausedAt: now.toISOString() }]);
+      handlePausedSession();
     } catch (err) {
       toast.error('Pause failed');
       return;
@@ -390,7 +311,7 @@ const handleBulkUpload = async () => {
           pausedDuration
         }, { headers });
 
-        toast.success('▶️ Session Resumed');
+        toast.success('Session Resumed');
         setPauseHistory(prev => {
           const updated = [...prev];
           const lastLog = updated[updated.length - 1];
@@ -408,117 +329,164 @@ const handleBulkUpload = async () => {
   }
 
   setIsPaused(prev => !prev);
-}}
+};
 
-  className={`mt-1 px-4 py-1 rounded-full text-xs font-bold shadow transition ${
-    isPaused
-      ? "bg-yellow-400 hover:bg-yellow-500 text-white"
-      : "bg-red-500 hover:bg-red-600 text-white"
-  }`}
->
-  {isPaused ? "Resume" : "Pause"}
-</button>
 
-  </div>
-</div>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 mb-7">
-            <button
-              onClick={() => setSearchVisible((prev) => !prev)}
-              className="p-3 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow"
-            >
-              <FiSearch size={20} />
-            </button>
-            {searchVisible && (
-              <input
-                type="text"
-                placeholder="🔎 Search by phone number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 min-w-0 px-4 py-2 border border-indigo-200 rounded-lg shadow-sm text-sm bg-white focus:ring focus:ring-indigo-200 transition"
-              />
-            )}
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleExcelUpload}
-              className="border border-indigo-200 px-4 py-2 rounded-lg text-sm bg-white shadow focus:outline-none focus:ring-2 focus:ring-indigo-200 transition"
-            />
-            <button
-              onClick={handleBulkUpload}
-              className="bg-gradient-to-r from-indigo-400 to-pink-400 hover:from-indigo-500 hover:to-pink-500 text-white px-8 py-3 rounded-full text-lg font-bold shadow-md transition flex items-center gap-2"
-            >
-              <BiImport size={20} />
-              Import Leads
-            </button>
-            <button
-              onClick={handleOpenLeadForm}
-              className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white px-8 py-3 rounded-full text-lg font-bold shadow-2xl transition flex items-center gap-2"
-            >
-              ➕ New Lead
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-7 mb-8">
-  <div className="bg-white/70 border rounded-2xl shadow-xl p-6 min-h-[250px] flex flex-col">
-    <div className="font-bold mb-2 text-gray-600">Leads by Day</div>
-    <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={leadsByDay}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-  <div className="bg-white/70 border rounded-2xl shadow-xl p-6 min-h-[250px] flex flex-col">
-    <div className="font-bold mb-2 text-gray-600">Leads by Status</div>
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart
-        data={
-          Object.entries(
-            myLeads.reduce((acc, cur) => {
-              const status = cur.status || "Unknown";
-              acc[status] = (acc[status] || 0) + 1;
-              return acc;
-            }, {})
-          ).map(([status, count]) => ({ status, count }))
-        }
+return (
+  <ProtectedRoute>
+    <div className="flex min-h-screen bg-gray-100">
+      <button
+        className="fixed top-4 left-4 z-50 p-2 bg-white border rounded md:hidden"
+        onClick={() => setSidebarOpen(true)}
       >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="status" />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Bar dataKey="count" fill="#10b981" />
-      </BarChart>
-    </ResponsiveContainer>
-  </div>
-</div>
-          {!loading && !error && (
-            <div className="bg-white/90 rounded-3xl shadow-xl p-6 mb-8 border">
-              <LeadTable
-                leads={filteredLeads}
-                setLeads={setMyLeads}
-                searchTerm={searchTerm}
-                loggedInUser={loggedInUser}
-                isSearchActive={!!searchTerm.trim()}
-              />
-            </div>
-          )}
+        <FiMenu size={26} />
+      </button>
 
-        {loading && (
-          <div className="text-center text-indigo-600 font-medium text-sm mt-4">
-            🔄 Loading leads...
+      <div className="flex-1 flex flex-col px-4 py-6">
+        {/* Top Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+          <div className="bg-blue-600 text-white px-4 py-2 rounded font-bold text-lg">
+            Leads Portal
           </div>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="bg-white px-4 py-2 rounded border text-gray-700 font-medium flex items-center gap-2">
+              <span className="bg-indigo-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">
+                {loggedInUser?.name?.charAt(0).toUpperCase() || 'U'}
+              </span>
+              {loggedInUser?.name || 'User'}
+            </div>
+            <button
+              onClick={() => router.push('/profile')}
+              className="px-4 py-2 bg-white border rounded text-gray-700 font-medium"
+            >
+              Profile
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('loginTime');
+                router.push('/login');
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded font-medium"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <StatCard label="Total Leads" value={myLeads.length} icon={<FiHome />} />
+          <StatCard label="Uploaded Today" value={totalLeadsUploaded} icon={<BiImport />} />
+          <StatCard label="Paused Sessions" value={totalPausedSessions} icon={<FiUsers />} />
+          <div className="bg-white border rounded p-4 flex flex-col items-center">
+            <div className="text-sm text-gray-500 mb-1">Login Time</div>
+            <div className="text-2xl font-bold text-blue-600">{loginDuration}</div>
+            <button
+              onClick={handlePauseResume}
+              className={`mt-2 px-4 py-1 rounded text-sm font-medium ${
+                isPaused ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'
+              }`}
+            >
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
+          </div>
+        </div>
+
+        {/* Search & Upload */}
+        <div className="flex flex-wrap gap-3 items-center mb-6">
+          <button
+            onClick={() => setSearchVisible(prev => !prev)}
+            className="px-3 py-2 bg-indigo-600 text-white rounded"
+          >
+            <FiSearch size={18} />
+          </button>
+          {searchVisible && (
+            <input
+              type="text"
+              placeholder="Search by phone number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3 py-2 border rounded text-sm w-60"
+            />
+          )}
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleExcelUpload}
+            className="px-3 py-2 border rounded text-sm"
+          />
+          <button
+            onClick={handleBulkUpload}
+            className="px-4 py-2 bg-indigo-600 text-white rounded text-sm"
+          >
+            <BiImport /> Import Leads
+          </button>
+          <button
+            onClick={handleOpenLeadForm}
+            className="px-4 py-2 bg-blue-600 text-white rounded text-sm"
+          >
+            New Lead
+          </button>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white border rounded p-4">
+            <div className="font-medium text-gray-600 mb-2">Leads by Day</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={leadsByDay}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="bg-white border rounded p-4">
+            <div className="font-medium text-gray-600 mb-2">Leads by Status</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart
+                data={Object.entries(
+                  myLeads.reduce((acc, cur) => {
+                    const status = cur.status || "Unknown";
+                    acc[status] = (acc[status] || 0) + 1;
+                    return acc;
+                  }, {})
+                ).map(([status, count]) => ({ status, count }))}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="status" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#10b981" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Table */}
+        {!loading && !error && (
+          <div className="bg-white border rounded p-4 mb-8">
+            <LeadTable
+              leads={filteredLeads}
+              setLeads={setMyLeads}
+              searchTerm={searchTerm}
+              loggedInUser={loggedInUser}
+              isSearchActive={!!searchTerm.trim()}
+            />
+          </div>
+        )}
+        {loading && (
+          <div className="text-center text-indigo-600 text-sm">Loading leads...</div>
         )}
         {error && !loading && (
-          <div className="text-center text-red-600 font-semibold text-sm mt-4">
-            ❌ {error}
-          </div>
+          <div className="text-center text-red-600 text-sm">{error}</div>
         )}
 
+        {/* Lead Form */}
         {isLeadFormOpen && loggedInUser?.role !== 'admin' && (
           <div ref={formRef} className="mt-10">
             <LeadForm
@@ -531,5 +499,6 @@ const handleBulkUpload = async () => {
     </div>
   </ProtectedRoute>
 );
+
 }
 export default Dashboard
