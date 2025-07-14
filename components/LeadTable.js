@@ -37,6 +37,8 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [newContactLabel, setNewContactLabel] = useState('');
   const [editingCompanyNameId, setEditingCompanyNameId] = useState(null);
   const [editedCompanyName, setEditedCompanyName] = useState('');
+  const [editingLocationId, setEditingLocationId] = useState(null);
+  const [editedLocation, setEditedLocation] = useState('');
 
 
   const leadsPerPage = 3;
@@ -549,6 +551,46 @@ const updateCompanyName = async (leadId) => {
   }
 };
 
+const updateLocation = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedLocation.trim()) {
+    toast.warning('Location cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/location`,
+      { location: editedLocation },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Location updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                location: editedLocation,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingLocationId(null);
+    setEditedLocation('');
+  } catch (err) {
+    console.error('Failed to update location', err);
+    toast.error('Update failed');
+  }
+};
+
 
 if (!loggedInUser) return null;
 
@@ -639,6 +681,41 @@ return (
       }}
     >
       🏢 {lead.leadDetails.companyName}
+    </div>
+  )
+)}
+
+{/* Location */}
+{editingLocationId === lead._id ? (
+  <div className="flex gap-2 items-center mt-1">
+    <input
+      value={editedLocation}
+      onChange={(e) => setEditedLocation(e.target.value)}
+      className="border px-2 py-1 rounded text-sm"
+    />
+    <button
+      onClick={() => updateLocation(lead._id)}
+      className="text-green-600 text-sm"
+    >
+      Save
+    </button>
+    <button
+      onClick={() => setEditingLocationId(null)}
+      className="text-red-500 text-sm"
+    >
+      Cancel
+    </button>
+  </div>
+) : (
+  lead.leadDetails?.location && (
+    <div
+      className="text-sm text-blue-600 font-medium cursor-pointer hover:underline"
+      onClick={() => {
+        setEditingLocationId(lead._id);
+        setEditedLocation(lead.leadDetails.location || '');
+      }}
+    >
+      📍 {lead.leadDetails.location}
     </div>
   )
 )}
