@@ -532,7 +532,7 @@ const getUserDurationDistribution = (timerLogs) => {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       await axios.delete(`${BASE_URL}/api/leads/`, { headers });
-      setLeads([]); // Clear state
+      setLeads([]); 
       toast.success('All leads deleted!');
     } catch (err) {
       toast.error('Delete failed');

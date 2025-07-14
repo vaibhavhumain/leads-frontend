@@ -8,6 +8,7 @@ const STATUS_OPTIONS = ['Hot', 'Warm', 'Cold'];
 import { MdAlarm } from 'react-icons/md';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
+import EnquiryForm from '../pages/EnquiryForm';
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 
@@ -619,9 +620,18 @@ return (
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3 justify-end">
+
+            <Link href="/EnquiryForm">
+  <span className="bg-amber-700 text-white px-4 py-2 rounded-lg shadow cursor-pointer inline-block">
+    📃 Enquiry Form
+  </span>
+</Link>
+
 <button onClick={() => sendWhatsAppMessage(lead)} className="bg-green-500 text-white px-4 py-2 rounded-lg shadow">
   📩 WhatsApp
 </button>
+
+
             <button onClick={() => sendWhatsAppPdf(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')} className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow">📄 PDF</button>
             <Link
             href="/gallery"
