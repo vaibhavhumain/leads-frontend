@@ -35,6 +35,9 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [newContactLeadId, setNewContactLeadId] = useState(null); 
   const [newContactNumber, setNewContactNumber] = useState('');
   const [newContactLabel, setNewContactLabel] = useState('');
+  const [editingCompanyNameId, setEditingCompanyNameId] = useState(null);
+  const [editedCompanyName, setEditedCompanyName] = useState('');
+
 
   const leadsPerPage = 3;
 
@@ -489,6 +492,64 @@ const goToNextLead = () => {
   }
 };
 
+const handleDeleteLead = async (leadId) => {
+  const confirmDelete = window.confirm('⚠️ Are you sure you want to delete this lead? This cannot be undone.');
+  if (!confirmDelete) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${BASE_URL}/api/leads/deleteByUser/${leadId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setLeads((prev) => prev.filter((lead) => lead._id !== leadId));
+    toast.success('Lead deleted successfully');
+  } catch (error) {
+    console.error('Error deleting lead:', error);
+    toast.error(error?.response?.data?.message || 'Failed to delete lead');
+  }
+};
+const updateCompanyName = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedCompanyName.trim()) {
+    toast.warning('Company name cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/company-name`,
+      { companyName: editedCompanyName },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Company name updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                companyName: editedCompanyName,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingCompanyNameId(null);
+    setEditedCompanyName('');
+  } catch (err) {
+    console.error('Failed to update company name', err);
+    toast.error('Update failed');
+  }
+};
+
+
 if (!loggedInUser) return null;
 
 const lead = filteredLeads[currentLeadIndex];
@@ -554,11 +615,34 @@ return (
   </h2>
 
   {/* Company */}
-  {lead.leadDetails?.companyName && (
-    <div className="text-sm text-indigo-700 font-medium">
-      {lead.leadDetails.companyName}
+  {editingCompanyNameId === lead._id ? (
+  <div className="flex gap-2 items-center mt-1">
+    <input
+      value={editedCompanyName}
+      onChange={(e) => setEditedCompanyName(e.target.value)}
+      className="border px-2 py-1 rounded text-sm"
+    />
+    <button onClick={() => updateCompanyName(lead._id)} className="text-green-600 text-sm">
+      Save
+    </button>
+    <button onClick={() => setEditingCompanyNameId(null)} className="text-red-500 text-sm">
+      Cancel
+    </button>
+  </div>
+) : (
+  lead.leadDetails?.companyName && (
+    <div
+      className="text-sm text-indigo-700 font-medium cursor-pointer hover:underline"
+      onClick={() => {
+        setEditingCompanyNameId(lead._id);
+        setEditedCompanyName(lead.leadDetails.companyName || '');
+      }}
+    >
+      🏢 {lead.leadDetails.companyName}
     </div>
-  )}
+  )
+)}
+
   {/* Main contact (if any) */}
   {lead.leadDetails?.contact && (
     <div className="flex items-center gap-2">
@@ -613,7 +697,15 @@ return (
     >
       ➕ Add Contact
     </button>
+    
   )}
+  <button
+  onClick={() => handleDeleteLead(lead._id)}
+  className="text-red-600 underline text-sm mt-2 w-fit"
+>
+  ❌ Delete this Lead
+</button>
+
 </div>
 
 
@@ -630,7 +722,7 @@ return (
 <button onClick={() => sendWhatsAppMessage(lead)} className="bg-green-500 text-white px-4 py-2 rounded-lg shadow">
   📩 WhatsApp
 </button>
-
+ 
 
             <button onClick={() => sendWhatsAppPdf(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')} className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow">📄 PDF</button>
             <Link
