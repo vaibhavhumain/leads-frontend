@@ -89,7 +89,6 @@ const payload = { leadDetails: leadPayload };
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
             value={leadDetails.clientName}
             onChange={handleChange}
-            required
             disabled={loading}
           />
         </div>
