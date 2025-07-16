@@ -939,13 +939,17 @@ return (
   📩 WhatsApp (Connected)
 </button>
 
-
 <button onClick={() => notSendWhatsAppMessage(lead)} className="bg-green-500 text-white px-4 py-2 rounded-lg shadow">
   📩 WhatsApp (Not Connected)
 </button>
  
 
-            <button onClick={() => sendWhatsAppPdf(lead.leadDetails?.contact, lead.leadDetails?.clientName, 'gcb.pdf')} className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow">📄 PDF</button>
+<button
+  onClick={() => sendWhatsAppPdf(lead)} // ✅ just pass the whole lead
+  className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow"
+>
+  📄 PDF
+</button>
             <Link
             href="/gallery"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow inline-block"
