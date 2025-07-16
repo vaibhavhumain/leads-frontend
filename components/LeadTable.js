@@ -39,6 +39,9 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [editedCompanyName, setEditedCompanyName] = useState('');
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [editedLocation, setEditedLocation] = useState('');
+  const [editingPrimaryContactId, setEditingPrimaryContactId] = useState(null);
+  const [editedPrimaryContact, setEditedPrimaryContact] = useState('');
+
 
 
   const leadsPerPage = 3;
@@ -389,7 +392,22 @@ const sendWhatsAppMessage = (lead) => {
   const selectedNumber = numbers[index].number;
   const phoneNumber = `91${selectedNumber}`;
   const clientName = lead.leadDetails?.clientName || 'Customer';
-  const message = `Dear ${clientName}, It was a pleasure speaking with you today! Thank you for considering Gobind Coach Builders for your bus body requirements. We're excited about the opportunity to bring your vision to life with our durable designs and unmatched craftsmanship.`;
+  const message = `Dear ${clientName}, this is Akshat Mudgal from Gobind Coach Builders.  
+Thank you for your time on the call today.
+As discussed, we specialize in manufacturing high-quality bus bodies – from school buses to luxury coaches – custom-built as per your needs.
+
+If you ever require a reliable bus body partner, feel free to reach out.  
+Would be happy to assist you with designs, specs, or quotations.
+
+Our legacy of 30+ years, 200+ skilled workers, and a dedicated team ensures quality you can trust.
+
+Looking forward to staying in touch!  
+Regards,  
+Akshat Mudgal  
+Business Development Executive  
+Gobind Coach Builders
+7888837540
+`;
 
   const encodedText = encodeURIComponent(message);
 
@@ -404,6 +422,55 @@ const sendWhatsAppMessage = (lead) => {
   copyToClipboard(message);
   window.location.href = url; // ✅ Use location.href to ensure redirection
 };
+
+const notSendWhatsAppMessage = (lead) => {
+  const numbers = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+  if (!numbers.length) {
+    toast.error("No valid contact numbers found.");
+    return;
+  }
+
+  // Prompt for number
+  const index = parseInt(prompt(
+    numbers.map((c, i) => `${i + 1}. ${c.label}: ${c.number}`).join('\n') + `\n\nSelect number 1-${numbers.length}`
+  )) - 1;
+
+  if (isNaN(index) || index < 0 || index >= numbers.length) {
+    toast.error("Invalid selection");
+    return;
+  }
+
+  const selectedNumber = numbers[index].number;
+  const phoneNumber = `91${selectedNumber}`;
+  const clientName = lead.leadDetails?.clientName || 'Customer';
+  const message = `Dear ${clientName}, this is Akshat Mudgal from Gobind Coach Builders.  
+I tried reaching you over a quick call regarding your bus body requirements.
+
+We’re a trusted name with 30+ years in manufacturing bus bodies – school, staff, AC luxury, and more – tailored to your business needs.
+
+Let me know a convenient time to connect or feel free to reply here if you’d like more info.
+
+Regards,  
+Akshat Mudgal  
+Business Development Executive  
+Gobind Coach Builders
+7888837540
+`;
+
+  const encodedText = encodeURIComponent(message);
+
+  // Prompt for app vs web
+  const openInApp = confirm("Click OK to open in WhatsApp App\nClick Cancel to open in WhatsApp Web");
+
+  const url = openInApp
+    ? `https://wa.me/${phoneNumber}?text=${encodedText}`
+    : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
+
+  // Copy to clipboard and open
+  copyToClipboard(message);
+  window.location.href = url; // ✅ Use location.href to ensure redirection
+};
+
 
 const sendWhatsAppPdf = (lead, pdfFileName = 'gcb.pdf') => {
   const numbers = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
@@ -592,6 +659,50 @@ const updateLocation = async (leadId) => {
 };
 
 
+const updatePrimaryContact = async (leadId) => {
+  const token = localStorage.getItem('token');
+  const cleaned = editedPrimaryContact.trim().replace(/\D/g, '');
+
+  if (!/^\d{10}$/.test(cleaned)) {
+    toast.warning('Enter a valid 10-digit contact number');
+    return;
+  }
+
+  try {
+    await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/primary-contact`,
+      { contact: cleaned },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Primary contact updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                contact: cleaned,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingPrimaryContactId(null);
+    setEditedPrimaryContact('');
+  } catch (err) {
+    console.error('Failed to update contact', err);
+    toast.error('Update failed');
+  }
+};
+
+
+
 if (!loggedInUser) return null;
 
 const lead = filteredLeads[currentLeadIndex];
@@ -720,12 +831,40 @@ return (
   )
 )}
 
-  {/* Main contact (if any) */}
-  {lead.leadDetails?.contact && (
-    <div className="flex items-center gap-2">
-      📞 <span className="font-medium">Primary:</span> {lead.leadDetails.contact}
-    </div>
-  )}
+ {/* Primary Contact - debug */}
+{editingPrimaryContactId === lead._id ? (
+  <div className="flex gap-2 items-center mt-1">
+    <input
+      type="text"
+      value={editedPrimaryContact}
+      onChange={(e) => setEditedPrimaryContact(e.target.value)}
+      className="border px-2 py-1 rounded text-sm"
+    />
+    <button
+      onClick={() => updatePrimaryContact(lead._id)}
+      className="text-green-600 text-sm"
+    >
+      ✅ Save
+    </button>
+    <button
+      onClick={() => setEditingPrimaryContactId(null)}
+      className="text-red-500 text-sm"
+    >
+      ❌ Cancel
+    </button>
+  </div>
+) : (
+  <div
+    onClick={() => {
+      console.log("Clicked to edit contact", lead._id);
+      setEditingPrimaryContactId(lead._id);
+      setEditedPrimaryContact(lead.leadDetails.contact || '');
+    }}
+    className="cursor-pointer text-blue-600 hover:underline mt-1"
+  >
+    📞 <b>Primary:</b> {lead.leadDetails.contact || 'N/A'} (click to edit)
+  </div>
+)}
 
   {/* Additional contacts */}
   {Array.isArray(lead.leadDetails?.contacts) &&
@@ -797,7 +936,12 @@ return (
 </Link>
 
 <button onClick={() => sendWhatsAppMessage(lead)} className="bg-green-500 text-white px-4 py-2 rounded-lg shadow">
-  📩 WhatsApp
+  📩 WhatsApp (Connected)
+</button>
+
+
+<button onClick={() => notSendWhatsAppMessage(lead)} className="bg-green-500 text-white px-4 py-2 rounded-lg shadow">
+  📩 WhatsApp (Not Connected)
 </button>
  
 
