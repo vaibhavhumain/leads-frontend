@@ -209,48 +209,56 @@ useEffect(() => {
     }
 
     const normalizeKey = (key) =>
-      key.toLowerCase().replace(/\s+/g, '').replace(/\u00a0/g, '');
+  key.toLowerCase().replace(/\s+/g, '').replace(/\u00a0/g, '').replace(/\./g, '');
 
-    const leads = jsonData.map((row) => {
-      const keys = {};
-      Object.keys(row).forEach((key) => {
-        const normalized = normalizeKey(key);
-        keys[normalized] = row[key];
-      });
-      const phone =
-        keys['phonenumber'] ||
-        keys['contactnumber'] ||
-        keys['contactno'] ||
-        keys['phone'] ||
-        keys['contact'] ||
-        keys['mobile'] ||
-        '';
+const leads = jsonData.map((row) => {
+  const keys = {};
+  Object.keys(row).forEach((key) => {
+    const normalized = normalizeKey(key);
+    keys[normalized] = row[key];
+  });
 
-      const company =
-        keys['companyname'] ||
-        keys['company'] ||
-        keys['firmname'] ||
-        keys['businessname'] ||
-        '';
+  const contact =
+    keys['phonenumber'] ||
+    keys['contactnumber'] ||
+    keys['contactno'] ||
+    keys['phone'] ||
+    keys['contact'] ||
+    keys['mobile'] ||
+    '';
 
-      const location =
-        keys['location'] ||
-        keys['place'] ||
-        keys['address'] ||
-        '';
+  const companyName =
+    keys['companyname'] ||
+    keys['company'] ||
+    keys['firmname'] ||
+    keys['businessname'] ||
+    '';
 
-      const email = keys['email'] || '';
+  const location =
+    keys['location'] ||
+    keys['place'] ||
+    keys['address'] ||
+    '';
 
-      return {
-        leadDetails: {
-          clientName: '', 
-          contact: String(phone).trim(),
-          companyName: String(company).trim(),
-          location: String(location).trim(),
-          email: String(email).trim(),
-        }
-      };
-    });
+  const email = keys['email'] || '';
+
+  const clientName =
+    keys['clientname'] ||
+    keys['name'] ||
+    keys['fullname'] ||
+    '';
+
+  return {
+    leadDetails: {
+      clientName: String(clientName || '').trim(),
+      contact: String(contact || '').trim(),
+      companyName: String(companyName || '').trim(),
+      location: String(location || '').trim(),
+      email: String(email || '').trim(),
+    },
+  };
+});
+
 
     setUploadedLeads(leads);
     toast.success(`${leads.length} lead(s) loaded from Excel`);
