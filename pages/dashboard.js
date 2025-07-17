@@ -12,6 +12,7 @@ import { toast } from 'react-toastify';
 import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
 import StatCard from '../components/StatCard';
+import Link from 'next/link';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar,
@@ -437,6 +438,11 @@ return (
           >
             New Lead
           </button>
+          <Link href='filter-leads'>
+            <button className="px-4 py-2 bg-green-600 text-white rounded text-sm">
+              Filter Leads
+            </button>
+          </Link>
         </div>
 
         {/* Charts */}

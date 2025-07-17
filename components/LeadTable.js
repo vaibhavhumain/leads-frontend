@@ -40,10 +40,9 @@ const LeadTable = ({ leads, setLeads, searchTerm, isAdminTable = false, isSearch
   const [editingLocationId, setEditingLocationId] = useState(null);
   const [editedLocation, setEditedLocation] = useState('');
   const [editingPrimaryContactId, setEditingPrimaryContactId] = useState(null);
-  const [editedPrimaryContact, setEditedPrimaryContact] = useState('');
-
-
-
+  const [editedPrimaryContacts, setEditedPrimaryContacts] = useState('');
+  const [hasRestoredIndex, setHasRestoredIndex] = useState(false);
+  
   const leadsPerPage = 3;
 
     const handleSave = () => {
@@ -155,6 +154,26 @@ const filteredLeads = useMemo(() => {
     return false;
   });
 }, [leads, searchTerm]); 
+
+
+useEffect(() => {
+  if (!hasRestoredIndex && filteredLeads.length > 0) {
+    const savedIndex = localStorage.getItem('lastViewedIndex');
+    if (savedIndex !== null && !isNaN(savedIndex)) {
+      const parsedIndex = parseInt(savedIndex, 10);
+      if (parsedIndex >= 0 && parsedIndex < filteredLeads.length) {
+        setCurrentLeadIndex(parsedIndex);
+      } else {
+        setCurrentLeadIndex(0); 
+      }
+    }
+    setHasRestoredIndex(true);
+  }
+}, [filteredLeads, hasRestoredIndex]);
+
+useEffect(() => {
+  localStorage.setItem('lastViewedIndex', currentLeadIndex.toString());
+}, [currentLeadIndex]);
 
   const formatDateTime = (isoString) => {
     return new Date(isoString).toLocaleDateString('en-US', {
@@ -659,27 +678,28 @@ const updateLocation = async (leadId) => {
 };
 
 
-const updatePrimaryContact = async (leadId) => {
-  const token = localStorage.getItem('token');
-  const cleaned = editedPrimaryContact.trim().replace(/\D/g, '');
-
-  if (!/^\d{10}$/.test(cleaned)) {
-    toast.warning('Enter a valid 10-digit contact number');
-    return;
-  }
-
+const updatePrimaryContacts = async (leadId) => {
   try {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const cleaned = editedPrimaryContacts
+      .map((c) => c.trim().replace(/\D/g, ''))
+      .filter((c) => c.length > 0);
+
+    const allValid = cleaned.every((num) => /^\d{10}$/.test(num));
+    if (!allValid) {
+      toast.warning('All contacts must be valid 10-digit numbers');
+      return;
+    }
+
     await axios.put(
       `${BASE_URL}/api/leads/${leadId}/primary-contact`,
-      { contact: cleaned },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      { contacts: cleaned },
+      { headers }
     );
 
-    toast.success('Primary contact updated ✅');
+    toast.success('Contacts updated ✅');
     setLeads((prev) =>
       prev.map((lead) =>
         lead._id === leadId
@@ -687,20 +707,20 @@ const updatePrimaryContact = async (leadId) => {
               ...lead,
               leadDetails: {
                 ...lead.leadDetails,
-                contact: cleaned,
+                contacts: cleaned.map((number) => ({ number })),
               },
             }
           : lead
       )
     );
+
     setEditingPrimaryContactId(null);
-    setEditedPrimaryContact('');
+    setEditedPrimaryContacts([]);
   } catch (err) {
-    console.error('Failed to update contact', err);
-    toast.error('Update failed');
+    toast.error('Failed to update contacts');
+    console.error(err);
   }
 };
-
 
 
 if (!loggedInUser) return null;
@@ -831,48 +851,68 @@ return (
   )
 )}
 
- {/* Primary Contact - debug */}
+{/* Editable Contact Numbers */}
 {editingPrimaryContactId === lead._id ? (
-  <div className="flex gap-2 items-center mt-1">
-    <input
-      type="text"
-      value={editedPrimaryContact}
-      onChange={(e) => setEditedPrimaryContact(e.target.value)}
-      className="border px-2 py-1 rounded text-sm"
-    />
+  <div className="flex flex-col gap-2 mt-1">
+    {editedPrimaryContacts.map((contact, index) => (
+      <div key={index} className="flex gap-2 items-center">
+        <input
+          type="text"
+          value={contact}
+          onChange={(e) => {
+            const updated = [...editedPrimaryContacts];
+            updated[index] = e.target.value;
+            setEditedPrimaryContacts(updated);
+          }}
+          className="border px-2 py-1 rounded text-sm"
+        />
+        <button
+          onClick={() => {
+            const updated = editedPrimaryContacts.filter((_, i) => i !== index);
+            setEditedPrimaryContacts(updated);
+          }}
+          className="text-red-500 text-xs"
+        >
+          🗑
+        </button>
+      </div>
+    ))}
     <button
-      onClick={() => updatePrimaryContact(lead._id)}
-      className="text-green-600 text-sm"
+      onClick={() => setEditedPrimaryContacts([...editedPrimaryContacts, ''])}
+      className="text-blue-600 text-xs mt-1"
     >
-      ✅ Save
+      ➕ Add Contact
     </button>
-    <button
-      onClick={() => setEditingPrimaryContactId(null)}
-      className="text-red-500 text-sm"
-    >
-      ❌ Cancel
-    </button>
+
+    <div className="flex gap-3 mt-2">
+      <button
+        onClick={() => updatePrimaryContacts(lead._id)}
+        className="text-green-600 text-sm"
+      >
+        ✅ Save
+      </button>
+      <button
+        onClick={() => setEditingPrimaryContactId(null)}
+        className="text-red-500 text-sm"
+      >
+        ❌ Cancel
+      </button>
+    </div>
   </div>
 ) : (
   <div
     onClick={() => {
-      console.log("Clicked to edit contact", lead._id);
       setEditingPrimaryContactId(lead._id);
-      setEditedPrimaryContact(lead.leadDetails.contact || '');
+      setEditedPrimaryContacts(
+        lead.leadDetails.contacts?.map((c) => c.number) || []
+      );
     }}
     className="cursor-pointer text-blue-600 hover:underline mt-1"
   >
-    📞 <b>Primary:</b> {lead.leadDetails.contact || 'N/A'} (click to edit)
+    📞 <b>Contacts:</b>{' '}
+    {lead.leadDetails.contacts?.map((c) => c.number).join(', ') || 'N/A'} (click to edit)
   </div>
 )}
-
-  {/* Additional contacts */}
-  {Array.isArray(lead.leadDetails?.contacts) &&
-    lead.leadDetails.contacts.map((c, idx) => (
-      <div key={idx} className="flex items-center gap-2">
-        📞 <span className="font-medium">{c.label}:</span> {c.number}
-      </div>
-    ))}
 
   {/* Add new contact input */}
   {newContactLeadId === lead._id ? (
@@ -945,7 +985,7 @@ return (
  
 
 <button
-  onClick={() => sendWhatsAppPdf(lead)} // ✅ just pass the whole lead
+  onClick={() => sendWhatsAppPdf(lead)} 
   className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow"
 >
   📄 PDF
@@ -1054,10 +1094,6 @@ return (
         >
           Next <FaArrowRight />
         </button>
-      </div>
-
-      <div className="text-center text-xs text-gray-400 mt-2">
-        End of Lead View
       </div>
     </div>
   );

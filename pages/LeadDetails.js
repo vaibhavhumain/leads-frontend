@@ -33,10 +33,12 @@ const LeadDetails = () => {
   const [leadTimers, setLeadTimers] = useState({});
   const [timer, setTimer] = useState({ running: false, time: 0, startTime: null, intervalId: null });
   const intervalRefs = useRef({});
+  const [noteInput, setNoteInput] = useState({ date: '', text: '' });
+  const [addingNote, setAddingNote] = useState(false);
   const [contactPicker, setContactPicker] = useState({
     open: false,
     options: [],
-    onSelect: null,  // callback for when a contact is selected
+    onSelect: null,  
     actionLabel: '',
   });
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -201,6 +203,38 @@ useEffect(() => {
   };
 }, []);
 
+
+const handleAddNote = async () => {
+  if (!noteInput.text.trim() || !noteInput.date) {
+    toast.warning('Please enter both note and date');
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  try {
+    setAddingNote(true);
+    const res = await axios.post(
+      `${BASE_URL}/api/leads/${lead._id}/notes`,
+      {
+        leadId: lead._id,
+        text: noteInput.text,
+        date: noteInput.date
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    toast.success('Note added');
+    setNoteInput({ text: '', date: '' });
+    const updatedLead = { ...lead, notes: res.data.notes };
+    setLead(updatedLead);
+    localStorage.setItem('selectedLead', JSON.stringify(updatedLead));
+  } catch (err) {
+    toast.error('Failed to add note');
+    console.error(err);
+  } finally {
+    setAddingNote(false);
+  }
+};
  
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
@@ -357,7 +391,7 @@ const [loadingLead, setLoadingLead] = useState(true);
     toast.error('Failed to add follow-up');
     console.error(err);
   }
-};
+};  
 
 
   const handleStatusUpdate = async () => {
@@ -506,6 +540,76 @@ const [loadingLead, setLoadingLead] = useState(true);
         </button>
       </div>
 
+<div className="mb-8">
+  <h3 className="text-xl font-semibold text-gray-800 mb-4">📝 Notes</h3>
+
+  {/* Note Date Input */}
+  <div className="mb-4">
+    <label htmlFor="noteDate" className="block text-sm font-medium text-gray-700 mb-1">
+      Note Date
+    </label>
+    <input
+      id="noteDate"
+      type="date"
+      value={noteInput.date}
+      onChange={(e) => setNoteInput({ ...noteInput, date: e.target.value })}
+      className="w-full border px-3 py-2 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+    />
+  </div>
+
+  {/* Note Text Input */}
+  <div className="mb-4">
+    <label htmlFor="noteText" className="block text-sm font-medium text-gray-700 mb-1">
+      Note Text
+    </label>
+    <textarea
+      id="noteText"
+      rows="3"
+      value={noteInput.text}
+      onChange={(e) => setNoteInput({ ...noteInput, text: e.target.value })}
+      className="w-full border px-3 py-2 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+      placeholder="Enter note details..."
+    />
+  </div>
+
+  {/* Add Note Button */}
+  <button
+    onClick={handleAddNote}
+    disabled={addingNote}
+    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-md shadow-md transition duration-150"
+  >
+    {addingNote ? 'Adding...' : '➕ Add Note'}
+  </button>
+
+  {/* Notes History Display */}
+  {lead.notes && lead.notes.length > 0 && (
+    <div className="mt-6 bg-white p-4 rounded-xl shadow border">
+      <h4 className="text-base font-semibold text-gray-700 mb-3">🗂️ Notes History</h4>
+      {lead.notes
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map((note, idx) => (
+          <div
+            key={idx}
+            className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm"
+          >
+            <div className="text-sm text-gray-600 mb-1">
+              <span className="font-medium text-indigo-700">
+                📅 {new Date(note.date).toLocaleDateString()}
+              </span>
+              {note.addedBy?.name && (
+                <span className="ml-2 text-xs text-gray-500 italic">
+                  by {note.addedBy.name}
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-gray-800">{note.text}</div>
+          </div>
+        ))}
+    </div>
+  )}
+</div>
+
+
       {/* Follow-Up Section */}
       <div className="mb-8">
         <label className="block text-sm font-semibold text-gray-700 mb-2">Add Follow-Up</label>
@@ -516,7 +620,7 @@ const [loadingLead, setLoadingLead] = useState(true);
           className="w-full border px-3 py-2 rounded mb-2 focus:ring-2 focus:ring-purple-300"
         />
         <textarea
-          placeholder="Enter follow-up notes"
+          placeholder="Enter follow-up"
           rows="3"
           value={followUp.notes}
           onChange={(e) => setFollowUp({ ...followUp, notes: e.target.value })}
