@@ -764,33 +764,45 @@ const [loadingLead, setLoadingLead] = useState(true);
   </select>
 
   <button
-    className="mt-2 w-full bg-orange-500 text-white py-2 rounded"
-    disabled={!selectedUserId}
-    onClick={async () => {
-      const token = localStorage.getItem('token');
+  className="mt-2 w-full bg-orange-500 text-white py-2 rounded"
+  disabled={!selectedUserId}
+  onClick={async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/api/leads/forward`,
+        { leadId: lead._id, userId: selectedUserId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      let userName = "user";
+      const user = users.find(u => u._id === selectedUserId);
+      if (user) userName = user.name;
+
+      toast.success(`Lead forwarded to ${userName}! Email notification sent.`);
+      setSelectedUserId('');
+
       try {
-        const res = await axios.post(
-          `${BASE_URL}/api/leads/forward`,
-          { leadId: lead._id, userId: selectedUserId },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const user = users.find(u => u._id === selectedUserId);
-        toast.success(`Lead forwarded to ${user?.name || "user"}! Email notification sent.`);
-        setSelectedUserId('');
-        fetchLead(lead._id);
-      } catch (err) {
-        if (err.response && err.response.status === 401) {
-          toast.error('Session expired. Please login again.');
-          localStorage.clear();
-          window.location.href = '/login';
-        } else {
-          toast.error("Forwarding failed");
-        }
+        await fetchLead(lead._id); // separate try-catch in case refresh fails
+      } catch (refreshErr) {
+        console.warn("Lead forwarded, but failed to refresh:", refreshErr);
+        toast.warning("Lead forwarded, but could not refresh details.");
       }
-    }}
-  >
-    Forward Lead
-  </button>
+
+    } catch (err) {
+      console.error("Forwarding error:", err);
+      if (err.response && err.response.status === 401) {
+        toast.error('Session expired. Please login again.');
+        localStorage.clear();
+        window.location.href = '/login';
+      } else {
+        toast.error("Forwarding failed");
+      }
+    }
+  }}
+>
+  Forward Lead
+</button>
 </div>
 
 {/* Share Buttons */}

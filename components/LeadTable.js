@@ -961,6 +961,32 @@ return (
 >
   ❌ Delete this Lead
 </button>
+{/* Email */}
+        <div className="mb-4 text-sm text-gray-700">
+          {editingEmailId === lead._id ? (
+            <div className="flex gap-2 items-center">
+              <input
+                value={editedEmail}
+                onChange={(e) => setEditedEmail(e.target.value)}
+                className="border px-2 py-1 rounded"
+              />
+              <button onClick={handleEmailSave} className="text-green-600">Save</button>
+              <button onClick={() => setEditingEmailId(null)} className="text-red-500">Cancel</button>
+            </div>
+          ) : (
+            <div className="flex gap-2 items-center">
+              <span>{lead.leadDetails?.email || 'No email'}</span>
+              <FaEdit
+                className="text-indigo-400 cursor-pointer hover:text-indigo-700"
+                onClick={() => {
+                  setEditingEmailId(lead._id);
+                  setEditedEmail(lead.leadDetails?.email || '');
+                }}
+              />
+            </div>
+          )}
+        </div>
+
 
 </div>
 
@@ -996,35 +1022,31 @@ return (
             >
             🖼️ Photos
             </Link>
+
+            <button className="bg-gray-500 text-white px-4 py-2 rounded-lg shadow inline-block"
+            onClick={async () => {
+              const confirm = window.confirm("Are you sure you want to move this lead to Dead Zone?");
+              if(!confirm) return;
+              const token = localStorage.getItem("token");
+              try {
+                await axios.post(`${BASE_URL}/api/leads/move-to-dead/${lead._id}`, {} , {
+                  headers : {Authorization: `Bearer ${token}`}
+                });
+                toast.success("Lead moved to Dead Zone successfully");
+                router.push("/dead-leads");
+              }
+              catch (error) {
+                toast.error("Failed to move lead to Dead Zone");
+                console.log(error);
+              }
+            }}
+            >
+              🗑️ Move to Dead Zone
+            </button>
           </div>
         </div>
 
-        {/* Email */}
-        <div className="mb-4 text-sm text-gray-700">
-          {editingEmailId === lead._id ? (
-            <div className="flex gap-2 items-center">
-              <input
-                value={editedEmail}
-                onChange={(e) => setEditedEmail(e.target.value)}
-                className="border px-2 py-1 rounded"
-              />
-              <button onClick={handleEmailSave} className="text-green-600">Save</button>
-              <button onClick={() => setEditingEmailId(null)} className="text-red-500">Cancel</button>
-            </div>
-          ) : (
-            <div className="flex gap-2 items-center">
-              <span>{lead.leadDetails?.email || 'No email'}</span>
-              <FaEdit
-                className="text-indigo-400 cursor-pointer hover:text-indigo-700"
-                onClick={() => {
-                  setEditingEmailId(lead._id);
-                  setEditedEmail(lead.leadDetails?.email || '');
-                }}
-              />
-            </div>
-          )}
-        </div>
-
+        
         {/* View Card */}
         <div className="flex justify-end">
           <button
@@ -1034,7 +1056,7 @@ return (
             }}
             className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow"
           >
-            🗂️ View Lead Card
+            View Lead
           </button>
         </div>
       </div>

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
+import Navbar from '../components/Navbar';
 const FilterLeadsPage = () => {
   const [date, setDate] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('');
@@ -10,6 +11,8 @@ const FilterLeadsPage = () => {
   const [hasFollowUps, setHasFollowUps] = useState('');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [followUpDates, setFollowUpDates] = useState([]);
+  const [followUpDate, setFollowUpDate] = useState('');
 
   const fetchLeads = async () => {
     try {
@@ -23,7 +26,7 @@ const FilterLeadsPage = () => {
           date,
           connectionStatus,
           status,
-          hasFollowUps,
+          followUpDate,
         },
       });
 
@@ -37,7 +40,25 @@ const FilterLeadsPage = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchDates = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${BASE_URL}/api/leads/followup-dates`, {
+          headers: {Authorization: `Bearer ${token}`}
+        });
+        setFollowUpDates(res.data);
+      }
+      catch(err) {
+        toast.error('Failed to fetch follow-up dates');
+      }
+    };
+    fetchDates();
+  }, []);
+
   return (
+    <div>
+      <Navbar />
     <div className="min-h-screen bg-gray-50 py-10 px-4 font-sans">
       <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">🎯 Filter Leads</h1>
 
@@ -79,17 +100,13 @@ const FilterLeadsPage = () => {
               <option value="Cold">Cold</option>
             </select>
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Follow-Ups</label>
-            <select
-              value={hasFollowUps}
-              onChange={(e) => setHasFollowUps(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
+            <select value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} className="w-full border px-3 py-2 rounded">
               <option value="">-- All --</option>
-              <option value="true">Has Follow-Ups</option>
-              <option value="false">No Follow-Ups</option>
+              {followUpDates.map((date,index)=>(
+                <option key={index} value={date}>{date}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -108,6 +125,7 @@ const FilterLeadsPage = () => {
               setConnectionStatus('');
               setStatus('');
               setHasFollowUps('');
+              setFollowUpDate('');
               setLeads([]);
             }}
             className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded shadow font-medium"
@@ -166,6 +184,7 @@ const FilterLeadsPage = () => {
           </table>
         </div>
       ) : null}
+    </div>
     </div>
   );
 };

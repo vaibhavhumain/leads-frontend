@@ -12,6 +12,7 @@ import { toast } from 'react-toastify';
 import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
 import StatCard from '../components/StatCard';
+import DeadLeadsPage from "./dead-leads";
 import Link from 'next/link';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -442,6 +443,11 @@ return (
             <button className="px-4 py-2 bg-green-600 text-white rounded text-sm">
               Filter Leads
             </button>
+          </Link>
+          <Link href="dead-leads">
+          <button className="px-4 py-2 bg-gray-600 text-white rounded text-sm">
+            View Dead Zone
+          </button>
           </Link>
         </div>
 

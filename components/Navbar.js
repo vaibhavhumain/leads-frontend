@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'next/router';
 import BASE_URL from '../utils/api';
 import NotificationBell from './NotificationBell';
+import FilterLeadsPage from '../pages/filter-leads';
 import {
   HomeIcon,
   UserCircleIcon,
@@ -17,7 +18,7 @@ const Navbar = ({ loggedInUser }) => {
   const [userName, setUserName] = useState('');
   const router = useRouter();
   const isProfilePage = router.pathname === '/profile';
-
+  const isFilterLeadsPage = router.pathname === '/filter-leads';
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -79,6 +80,13 @@ const Navbar = ({ loggedInUser }) => {
             <Link href="/profile" legacyBehavior>
               <a className="hover:underline">Profile</a>
             </Link>
+          )}
+
+          {/* Filter Leads link */}
+          {!isFilterLeadsPage && (
+          <Link href="/filter-leads" legacyBehavior>
+            <a className="hover:underline">Filter Leads</a>
+          </Link>
           )}
 
           {/* Logout button */}

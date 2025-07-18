@@ -179,7 +179,15 @@ return (
         <div className="flex-1 space-y-2">
           <h2 className="text-xl font-semibold text-indigo-800">{lead.leadDetails?.clientName || '—'}</h2>
           <div className="flex flex-wrap gap-3 text-sm text-gray-700">
-            <span className="bg-gray-100 px-3 py-1 rounded">{lead.leadDetails?.contacts?.[0]?.number || '—'}</span>
+            {lead.leadDetails?.contacts?.length>0 ? (
+              lead.leadDetails.contacts.map((contact, index) => (
+                <span key={index} className='bg-gray-100 px-3 py-1 rounded'>
+                  {contact.number}
+                </span>
+              ))
+            ) : (
+              <span className="bg-gray-100 px-3 py-1 rounded">-</span>
+            )}
             <span className="bg-gray-100 px-3 py-1 rounded">{lead.leadDetails?.companyName || '—'}</span>
             <span className="bg-gray-100 px-3 py-1 rounded font-semibold">{lead.status || '—'}</span>
             <span className="bg-gray-100 px-3 py-1 rounded">{lead.createdBy?.name || '—'}</span>
