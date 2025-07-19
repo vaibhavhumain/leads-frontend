@@ -13,7 +13,7 @@ const DeadLeadsPage = () => {
     const fetchDeadLeads = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${BASE_URL}/api/leads/dead-leads`, {
+        const res = await axios.get(`${BASE_URL}/api/leads/dead-leads?status=dead`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDeadLeads(res.data.leads);
