@@ -14,7 +14,6 @@ const EnquirySummary = ({ data }) => {
           <div><strong>Feature Requirement:</strong> {data.featureRequirement}</div>
           <div><strong>Total Seats:</strong> {data.totalSeats}</div>
           <div><strong>Seating Pattern:</strong> {data.seatingPattern}</div>
-          {/* Add more fields as needed */}
         </div>
       </div>
 

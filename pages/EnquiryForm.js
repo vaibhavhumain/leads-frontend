@@ -12,7 +12,7 @@ export default function EnquiryForm() {
   const [submittedData, setSubmittedData] = useState(null);
   const loggedInUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const router = useRouter();
-  const {leadId} = router.query;  
+const leadId = router.query.leadId || (typeof window !== 'undefined' ? localStorage.getItem('leadId') : null);
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -75,19 +75,23 @@ export default function EnquiryForm() {
   });
 
 useEffect(() => {
-  if (!router.isReady || !leadId) return;
+  if (!router.isReady || !leadId) {
+    console.warn("⚠️ leadId missing.");
+    return;
+  }
+
   console.log("✅ Router is ready");
-  console.log("➡️ leadId from query:", leadId);
+  console.log("➡️ leadId:", leadId);
 
   const fetchLead = async () => {
     try {
       const token = localStorage.getItem('token');
-const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
-  headers: {
-    ...(token && { Authorization: `Bearer ${token}` }),
-    "Content-Type": "application/json",
-  },
-});
+      const res = await fetch(`${BASE_URL}/api/leads/${leadId}`, {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = await res.json();
       console.log("📦 API Response:", data);
@@ -109,6 +113,7 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
         teamMember: lead.createdBy?.name || '',
         companyDetails: lead.leadDetails.companyName || '',
       }));
+
     } catch (error) {
       console.error("❌ Error fetching lead:", error);
     }
@@ -116,6 +121,7 @@ const res = await fetch(`${BASE_URL}/api/leads/${router.query.leadId}`, {
 
   fetchLead();
 }, [router.isReady, leadId]);
+
 
   const windowImages = {
     'Sliding Glass': '/Sliding Glass.jpg',

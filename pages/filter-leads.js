@@ -38,23 +38,26 @@ const FilterLeadsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   useEffect(() => {
-    const fetchDates = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${BASE_URL}/api/leads/followup-dates`, {
-          headers: {Authorization: `Bearer ${token}`}
-        });
-        setFollowUpDates(res.data);
-      }
-      catch(err) {
-        toast.error('Failed to fetch follow-up dates');
-      }
-    };
-    fetchDates();
-  }, []);
+  const fetchDates = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${BASE_URL}/api/leads/followup-dates`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log('LEAD FOLLOW-UP RESPONSE:', res.data);
+      const uniqueDates = [...new Set(res.data)].sort((a, b) => new Date(b) - new Date(a));
+      setFollowUpDates(uniqueDates);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to fetch follow-up dates');
+    }
+  };
+  fetchDates();
+}, []);
 
   return (
     <div>
@@ -102,11 +105,17 @@ const FilterLeadsPage = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
-            <select value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} className="w-full border px-3 py-2 rounded">
-              <option value="">-- All --</option>
-              {followUpDates.map((date,index)=>(
-                <option key={index} value={date}>{date}</option>
-              ))}
+            <select value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} className='w-full border px-3 py-2 rounded'>
+              <option value="">--All --</option>
+              {followUpDates.map((date, idx) => (
+                <option key={idx} value={date}>
+                  {new Date(date).toLocaleDateString('en-IN',{
+                    day:'2-digit',
+                    month:'short',
+                    year:'numeric',
+                  })}
+                </option>
+                ))}
             </select>
           </div>
         </div>

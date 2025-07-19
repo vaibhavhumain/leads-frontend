@@ -995,11 +995,17 @@ return (
           {/* Actions */}
           <div className="flex flex-wrap gap-3 justify-end">
 
-            <Link href="/EnquiryForm">
+         <Link
+  href={{
+    pathname: '/EnquiryForm',
+    query: { leadId: lead._id },  
+  }}
+>
   <span className="bg-amber-700 text-white px-4 py-2 rounded-lg shadow cursor-pointer inline-block">
     📃 Enquiry Form
   </span>
 </Link>
+
 
 <button onClick={() => sendWhatsAppMessage(lead)} className="bg-green-500 text-white px-4 py-2 rounded-lg shadow">
   📩 WhatsApp (Connected)
