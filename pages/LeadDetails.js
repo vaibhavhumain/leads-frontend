@@ -45,6 +45,8 @@ const LeadDetails = () => {
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
 
+  const isDeadLead = lead?.lifecycleStatus === 'dead';
+
   useEffect(() => {
   if (!lead || !lead._id) return;
   setActivityLoading(true);
@@ -256,22 +258,33 @@ const formatTime = (seconds) => {
   }, []);
 
   const fetchLead = async (id) => {
-  if (!id) {
-    console.error("❌ No lead ID provided to fetchLead");
+  if (!id || id === 'undefined') {
+    console.error("❌ Invalid lead ID");
     setLoadingLead(false);
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    toast.error("Session expired. Please login again.");
+    router.push('/login');
     return;
   }
 
   setLoadingLead(true);
   try {
-    const token = localStorage.getItem('token');
-    const res = await axios.get(`${BASE_URL}/api/leads/${id}`, {
+    const isDead = router.query.isDead === 'true';
+    const url = isDead
+      ? `${BASE_URL}/api/leads/${id}`
+      : `${BASE_URL}/api/leads/${id}`;
+
+    const res = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     const data = res.data?.lead;
     if (!data) {
-      console.error("❌ No lead data returned from server");
+      toast.error("Lead not found.");
       setLoadingLead(false);
       return;
     }
@@ -282,6 +295,7 @@ const formatTime = (seconds) => {
     localStorage.setItem('selectedLead', JSON.stringify(data));
   } catch (error) {
     console.error("❌ Error fetching lead:", error);
+    toast.error(error.response?.data?.message || 'Failed to fetch lead');
   } finally {
     setLoadingLead(false);
   }
@@ -334,26 +348,27 @@ const sendWhatsAppPhotos = (number, clientName = '', selectedImages) => {
 
 useEffect(() => {
   const loadLead = async () => {
+    const idFromRouter = router.query?.leadId;
     const storedLead = localStorage.getItem('selectedLead');
     const parsedLead = storedLead ? JSON.parse(storedLead) : null;
     const idFromStorage = parsedLead?._id;
-    const idFromRouter = router.query?.leadId;
 
     const finalId = idFromRouter || idFromStorage;
 
-    if (finalId) {
-      await fetchLead(finalId);
-    } else {
-      console.warn("❌ Lead ID not found in localStorage or URL");
+    if (!finalId || finalId === 'undefined') {
+      console.warn("❌ No valid lead ID found");
       setLoadingLead(false);
+      return;
     }
+
+    await fetchLead(finalId);
   };
 
-  // Only run when router is ready
   if (router.isReady) {
     loadLead();
   }
 }, [router.isReady, router.query.leadId]);
+
 
 
 
@@ -430,6 +445,24 @@ const [loadingLead, setLoadingLead] = useState(true);
   } catch (err) {
     toast.error('Error updating connection');
     console.error(err);
+  }
+};
+const handleMarkAsDead = async () => {
+  const token = localStorage.getItem('token'); // ✅ Add this
+  const note = prompt('Optional Note while marking as dead:');
+
+  try {
+    const response = await axios.put(`${BASE_URL}/api/leads/${lead._id}/mark-dead`, { note }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    toast.success('Lead marked as dead');
+    router.push('/dead-leads'); 
+  } catch (error) {
+    console.error('Error marking as dead:', error);
+    toast.error('Failed to mark lead as dead');
   }
 };
 
@@ -608,6 +641,16 @@ const [loadingLead, setLoadingLead] = useState(true);
     </div>
   )}
 </div>
+
+{!isDeadLead && (
+  <button
+    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+    onClick={handleMarkAsDead}
+  >
+    Mark Lead as Dead
+  </button>
+)}
+
 
 
       {/* Follow-Up Section */}

@@ -2,20 +2,21 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
 import Navbar from '../components/Navbar';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const DeadLeadsPage = () => {
   const [deadLeads, setDeadLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchDeadLeads = async () => {
       try {
         const token = localStorage.getItem('token');
         const res = await axios.get(`${BASE_URL}/api/leads/dead-leads`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setDeadLeads(res.data.deadLeads);
+        setDeadLeads(res.data.leads);
       } catch (err) {
         console.error("Failed to fetch dead leads:", err);
       } finally {
@@ -25,6 +26,14 @@ const DeadLeadsPage = () => {
 
     fetchDeadLeads();
   }, []);
+
+  const handleViewLead = (lead) => {
+    localStorage.setItem('selectedLead', JSON.stringify(lead));
+    router.push({
+  pathname: '/LeadDetails',
+  query: { leadId: lead._id, isDead: 'true' },
+});
+  };
 
   return (
     <>
@@ -45,7 +54,10 @@ const DeadLeadsPage = () => {
                 </h2>
                 <p className="text-sm text-gray-600">
                   {lead.leadDetails?.contacts?.map((c, i) => (
-                    <span key={i}>{c.number} ({c.label || 'Phone'})</span>
+                    <span key={i}>
+                      {c.number} ({c.label || 'Phone'})
+                      {i !== lead.leadDetails.contacts.length - 1 && ', '}
+                    </span>
                   ))}
                 </p>
                 <p className="text-sm text-gray-500">
@@ -54,6 +66,12 @@ const DeadLeadsPage = () => {
                 <p className="text-xs text-gray-400 mt-1 italic">
                   Deleted on {new Date(lead.deletedAt).toLocaleDateString()}
                 </p>
+                <button
+                  onClick={() => handleViewLead(lead)}
+                  className="mt-3 inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1 rounded"
+                >
+                  🔍 View Lead
+                </button>
               </div>
             ))}
           </div>
