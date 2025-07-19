@@ -19,7 +19,7 @@ import { FaArrowRight } from "react-icons/fa";
 import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
 import {useRouter} from 'next/router';
-
+import LifecycleToggle from '../components/LifecycleToggle';
 const LeadDetails = () => {
   const router=useRouter();
   const [lead, setLead] = useState(null);
@@ -306,7 +306,6 @@ function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
     toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
   } catch {
-    // Fallback for older browsers
     const textarea = document.createElement('textarea');
     textarea.value = text;
     document.body.appendChild(textarea);
@@ -448,11 +447,10 @@ const [loadingLead, setLoadingLead] = useState(true);
   }
 };
 const handleMarkAsDead = async () => {
-  const token = localStorage.getItem('token'); // ✅ Add this
-  const note = prompt('Optional Note while marking as dead:');
+  const token = localStorage.getItem('token'); 
 
   try {
-    const response = await axios.put(`${BASE_URL}/api/leads/${lead._id}/mark-dead`, { note }, {
+    const response = await axios.put(`${BASE_URL}/api/leads/${lead._id}/mark-dead`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -552,6 +550,8 @@ const handleMarkAsDead = async () => {
         </button>
       </div>
 
+      <LifecycleToggle lead={lead} />
+
       {/* Status */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -650,8 +650,6 @@ const handleMarkAsDead = async () => {
     Mark Lead as Dead
   </button>
 )}
-
-
 
       {/* Follow-Up Section */}
       <div className="mb-8">

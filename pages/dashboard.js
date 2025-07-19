@@ -76,8 +76,10 @@ useEffect(() => {
         setPauseHistory(logsRes.data);
       } else {
         const response = await axios.get(`${BASE_URL}/api/leads/my-leads`, { headers });
-        setMyLeads(response.data);
-        setFilteredLeads(response.data);
+        const activeLeads = response.data.filter(lead => lead.lifecycleStatus !== 'dead');
+        setMyLeads(activeLeads);
+        setFilteredLeads(activeLeads);
+
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Error fetching leads');

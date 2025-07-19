@@ -63,9 +63,27 @@ const DeadLeadsPage = () => {
                 <p className="text-sm text-gray-500">
                   {lead.leadDetails?.location || 'No location'}
                 </p>
-                <p className="text-xs text-gray-400 mt-1 italic">
-                  Deleted on {new Date(lead.deletedAt).toLocaleDateString()}
+                <p className="text-sm text-gray-500">
+                  {lead.leadDetails?.companyName || 'No company name'}
                 </p>
+                <p className='text-sm text-gray-500 mt-1'>
+                  <span className='font-medium'>Created By:</span> {lead.createdBy?.name || 'Unknown'}
+                </p>
+                {lead.notes && lead.notes.length>0 && (
+                  <div className='mt-2'>
+                    <p className="text-sm font medium text-gray-700">📝 Notes:</p>
+                    <ul className='text-sm text-gray-600 list-dsc list-inside space-y-1'>
+                      {lead.notes.map((note, i) => (
+                        <li key={i}>
+                          {note.text}{" "}
+                          <span className='text-xs text-gray-400'>
+                            ({new Date(note.date).toLocaleDateString()})
+                          </span>
+                          </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <button
                   onClick={() => handleViewLead(lead)}
                   className="mt-3 inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1 rounded"
