@@ -79,7 +79,7 @@ useEffect(() => {
         const activeLeads = response.data.filter(lead => lead.lifecycleStatus !== 'dead');
         setMyLeads(activeLeads);
         setFilteredLeads(activeLeads);
-
+ 
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Error fetching leads');
@@ -255,10 +255,11 @@ const leads = jsonData.map((row) => {
   return {
     leadDetails: {
       clientName: String(clientName || '').trim(),
-      contact: String(contact || '').trim(),
+      contacts: [{ number: String(contact || '').trim() }],
       companyName: String(companyName || '').trim(),
       location: String(location || '').trim(),
       email: String(email || '').trim(),
+      source:"Excel",
     },
   };
 });

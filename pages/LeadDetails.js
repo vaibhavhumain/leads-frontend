@@ -2,29 +2,28 @@ import { useEffect, useState , useRef} from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
 import { toast } from 'react-toastify';
-import { 
-  FaEye, 
-  FaEyeSlash, 
-  FaUserCircle,
-  FaUser,
-  FaPhone,
-  FaEnvelope,
-  FaBuilding,
-  FaMapMarkerAlt,
-  FaUserShield,
-  FaStickyNote, } from 'react-icons/fa';
-import { BsCalendarEvent } from 'react-icons/bs';
 import Link from 'next/link';
-import { FaArrowRight } from "react-icons/fa";
 import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
 import {useRouter} from 'next/router';
 import LifecycleToggle from '../components/LifecycleToggle';
+import { FaEdit } from 'react-icons/fa';
 const LeadDetails = () => {
   const router=useRouter();
   const [lead, setLead] = useState(null);
+  const [editingClientNameId, setEditingClientNameId] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedConnection, setSelectedConnection] = useState('');
+  const [editingCompanyNameId, setEditingCompanyNameId] = useState(null);
+  const [editingLocationId, setEditingLocationId] = useState(null);
+  const [editingPrimaryContactId, setEditingPrimaryContactId] = useState(null);
+  const [editedClientName, setEditedClientName] = useState('');
+  const [newContactLeadId, setNewContactLeadId] = useState(null);
+  const [editedCompanyName, setEditedCompanyName] = useState('');  
+  const [editedLocation, setEditedLocation] = useState('');
+  const [editingEmailId, setEditingEmailId] = useState(null);
+  const [editedPrimaryContacts, setEditedPrimaryContacts] = useState([]);
+  const [editedEmail, setEditedEmail] = useState('');
   const [followUp, setFollowUp] = useState({ date: '', notes: '' });
   const [selectedUserId, setSelectedUserId] = useState('');
   const [users, setUsers] = useState([]);
@@ -35,12 +34,21 @@ const LeadDetails = () => {
   const intervalRefs = useRef({});
   const [noteInput, setNoteInput] = useState({ date: '', text: '' });
   const [addingNote, setAddingNote] = useState(false);
+  const [leads,setLeads] = useState([]);
   const [contactPicker, setContactPicker] = useState({
     open: false,
     options: [],
     onSelect: null,  
     actionLabel: '',
   });
+  const [editableFields, setEditableFields] = useState({
+  clientName: '',
+  email: '',
+  companyName: '',
+  location: '',
+  contacts: [],
+});
+  const [isEditing , setIsEditing] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
@@ -76,7 +84,6 @@ useEffect(() => {
     }
   }
 }, []);
-
 
 const initializeTimers = (leads) => {
   const timers = {};
@@ -257,7 +264,7 @@ const formatTime = (seconds) => {
     fetchUsers();
   }, []);
 
-  const fetchLead = async (id) => {
+const fetchLead = async (id) => {
   if (!id || id === 'undefined') {
     console.error("❌ Invalid lead ID");
     setLoadingLead(false);
@@ -293,6 +300,15 @@ const formatTime = (seconds) => {
     setSelectedStatus(data.status || '');
     setSelectedConnection(data.connectionStatus || '');
     localStorage.setItem('selectedLead', JSON.stringify(data));
+
+    setEditableFields({
+      clientName: data.leadDetails?.clientName || '',
+      email: data.leadDetails?.email || '',
+      companyName: data.leadDetails?.companyName || '',
+      location: data.leadDetails?.location || '',
+      contacts: data.leadDetails?.contacts || [],
+    });
+
   } catch (error) {
     console.error("❌ Error fetching lead:", error);
     toast.error(error.response?.data?.message || 'Failed to fetch lead');
@@ -316,23 +332,6 @@ function copyToClipboard(text) {
   }
 }
 
-
-const sendWhatsAppMessage = (number, clientName = '') => {
-  const text = `Dear ${clientName || 'Customer'}, It was a pleasure speaking with you today! Thank you for considering Gobind Coach Builders for your bus body requirements. We're excited about the opportunity to bring your vision to life with our durable designs and unmatched craftsmanship.`;
-  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
-  console.log('WA URL:', url);
-  window.open(url, '_blank');
-  copyToClipboard(text); 
-};
-
-const sendWhatsAppPdf = (number, clientName = '', pdfFileName) => {
-  const origin = window.location.origin;
-  const pdfUrl = `${origin}/${pdfFileName}`;
-  const text = `Dear ${clientName || 'Customer'},\n\nPlease find the PDF here:\n${pdfUrl}`;
-  const url = `https://wa.me/91${number}?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
-  copyToClipboard(text); 
-};
 
 
 const sendWhatsAppPhotos = (number, clientName = '', selectedImages) => {
@@ -367,9 +366,6 @@ useEffect(() => {
     loadLead();
   }
 }, [router.isReady, router.query.leadId]);
-
-
-
 
 const [loadingLead, setLoadingLead] = useState(true);
  
@@ -485,42 +481,651 @@ const handleMarkAsDead = async () => {
     }
   };
 
+  const updateCompanyName = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedCompanyName.trim()) {
+    toast.warning('Company name cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/company-name`,
+      { companyName: editedCompanyName },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Company name updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                companyName: editedCompanyName,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingCompanyNameId(null);
+    setEditedCompanyName('');
+  } catch (err) {
+    console.error('Failed to update company name', err);
+    toast.error('Update failed');
+  }
+};
+
+const updateLocation = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedLocation.trim()) {
+    toast.warning('Location cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/location`,
+      { location: editedLocation },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Location updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                location: editedLocation,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingLocationId(null);
+    setEditedLocation('');
+  } catch (err) {
+    console.error('Failed to update location', err);
+    toast.error('Update failed');
+  }
+};
+
+
+const updatePrimaryContacts = async (leadId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const cleaned = editedPrimaryContacts
+      .map((c) => c.trim().replace(/\D/g, ''))
+      .filter((c) => c.length > 0);
+
+    const allValid = cleaned.every((num) => /^\d{10}$/.test(num));
+    if (!allValid) {
+      toast.warning('All contacts must be valid 10-digit numbers');
+      return;
+    }
+
+    await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/primary-contact`,
+      { contacts: cleaned },
+      { headers }
+    );
+
+    toast.success('Contacts updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                contacts: cleaned.map((number) => ({ number })),
+              },
+            }
+          : lead
+      )
+    );
+
+    setEditingPrimaryContactId(null);
+    setEditedPrimaryContacts([]);
+  } catch (err) {
+    toast.error('Failed to update contacts');
+    console.error(err);
+  }
+};
+
+const handleEmailSave = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedEmail.trim()) {
+    toast.warning('Email cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${lead._id}/email`,
+      { email: editedEmail },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Email updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                email: editedEmail,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingEmailId(null);
+    setEditedEmail('');
+  } catch (err) {
+    console.error('Failed to update email', err);
+    toast.error('Update failed');
+  }
+};
+
+const getAllValidContacts = (contactsArr, singleContact) => {
+  let numbers = [];
+  if (Array.isArray(contactsArr) && contactsArr.length > 0) {
+    for (let c of contactsArr) {
+      if (c && c.number) {
+        let cleaned = c.number.replace(/\D/g, '');
+        if (cleaned.length === 11 && cleaned.startsWith('0')) {
+          cleaned = cleaned.substring(1);
+        }
+        if (/^\d{10}$/.test(cleaned)) {
+          numbers.push({ label: c.label || 'Other', number: cleaned });
+        }
+      }
+    }
+  }
+  if (typeof singleContact === 'string') {
+    let cleaned = singleContact.replace(/\D/g, '');
+    if (cleaned.length === 11 && cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    if (/^\d{10}$/.test(cleaned)) {
+      numbers.push({ label: 'Primary', number: cleaned });
+    }
+  }
+  return numbers;
+};
+
+
+const handleSave = () => {
+    updateClientName(editingClientNameId);
+};
+
+
+const updateClientName = async (leadId) => {
+  const token = localStorage.getItem('token');
+  if (!editedClientName.trim()) {
+    toast.warning('Client name cannot be empty');
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/client-name`,
+      { clientName: editedClientName },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    toast.success('Client name updated ✅');
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead._id === leadId
+          ? {
+              ...lead,
+              leadDetails: {
+                ...lead.leadDetails,
+                clientName: editedClientName,
+              },
+            }
+          : lead
+      )
+    );
+    setEditingClientNameId(null);
+    setEditedClientName('');
+  } catch (err) {
+    console.error('Failed to update client name', err);
+    toast.error('Update failed');
+  }
+};
+
+function copyToClipboard(text) {
+  try {
+    navigator.clipboard.writeText(text);
+    toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    toast.success('Message copied! If it is not pre-filled in WhatsApp, just paste.');
+  }
+}
+const sendWhatsAppMessage = (lead) => {
+  const numbers = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+  if (!numbers.length) {
+    toast.error("No valid contact numbers found.");
+    return;
+  }
+
+  // Prompt for number
+  const index = parseInt(prompt(
+    numbers.map((c, i) => `${i + 1}. ${c.label}: ${c.number}`).join('\n') + `\n\nSelect number 1-${numbers.length}`
+  )) - 1;
+
+  if (isNaN(index) || index < 0 || index >= numbers.length) {
+    toast.error("Invalid selection");
+    return;
+  }
+
+  const selectedNumber = numbers[index].number;
+  const phoneNumber = `91${selectedNumber}`;
+  const clientName = lead.leadDetails?.clientName || 'Customer';
+  const message = `Dear ${clientName}, this is Akshat Mudgal from Gobind Coach Builders.  
+Thank you for your time on the call today.
+As discussed, we specialize in manufacturing high-quality bus bodies – from school buses to luxury coaches – custom-built as per your needs.
+
+If you ever require a reliable bus body partner, feel free to reach out.  
+Would be happy to assist you with designs, specs, or quotations.
+
+Our legacy of 30+ years, 200+ skilled workers, and a dedicated team ensures quality you can trust.
+
+Looking forward to staying in touch!  
+Regards,  
+Akshat Mudgal  
+Business Development Executive  
+Gobind Coach Builders
+7888837540
+`;
+
+  const encodedText = encodeURIComponent(message);
+
+  // Prompt for app vs web
+  const openInApp = confirm("Click OK to open in WhatsApp App\nClick Cancel to open in WhatsApp Web");
+
+  const url = openInApp
+    ? `https://wa.me/${phoneNumber}?text=${encodedText}`
+    : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
+
+  // Copy to clipboard and open
+  copyToClipboard(message);
+  window.location.href = url; // ✅ Use location.href to ensure redirection
+};
+
+const notSendWhatsAppMessage = (lead) => {
+  const numbers = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+  if (!numbers.length) {
+    toast.error("No valid contact numbers found.");
+    return;
+  }
+
+  // Prompt for number
+  const index = parseInt(prompt(
+    numbers.map((c, i) => `${i + 1}. ${c.label}: ${c.number}`).join('\n') + `\n\nSelect number 1-${numbers.length}`
+  )) - 1;
+
+  if (isNaN(index) || index < 0 || index >= numbers.length) {
+    toast.error("Invalid selection");
+    return;
+  }
+
+  const selectedNumber = numbers[index].number;
+  const phoneNumber = `91${selectedNumber}`;
+  const clientName = lead.leadDetails?.clientName || 'Customer';
+  const message = `Dear ${clientName}, this is Akshat Mudgal from Gobind Coach Builders.  
+I tried reaching you over a quick call regarding your bus body requirements.
+
+We’re a trusted name with 30+ years in manufacturing bus bodies – school, staff, AC luxury, and more – tailored to your business needs.
+
+Let me know a convenient time to connect or feel free to reply here if you’d like more info.
+
+Regards,  
+Akshat Mudgal  
+Business Development Executive  
+Gobind Coach Builders
+7888837540
+`;
+
+  const encodedText = encodeURIComponent(message);
+
+  // Prompt for app vs web
+  const openInApp = confirm("Click OK to open in WhatsApp App\nClick Cancel to open in WhatsApp Web");
+
+  const url = openInApp
+    ? `https://wa.me/${phoneNumber}?text=${encodedText}`
+    : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
+
+  // Copy to clipboard and open
+  copyToClipboard(message);
+  window.location.href = url; // ✅ Use location.href to ensure redirection
+};
+
+
+const sendWhatsAppPdf = (lead, pdfFileName = 'gcb.pdf') => {
+  const numbers = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
+  if (!numbers.length) {
+    toast.error("No valid contact numbers found.");
+    return;
+  }
+
+  const index = parseInt(prompt(
+    numbers.map((c, i) => `${i + 1}. ${c.label}: ${c.number}`).join('\n') + `\n\nSelect number 1-${numbers.length}`
+  )) - 1;
+
+  if (isNaN(index) || index < 0 || index >= numbers.length) {
+    toast.error("Invalid selection");
+    return;
+  }
+
+  const selectedNumber = numbers[index].number;
+  const phoneNumber = `91${selectedNumber}`;
+  const origin = window.location.origin;
+  const pdfUrl = `${origin}/${pdfFileName}`;
+  const clientName = lead.leadDetails?.clientName || 'Customer';
+  const message = `Dear ${clientName},\n\nPlease find the PDF here:\n${pdfUrl}`;
+  const encodedText = encodeURIComponent(message);
+
+  const openInApp = confirm("Click OK to open in WhatsApp App\nClick Cancel to open in WhatsApp Web");
+
+  const url = openInApp
+    ? `https://wa.me/${phoneNumber}?text=${encodedText}`
+    : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
+
+  copyToClipboard(message);
+  window.location.href = url;
+};
+
+
   if (loadingLead) return <p>Loading lead...</p>;
   if (!lead) return  <p>No lead found</p>
 
 
-  return (
+  return (  
     <ProtectedRoute>
-       <Navbar />
-    <div className="relative min-h-screen w-full bg-gray-50 py-12 px-4 flex items-start justify-center overflow-hidden font-sans">
+      <Navbar />
+      <div className="relative min-h-screen w-full bg-gray-50 py-12 px-4 flex items-start justify-center overflow-hidden font-sans">
       <div className="absolute top-0 left-0 w-80 h-80 bg-pink-200 rounded-full filter blur-3xl opacity-20" />
-      <div className="absolute top-1/3 right-0 w-80 h-80 bg-red-100 rounded-full filter blur-2xl opacity-10" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-100 rounded-full filter blur-3xl opacity-5" />
+        <div className="absolute top-1/3 right-0 w-80 h-80 bg-red-100 rounded-full filter blur-2xl opacity-10" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-100 rounded-full filter blur-3xl opacity-5" />
 
       <Link href="/dashboard"></Link>
 
-      <div className="relative z-10 bg-white p-8 rounded-xl shadow-md border border-gray-200 w-full max-w-2xl transition">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Lead Card Details</h2>
+       <div className="relative z-10 bg-white p-8 rounded-xl shadow-md border border-gray-200 w-full max-w-2xl transition">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Lead Card Details</h2>
+          {/* Last Edited Timestamp */}
+{lead.lastEditedAt && (
+  <div className="mb-3 flex items-center gap-2">
+    <span className="text-xs text-gray-500">
+      <b>Last Edited:</b>{' '}
+      {new Date(lead.lastEditedAt).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })}
+    </span>
+  </div>
+)}
 
-        <div className="text-sm text-gray-700 space-y-2 mb-6">
-          <p><strong>Client:</strong> {lead.leadDetails?.clientName || 'N/A'}</p>
-          {lead.leadDetails?.contacts && lead.leadDetails.contacts.length > 0 ? (
-            <p>
-              <strong>Contact:</strong>{' '}
-              {lead.leadDetails.contacts.map((c, idx) => (
-                <span key={idx} className="mr-2">
-                  {c.number} <span className="text-xs text-gray-500">({c.label || 'Other'})</span>
-                </span>
-              ))}
-            </p>
+        {/* Header */}
+        <div className="flex justify-between items-start gap-6 flex-wrap mb-6">
+          <div className="flex flex-col gap-1">
+  <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+    {editingClientNameId === lead._id ? (
+      <>
+        <input
+          value={editedClientName}
+          onChange={(e) => setEditedClientName(e.target.value)}
+          className="border px-2 py-1 rounded text-base"
+        />
+        <button onClick={handleSave} className="text-green-600">Save</button>
+        <button onClick={() => setEditingClientNameId(null)} className="text-red-500">Cancel</button>
+      </>
+    ) : (
+      <>
+        <span>{lead.leadDetails?.clientName || 'No Name'}</span>
+        <FaEdit
+          className="text-indigo-400 cursor-pointer hover:text-indigo-700"
+          onClick={() => {
+            setEditingClientNameId(lead._id);
+            setEditedClientName(lead.leadDetails?.clientName || '');
+          }}
+        />
+      </>
+    )}
+  </h2>
+
+  {/* Company */}
+  {editingCompanyNameId === lead._id ? (
+  <div className="flex gap-2 items-center mt-1">
+    <input
+      value={editedCompanyName}
+      onChange={(e) => setEditedCompanyName(e.target.value)}
+      className="border px-2 py-1 rounded text-sm"
+    />
+    <button onClick={() => updateCompanyName(lead._id)} className="text-green-600 text-sm">
+      Save
+    </button>
+    <button onClick={() => setEditingCompanyNameId(null)} className="text-red-500 text-sm">
+      Cancel
+    </button>
+  </div>
+) : (
+  lead.leadDetails?.companyName && (
+    <div
+      className="text-sm text-indigo-700 font-medium cursor-pointer hover:underline"
+      onClick={() => {
+        setEditingCompanyNameId(lead._id);
+        setEditedCompanyName(lead.leadDetails.companyName || '');
+      }}
+    >
+      🏢 {lead.leadDetails.companyName}
+    </div>
+  )
+)}
+
+{/* Location */}
+{editingLocationId === lead._id ? (
+  <div className="flex gap-2 items-center mt-1">
+    <input
+      value={editedLocation}
+      onChange={(e) => setEditedLocation(e.target.value)}
+      className="border px-2 py-1 rounded text-sm"
+    />
+    <button
+      onClick={() => updateLocation(lead._id)}
+      className="text-green-600 text-sm"
+    >
+      Save
+    </button>
+    <button
+      onClick={() => setEditingLocationId(null)}
+      className="text-red-500 text-sm"
+    >
+      Cancel
+    </button>
+  </div>
+) : (
+  lead.leadDetails?.location && (
+    <div
+      className="text-sm text-blue-600 font-medium cursor-pointer hover:underline"
+      onClick={() => {
+        setEditingLocationId(lead._id);
+        setEditedLocation(lead.leadDetails.location || '');
+      }}
+    >
+      📍 {lead.leadDetails.location}
+    </div>
+  )
+)}
+
+{/* Editable Contact Numbers */}
+{editingPrimaryContactId === lead._id ? (
+  <div className="flex flex-col gap-2 mt-1">
+    {editedPrimaryContacts.map((contact, index) => (
+      <div key={index} className="flex gap-2 items-center">
+        <input
+          type="text"
+          value={contact}
+          onChange={(e) => {
+            const updated = [...editedPrimaryContacts];
+            updated[index] = e.target.value;
+            setEditedPrimaryContacts(updated);
+          }}
+          className="border px-2 py-1 rounded text-sm"
+        />
+        <button
+          onClick={() => {
+            const updated = editedPrimaryContacts.filter((_, i) => i !== index);
+            setEditedPrimaryContacts(updated);
+          }}
+          className="text-red-500 text-xs"
+        >
+          🗑
+        </button>
+      </div>
+    ))}
+    <button
+      onClick={() => setEditedPrimaryContacts([...editedPrimaryContacts, ''])}
+      className="text-blue-600 text-xs mt-1"
+    >
+      ➕ Add Contact
+    </button>
+
+    <div className="flex gap-3 mt-2">
+      <button
+        onClick={() => updatePrimaryContacts(lead._id)}
+        className="text-green-600 text-sm"
+      >
+        ✅ Save
+      </button>
+      <button
+        onClick={() => setEditingPrimaryContactId(null)}
+        className="text-red-500 text-sm"
+      >
+        ❌ Cancel
+      </button>
+    </div>
+  </div>
+) : (
+  <div
+    onClick={() => {
+      setEditingPrimaryContactId(lead._id);
+      setEditedPrimaryContacts(
+        lead.leadDetails.contacts?.map((c) => c.number) || []
+      );
+    }}
+    className="cursor-pointer text-blue-600 hover:underline mt-1"
+  >
+    📞 <b>Contacts:</b>{' '}
+    {lead.leadDetails.contacts?.map((c) => c.number).join(', ') || 'N/A'} (click to edit)
+  </div>
+)}
+
+  {/* Add new contact input */}
+  {newContactLeadId === lead._id ? (
+    <div className="mt-2 flex flex-col gap-2">
+      <input
+        type="text"
+        value={newContactNumber}
+        onChange={(e) => setNewContactNumber(e.target.value)}
+        placeholder="Enter 10-digit number"
+        className="border rounded px-2 py-1 text-sm"
+      />
+      <input
+        type="text"
+        value={newContactLabel}
+        onChange={(e) => setNewContactLabel(e.target.value)}
+        placeholder="Label (e.g., Work, Alternate)"
+        className="border rounded px-2 py-1 text-sm"
+      />
+      <div className="flex gap-3 mt-1">
+        <button
+          onClick={() => handleAddContact(lead._id)}
+          className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+        >
+          ✅ Add
+        </button>
+        <button
+          onClick={() => setNewContactLeadId(null)}
+          className="text-red-500 text-sm"
+        >
+          ❌ Cancel
+        </button>
+      </div>
+    </div>
+  ) : (
+    <button
+      onClick={() => setNewContactLeadId(lead._id)}
+      className="text-blue-500 underline text-sm mt-1 w-fit"
+    >
+      ➕ Add Contact
+    </button>
+    
+  )}
+  <button
+  onClick={() => handleDeleteLead(lead._id)}
+  className="text-red-600 underline text-sm mt-2 w-fit"
+>
+  ❌ Delete this Lead
+</button>
+{/* Email */}
+        <div className="mb-4 text-sm text-gray-700">
+          {editingEmailId === lead._id ? (
+            <div className="flex gap-2 items-center">
+              <input
+                value={editedEmail}
+                onChange={(e) => setEditedEmail(e.target.value)}
+                className="border px-2 py-1 rounded"
+              />
+              <button onClick={handleEmailSave} className="text-green-600">Save</button>
+              <button onClick={() => setEditingEmailId(null)} className="text-red-500">Cancel</button>
+            </div>
           ) : (
-            <p><strong>Contact:</strong> {lead.leadDetails?.contact || 'N/A'}</p>
+            <div className="flex gap-2 items-center">
+              <span>{lead.leadDetails?.email || 'No email'}</span>
+              <FaEdit
+                className="text-indigo-400 cursor-pointer hover:text-indigo-700"
+                onClick={() => {
+                  setEditingEmailId(lead._id);
+                  setEditedEmail(lead.leadDetails?.email || '');
+                }}
+              />
+            </div>
           )}
-          <p><strong>Email:</strong> {lead.leadDetails?.email || 'N/A'}</p>
-          <p><strong>Company:</strong> {lead.leadDetails?.companyName || 'N/A'}</p>
-          <p><strong>Location:</strong> {lead.leadDetails?.location || 'N/A'}</p>
-          <p><strong>Created By:</strong> {lead.createdBy?.name || 'N/A'}</p>
         </div>
+
 
         <div className="text-sm text-gray-700 mt-3">Timer: {formatTime(leadTimers[lead._id]?.time || 0)}</div>
         <div className="flex gap-2 mt-2">
@@ -642,14 +1247,6 @@ const handleMarkAsDead = async () => {
   )}
 </div>
 
-{!isDeadLead && (
-  <button
-    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-    onClick={handleMarkAsDead}
-  >
-    Mark Lead as Dead
-  </button>
-)}
 
       {/* Follow-Up Section */}
       <div className="mb-8">
@@ -847,74 +1444,53 @@ const handleMarkAsDead = async () => {
 </div>
 
 {/* Share Buttons */}
-<div className="flex flex-col gap-3 mb-6 max-w-xs">
-  <button
-    onClick={() => {
-      const validContacts = (lead.leadDetails?.contacts || [])
-        .filter(c => c.number)
-        .map(c => ({ number: c.number, label: c.label })) || [];
+<div className="w-full flex justify-end">
+  <div className="flex flex-wrap gap-3 mb-6 max-w-xl justify-end">
+    {/* Enquiry Form */}
+    <Link
+      href={{
+        pathname: '/EnquiryForm',
+        query: { leadId: lead._id },
+      }}
+      passHref
+      legacyBehavior
+    >
+      <a className="bg-amber-700 text-white px-4 py-2 rounded-lg shadow cursor-pointer hover:bg-amber-800 transition">
+        📃 Enquiry Form
+      </a>
+    </Link>
 
-      if (validContacts.length === 0) {
-        toast.error("No valid 10-digit contact found!");
-        return;
-      }
+    {/* WhatsApp (Connected) */}
+    <button
+      onClick={() => sendWhatsAppMessage(lead)}
+      className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition"
+    >
+      📩 WhatsApp (Connected)
+    </button>
 
-      if (validContacts.length === 1) {
-        sendWhatsAppMessage(validContacts[0].number, lead.leadDetails?.clientName || '');
-      } else {
-        setContactPicker({
-          open: true,
-          options: validContacts,
-          onSelect: (number) => {
-            sendWhatsAppMessage(number, lead.leadDetails?.clientName || '');
-            setContactPicker(prev => ({ ...prev, open: false }));
-          },
-          actionLabel: "Send WhatsApp Message",
-        });
-      }
-    }}
-    className="w-full bg-green-500 text-white py-2 rounded"
-  >
-    Send WhatsApp
-  </button>
+    {/* WhatsApp (Not Connected) */}
+    <button
+      onClick={() => notSendWhatsAppMessage(lead)}
+      className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition"
+    >
+      📩 WhatsApp (Not Connected)
+    </button>
 
-  <button
-    onClick={() => {
-      const validContacts = (lead.leadDetails?.contacts || [])
-        .filter(c => c.number)
-        .map(c => ({ number: c.number, label: c.label })) || [];
+    {/* Send PDF */}
+    <button
+      onClick={() => sendWhatsAppPdf(lead)}
+      className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 transition"
+    >
+      📄 PDF
+    </button>
 
-      if (validContacts.length === 0) {
-        toast.error("No valid 10-digit contact found!");
-        return;
-      }
-
-      if (validContacts.length === 1) {
-        sendWhatsAppPdf(validContacts[0].number, lead.leadDetails?.clientName || '', 'gcb.pdf');
-      } else {
-        setContactPicker({
-          open: true,
-          options: validContacts,
-          onSelect: (number) => {
-            sendWhatsAppPdf(number, lead.leadDetails?.clientName || '', 'gcb.pdf');
-            setContactPicker(prev => ({ ...prev, open: false }));
-          },
-          actionLabel: "Send PDF",
-        });
-      }
-    }}
-    className="w-full bg-yellow-500 text-white py-2 rounded"
-  >
-    Send PDF
-  </button>
-
-  <Link href="/gallery" passHref legacyBehavior>
-    <a>
-      <button className="w-full bg-blue-500 text-white py-2 rounded">
-        View Photos
-      </button>
-    </a>
-  </Link>
+    {/* Photos Link */}
+    <Link href="/gallery" passHref legacyBehavior>
+      <a className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition">
+        🖼️ Photos
+      </a>
+    </Link>
+  </div>
 </div>
 
 {/* Contact Picker Modal */}
@@ -943,12 +1519,13 @@ const handleMarkAsDead = async () => {
   </div>
 )}
 
-
     </div>
+  </div>
+  </div>
   </div>
   </ProtectedRoute>
 );
+
 };
 
 export default LeadDetails;
-
