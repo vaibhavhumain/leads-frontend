@@ -4,7 +4,9 @@ import Link from 'next/link';
 
 const LeadTable = ({ leads, searchTerm }) => {
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
+  const [hasRestoredIndex, setHasRestoredIndex] = useState(false);
 
+  // Only one source for filtered leads
   const filteredLeads = useMemo(() => {
     if (!searchTerm || !searchTerm.trim()) return leads;
     const term = searchTerm.toLowerCase().replace(/\D/g, '');
@@ -19,7 +21,7 @@ const LeadTable = ({ leads, searchTerm }) => {
     });
   }, [leads, searchTerm]);
 
-  // Try to restore the currentLeadIndex based on saved ID whenever leads or searchTerm changes
+  // Restore last viewed lead by ID when leads change
   useEffect(() => {
     if (filteredLeads.length === 0) return;
     const savedLeadId = localStorage.getItem('lastViewedLeadId');
@@ -31,14 +33,32 @@ const LeadTable = ({ leads, searchTerm }) => {
     }
   }, [filteredLeads]);
 
+  // Save last viewed lead id
   const lead = filteredLeads[currentLeadIndex];
-
-  // Save the current lead id whenever it changes
   useEffect(() => {
     if (lead) {
       localStorage.setItem('lastViewedLeadId', lead._id);
     }
   }, [lead]);
+
+  // Restore last viewed index (optional extra feature)
+  useEffect(() => {
+    if (!hasRestoredIndex && filteredLeads.length > 0) {
+      const savedIndex = localStorage.getItem('lastViewedIndex');
+      if (savedIndex !== null && !isNaN(savedIndex)) {
+        const parsedIndex = parseInt(savedIndex, 10);
+        if (parsedIndex >= 0 && parsedIndex < filteredLeads.length) {
+          setCurrentLeadIndex(parsedIndex);
+        } else {
+          setCurrentLeadIndex(0); 
+        }
+      }
+      setHasRestoredIndex(true);
+    }
+  }, [filteredLeads, hasRestoredIndex]);
+  useEffect(() => {
+    localStorage.setItem('lastViewedIndex', currentLeadIndex.toString());
+  }, [currentLeadIndex]);
 
   const goToPreviousLead = () => {
     if (currentLeadIndex > 0) setCurrentLeadIndex(prev => prev - 1);
@@ -47,7 +67,11 @@ const LeadTable = ({ leads, searchTerm }) => {
     if (currentLeadIndex < filteredLeads.length - 1) setCurrentLeadIndex(prev => prev + 1);
   };
 
-  if (!lead) return null;
+  if (!lead) return (
+    <div className="w-full px-4 py-8 min-h-screen flex items-center justify-center text-gray-500">
+      No lead found.
+    </div>
+  );
 
   return (
     <div className="w-full px-4 py-8 bg-[#e9f0ff] min-h-screen font-sans">

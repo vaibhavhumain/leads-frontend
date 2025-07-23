@@ -35,6 +35,10 @@ const LeadDetails = () => {
   const [noteInput, setNoteInput] = useState({ date: '', text: '' });
   const [addingNote, setAddingNote] = useState(false);
   const [leads,setLeads] = useState([]);
+  const [timerLogs, setTimerLogs] = useState([]);
+  const [filteredLeads, setFilteredLeads] = useState([]); 
+  const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
+  const [hasRestoredIndex, setHasRestoredIndex] = useState(false);
   const [contactPicker, setContactPicker] = useState({
     open: false,
     options: [],
@@ -97,20 +101,24 @@ const initializeTimers = (leads) => {
   });
   setLeadTimers(timers);
 };
-const startTimer = (leadId) => {
-  // If timer running, do nothing
-  if (intervalRefs.current[leadId]) return;
 
+const startTimer = (leadId) => {
+  if (intervalRefs.current[leadId]) return;
   intervalRefs.current[leadId] = setInterval(() => {
-    setLeadTimers(prev => ({
-      ...prev,
-      [leadId]: {
-        ...prev[leadId],
-        time: (prev[leadId]?.time || 0) + 1,
-        running: true,
-        paused: false,
-      },
-    }));
+    setLeadTimers(prev => {
+      const nextTime = (prev[leadId]?.time || 0) + 1;
+      // Save to localStorage each tick
+      localStorage.setItem(`timer_${leadId}`, nextTime);
+      return {
+        ...prev,
+        [leadId]: {
+          ...prev[leadId],
+          time: nextTime,
+          running: true,
+          paused: false,
+        },
+      };
+    });
   }, 1000);
 
   setLeadTimers(prev => ({
@@ -139,19 +147,23 @@ const pauseTimer = (leadId) => {
 };
 
 const resumeTimer = (leadId) => {
-  if (intervalRefs.current[leadId]) return; // already running
-  if (!leadTimers[leadId]?.paused) return; // only resume if paused
+  if (intervalRefs.current[leadId]) return;
+  if (!leadTimers[leadId]?.paused) return;
 
   intervalRefs.current[leadId] = setInterval(() => {
-    setLeadTimers(prev => ({
-      ...prev,
-      [leadId]: {
-        ...prev[leadId],
-        time: (prev[leadId]?.time || 0) + 1,
-        running: true,
-        paused: false,
-      },
-    }));
+    setLeadTimers(prev => {
+      const nextTime = (prev[leadId]?.time || 0) + 1;
+      localStorage.setItem(`timer_${leadId}`, nextTime);
+      return {
+        ...prev,
+        [leadId]: {
+          ...prev[leadId],
+          time: nextTime,
+          running: true,
+          paused: false,
+        },
+      };
+    });
   }, 1000);
 
   setLeadTimers(prev => ({
@@ -170,9 +182,9 @@ const stopTimer = async (leadId) => {
     clearInterval(intervalRefs.current[leadId]);
     intervalRefs.current[leadId] = null;
   }
-
-  // Get the current time spent on this lead's timer
   const duration = leadTimers[leadId]?.time || 0;
+
+  localStorage.removeItem(`timer_${leadId}`);
 
   setLeadTimers(prev => ({
     ...prev,
@@ -195,15 +207,11 @@ const stopTimer = async (leadId) => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Optionally, notify success or refresh logs
-      // e.g. toast.success('Timer log saved successfully');
     } catch (err) {
       console.error('Failed to save timer log:', err);
-      // Optionally notify user about failure
     }
   }
 };
-// Cleanup on unmount:
 useEffect(() => {
   return () => {
     Object.values(intervalRefs.current).forEach(intervalId => {
@@ -402,6 +410,24 @@ const [loadingLead, setLoadingLead] = useState(true);
     console.error(err);
   }
 };  
+
+const handleDeleteLead = async (leadId) => {
+  const confirmDelete = window.confirm('⚠️ Are you sure you want to delete this lead? This cannot be undone.');
+  if (!confirmDelete) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${BASE_URL}/api/leads/deleteByUser/${leadId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setLeads((prev) => prev.filter((lead) => lead._id !== leadId));
+    toast.success('Lead deleted successfully');
+  } catch (error) {
+    console.error('Error deleting lead:', error);
+    toast.error(error?.response?.data?.message || 'Failed to delete lead');
+  }
+};
 
 
   const handleStatusUpdate = async () => {
@@ -867,6 +893,32 @@ const sendWhatsAppPdf = (lead, pdfFileName = 'gcb.pdf') => {
   window.location.href = url;
 };
 
+const handleDeleteAllLeads = async () => {
+  const confirm = window.confirm('⚠️ Are you sure you want to delete ALL leads? This cannot be undone.');
+  if (!confirm) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(`${BASE_URL}/api/leads`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    toast.success('All leads deleted successfully');
+    setLeads([]); 
+  } catch (error) {
+    console.error('Error deleting all leads:', error);
+    toast.error('Failed to delete all leads');
+  }
+};
+
+const currentLead = filteredLeads[currentLeadIndex];
+const isFrozenByCreator =
+  currentLead?.createdBy?._id === loggedInUser?._id &&
+  currentLead?.forwardedTo?.user?._id &&
+  currentLead?.isFrozen;
+
+
+
 
   if (loadingLead) return <p>Loading lead...</p>;
   if (!lead) return  <p>No lead found</p>
@@ -1133,6 +1185,28 @@ const sendWhatsAppPdf = (lead, pdfFileName = 'gcb.pdf') => {
           <button onClick={() => pauseTimer(lead._id)} className="px-3 py-1 bg-yellow-400 text-white rounded">Pause</button>
           <button onClick={() => resumeTimer(lead._id)} className="px-3 py-1 bg-blue-500 text-white rounded">Resume</button>
           <button onClick={() => stopTimer(lead._id)} className="px-3 py-1 bg-red-600 text-white rounded">Stop</button>
+        </div>
+        <div className="bg-white p-4 rounded shadow max-w-xs">
+          <h3 className="text-base font-semibold text-gray-700 mb-2">🕓 Timer Logs</h3>
+          {timerLogs.length === 0 ? (
+            <p className='text-sm text-gray-400'>No Logs yet</p>
+          ) : (
+            <ul>
+              {timerLogs.map((log,idx) => (
+                <li key={idx} className='border-b pb-1 text-xs'>
+                  <div>
+                    <b>Time:</b> {formatTime(log.duration)}
+                  </div>
+                  <div>
+                    <b>By:</b> {log.stoppedByName}
+                   </div>
+                  <div>
+                    <b>At:</b> {new Date(log.stoppedAt).toLocaleString()}
+                    </div> 
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
        
             {/* Connection */}
