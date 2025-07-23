@@ -1,77 +1,77 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
 
 const LeadTable = ({ leads, searchTerm }) => {
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
-  const [hasRestoredIndex, setHasRestoredIndex] = useState(false);
+  const hasRestoredRef = useRef(false);
 
-  // Only one source for filtered leads
+  // Filtered and sorted
   const filteredLeads = useMemo(() => {
-    if (!searchTerm || !searchTerm.trim()) return leads;
-    const term = searchTerm.toLowerCase().replace(/\D/g, '');
-    const termString = searchTerm.toLowerCase();
-    return leads.filter(lead => {
-      const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
-      if (clientName.includes(termString)) return true;
-      const contacts = lead.leadDetails?.contacts || [];
-      return contacts.some(c =>
-        (c?.number || '').replace(/\D/g, '').includes(term)
-      );
-    });
+    let result = leads || [];
+    if (searchTerm && searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().replace(/\D/g, '');
+      const termString = searchTerm.toLowerCase();
+      result = leads.filter(lead => {
+        const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
+        if (clientName.includes(termString)) return true;
+        const contacts = lead.leadDetails?.contacts || [];
+        return contacts.some(c =>
+          (c?.number || '').replace(/\D/g, '').includes(term)
+        );
+      });
+    }
+    // Sort by client name, fallback to _id
+    return [...result].sort((a, b) =>
+      (a.leadDetails?.clientName || a._id || '').toLowerCase().localeCompare(
+        (b.leadDetails?.clientName || b._id || '').toLowerCase()
+      )
+    );
   }, [leads, searchTerm]);
 
-  // Restore last viewed lead by ID when leads change
+  // This will restore ONCE when filteredLeads is first loaded/non-empty
   useEffect(() => {
-    if (filteredLeads.length === 0) return;
-    const savedLeadId = localStorage.getItem('lastViewedLeadId');
-    if (savedLeadId) {
-      const foundIndex = filteredLeads.findIndex(l => l._id === savedLeadId);
-      setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
-    } else {
-      setCurrentLeadIndex(0);
+    if (!hasRestoredRef.current && filteredLeads.length > 0) {
+      const savedLeadId = localStorage.getItem('lastViewedLeadId');
+      if (savedLeadId) {
+        const foundIndex = filteredLeads.findIndex(
+          l => l._id?.toString() === savedLeadId.toString()
+        );
+        setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
+      } else {
+        setCurrentLeadIndex(0);
+      }
+      hasRestoredRef.current = true;
+    }
+    // If you want to reset restoration when the list becomes empty (e.g., on logout), reset the flag:
+    if (filteredLeads.length === 0) {
+      hasRestoredRef.current = false;
     }
   }, [filteredLeads]);
 
-  // Save last viewed lead id
+  // Whenever the lead changes (e.g., via Next/Prev), update lastViewedLeadId
   const lead = filteredLeads[currentLeadIndex];
   useEffect(() => {
     if (lead) {
-      localStorage.setItem('lastViewedLeadId', lead._id);
+      localStorage.setItem('lastViewedLeadId', lead._id.toString());
     }
   }, [lead]);
 
-  // Restore last viewed index (optional extra feature)
-  useEffect(() => {
-    if (!hasRestoredIndex && filteredLeads.length > 0) {
-      const savedIndex = localStorage.getItem('lastViewedIndex');
-      if (savedIndex !== null && !isNaN(savedIndex)) {
-        const parsedIndex = parseInt(savedIndex, 10);
-        if (parsedIndex >= 0 && parsedIndex < filteredLeads.length) {
-          setCurrentLeadIndex(parsedIndex);
-        } else {
-          setCurrentLeadIndex(0); 
-        }
-      }
-      setHasRestoredIndex(true);
-    }
-  }, [filteredLeads, hasRestoredIndex]);
-  useEffect(() => {
-    localStorage.setItem('lastViewedIndex', currentLeadIndex.toString());
-  }, [currentLeadIndex]);
-
+  // Prev/Next
   const goToPreviousLead = () => {
-    if (currentLeadIndex > 0) setCurrentLeadIndex(prev => prev - 1);
+    setCurrentLeadIndex(idx => Math.max(idx - 1, 0));
   };
   const goToNextLead = () => {
-    if (currentLeadIndex < filteredLeads.length - 1) setCurrentLeadIndex(prev => prev + 1);
+    setCurrentLeadIndex(idx => Math.min(idx + 1, filteredLeads.length - 1));
   };
 
-  if (!lead) return (
-    <div className="w-full px-4 py-8 min-h-screen flex items-center justify-center text-gray-500">
-      No lead found.
-    </div>
-  );
+  if (!lead) {
+    return (
+      <div className="w-full px-4 py-8 min-h-screen flex items-center justify-center text-gray-500">
+        No lead found.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full px-4 py-8 bg-[#e9f0ff] min-h-screen font-sans">
