@@ -6,6 +6,7 @@ import { saveAs } from "file-saver";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
+import Navbar from "../components/Navbar";
 
 const builder = imageUrlBuilder(sanity);
 function urlFor(source) {
@@ -201,6 +202,8 @@ export default function Gallery() {
   };
 
   return (
+    <div>
+      <Navbar />
     <div className="max-w-5xl mx-auto p-4 sm:p-8">
       <h1 className="text-3xl sm:text-4xl font-extrabold mb-8 text-blue-800 drop-shadow text-center">
         Bus Image Gallery
@@ -449,6 +452,7 @@ export default function Gallery() {
           </button>
         </div>
       )}
+    </div>
     </div>
   );
 }

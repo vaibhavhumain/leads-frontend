@@ -61,6 +61,71 @@ const LeadDetails = () => {
 
   useEffect(() => {
   if (!lead || !lead._id) return;
+
+  const start = localStorage.getItem(`timer_${lead._id}_start`);
+  const elapsed = parseInt(localStorage.getItem(`timer_${lead._id}_elapsed`) || "0", 10);
+  const paused = localStorage.getItem(`timer_${lead._id}_paused`) === '1';
+
+  if (start && !paused) {
+    // Timer was running: resume ticking from correct value!
+    const startTimestamp = parseInt(start, 10);
+
+    // Immediately set initial state to avoid lag:
+    setLeadTimers(prev => ({
+      ...prev,
+      [lead._id]: {
+        time: Math.floor((Date.now() - startTimestamp) / 1000),
+        running: true,
+        paused: false,
+        startTimestamp,
+      },
+    }));
+
+    // Start ticking!
+    if (intervalRefs.current[lead._id]) clearInterval(intervalRefs.current[lead._id]);
+    intervalRefs.current[lead._id] = setInterval(() => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startTimestamp) / 1000);
+      setLeadTimers(prev2 => ({
+        ...prev2,
+        [lead._id]: {
+          ...prev2[lead._id],
+          time: elapsedSeconds,
+          running: true,
+          paused: false,
+          startTimestamp,
+        },
+      }));
+      localStorage.setItem(`timer_${lead._id}_elapsed`, elapsedSeconds);
+    }, 1000);
+  } else {
+    // Not running (paused or stopped)
+    setLeadTimers(prev => ({
+      ...prev,
+      [lead._id]: {
+        time: elapsed,
+        running: false,
+        paused: !!paused,
+        startTimestamp: null,
+      },
+    }));
+    if (intervalRefs.current[lead._id]) {
+      clearInterval(intervalRefs.current[lead._id]);
+      intervalRefs.current[lead._id] = null;
+    }
+  }
+
+  // Clean up on unmount
+  return () => {
+    if (intervalRefs.current[lead._id]) {
+      clearInterval(intervalRefs.current[lead._id]);
+      intervalRefs.current[lead._id] = null;
+    }
+  };
+}, [lead]);
+
+  useEffect(() => {
+  if (!lead || !lead._id) return;
   setActivityLoading(true);
   const fetchActivities = async () => {
     try {
@@ -102,23 +167,59 @@ const initializeTimers = (leads) => {
   setLeadTimers(timers);
 };
 
+
+useEffect(() => {
+  if (lead && lead._id) {
+    const stored = localStorage.getItem(`timer_${lead._id}`);
+    const storedTime = stored ? parseInt(stored, 10) : 0;
+
+    setLeadTimers(prev => ({
+      ...prev,
+      [lead._id]: {
+        ...(prev[lead._id] || {}),
+        time: storedTime,
+        running: false,
+        paused: false,
+      },
+    }));
+  }
+}, [lead]);
+
+// Start or Resume timer for a lead
 const startTimer = (leadId) => {
-  if (intervalRefs.current[leadId]) return;
+  const prev = leadTimers[leadId] || {};
+  const isResuming = prev.paused && prev.startTimestamp;
+
+  let startTimestamp = Date.now();
+  let elapsed = prev.time || 0;
+
+  if (isResuming) {
+    // If resuming, offset startTimestamp by elapsed time
+    startTimestamp = Date.now() - elapsed * 1000;
+  } else {
+    // If starting fresh, reset elapsed
+    elapsed = 0;
+    startTimestamp = Date.now();
+  }
+
+  // Save to localStorage
+  localStorage.setItem(`timer_${leadId}_start`, startTimestamp);
+  localStorage.setItem(`timer_${leadId}_elapsed`, elapsed);
+
+  if (intervalRefs.current[leadId]) clearInterval(intervalRefs.current[leadId]);
   intervalRefs.current[leadId] = setInterval(() => {
-    setLeadTimers(prev => {
-      const nextTime = (prev[leadId]?.time || 0) + 1;
-      // Save to localStorage each tick
-      localStorage.setItem(`timer_${leadId}`, nextTime);
-      return {
-        ...prev,
-        [leadId]: {
-          ...prev[leadId],
-          time: nextTime,
-          running: true,
-          paused: false,
-        },
-      };
-    });
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - startTimestamp) / 1000) + elapsed;
+    setLeadTimers(prev => ({
+      ...prev,
+      [leadId]: {
+        time: elapsedSeconds,
+        running: true,
+        paused: false,
+        startTimestamp,
+      },
+    }));
+    localStorage.setItem(`timer_${leadId}_elapsed`, elapsedSeconds);
   }, 1000);
 
   setLeadTimers(prev => ({
@@ -127,6 +228,8 @@ const startTimer = (leadId) => {
       ...prev[leadId],
       running: true,
       paused: false,
+      startTimestamp,
+      time: elapsed,
     },
   }));
 };
@@ -136,82 +239,138 @@ const pauseTimer = (leadId) => {
     clearInterval(intervalRefs.current[leadId]);
     intervalRefs.current[leadId] = null;
   }
-  setLeadTimers(prev => ({
-    ...prev,
+  const prev = leadTimers[leadId] || {};
+  const now = Date.now();
+  let elapsed = prev.time || 0;
+  if (prev.startTimestamp) {
+    elapsed = Math.floor((now - prev.startTimestamp) / 1000) + (prev.time || 0);
+  }
+  // Save
+  localStorage.setItem(`timer_${leadId}_paused`, '1');
+  localStorage.setItem(`timer_${leadId}_elapsed`, elapsed);
+  setLeadTimers(prev2 => ({
+    ...prev2,
     [leadId]: {
-      ...prev[leadId],
+      ...prev,
       running: false,
       paused: true,
+      time: elapsed,
     },
   }));
 };
 
 const resumeTimer = (leadId) => {
-  if (intervalRefs.current[leadId]) return;
-  if (!leadTimers[leadId]?.paused) return;
+  const prev = leadTimers[leadId] || {};
+  const elapsed = parseInt(localStorage.getItem(`timer_${leadId}_elapsed`) || prev.time || 0, 10);
+  const startTimestamp = Date.now() - elapsed * 1000;
 
+  // Save
+  localStorage.setItem(`timer_${leadId}_start`, startTimestamp);
+  localStorage.removeItem(`timer_${leadId}_paused`);
+
+  if (intervalRefs.current[leadId]) clearInterval(intervalRefs.current[leadId]);
   intervalRefs.current[leadId] = setInterval(() => {
-    setLeadTimers(prev => {
-      const nextTime = (prev[leadId]?.time || 0) + 1;
-      localStorage.setItem(`timer_${leadId}`, nextTime);
-      return {
-        ...prev,
-        [leadId]: {
-          ...prev[leadId],
-          time: nextTime,
-          running: true,
-          paused: false,
-        },
-      };
-    });
+    const now = Date.now();
+    const elapsedSeconds = Math.floor((now - startTimestamp) / 1000) + elapsed;
+    setLeadTimers(prev2 => ({
+      ...prev2,
+      [leadId]: {
+        ...prev2[leadId],
+        time: elapsedSeconds,
+        running: true,
+        paused: false,
+        startTimestamp,
+      },
+    }));
+    localStorage.setItem(`timer_${leadId}_elapsed`, elapsedSeconds);
   }, 1000);
 
-  setLeadTimers(prev => ({
-    ...prev,
+  setLeadTimers(prev2 => ({
+    ...prev2,
     [leadId]: {
-      ...prev[leadId],
+      ...prev2[leadId],
       running: true,
       paused: false,
+      startTimestamp,
+      time: elapsed,
     },
   }));
 };
-
 
 const stopTimer = async (leadId) => {
   if (intervalRefs.current[leadId]) {
     clearInterval(intervalRefs.current[leadId]);
     intervalRefs.current[leadId] = null;
   }
-  const duration = leadTimers[leadId]?.time || 0;
 
-  localStorage.removeItem(`timer_${leadId}`);
+  // Get the duration from state – don't add extra seconds!
+  const prev = leadTimers[leadId] || {};
+  const duration = prev.time || 0;
+  const startTime = prev.startTimestamp ? new Date(prev.startTimestamp).toISOString() : null;
 
+  // Reset storage & state
+  localStorage.removeItem(`timer_${leadId}_start`);
+  localStorage.removeItem(`timer_${leadId}_elapsed`);
+  localStorage.removeItem(`timer_${leadId}_paused`);
   setLeadTimers(prev => ({
     ...prev,
     [leadId]: {
       time: 0,
       running: false,
       paused: false,
+      startTimestamp: null,
     },
   }));
 
-  if (duration > 0) {
+  if (duration > 0 && startTime) {
     try {
       const token = localStorage.getItem('token');
       await axios.post(`${BASE_URL}/api/timer-logs/save`, {
         leadId,
         leadName: lead.leadDetails?.clientName || 'Unknown',
-        stoppedByName: loggedInUser.name || 'Unknown',
+        stoppedByName: loggedInUser?.name || 'Unknown',
         duration,
+        startTime,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+      await fetchTimerLogs();
     } catch (err) {
       console.error('Failed to save timer log:', err);
     }
   }
 };
+
+const fetchTimerLogs = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    console.log('Timer log token:', token); // Debug
+    if (!token) {
+      setTimerLogs([]);
+      return;
+    }
+    const res = await axios.get(`${BASE_URL}/api/timer-logs/${lead._id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setTimerLogs(res.data.logs || []);
+  } catch (err) {
+    setTimerLogs([]);
+    console.error('Failed to fetch timer logs', err?.response?.data || err.message);
+    if (err?.response?.status === 401) {
+      // Token invalid/expired, handle logout or redirect
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+  }
+};
+
+
+useEffect(() => {
+  if (lead && lead._id) fetchTimerLogs();
+}, [lead]);
+
+
+
 useEffect(() => {
   return () => {
     Object.values(intervalRefs.current).forEach(intervalId => {
@@ -219,6 +378,7 @@ useEffect(() => {
     });
   };
 }, []);
+
 
 
 const handleAddNote = async () => {
@@ -1187,27 +1347,28 @@ const isFrozenByCreator =
           <button onClick={() => stopTimer(lead._id)} className="px-3 py-1 bg-red-600 text-white rounded">Stop</button>
         </div>
         <div className="bg-white p-4 rounded shadow max-w-xs">
-          <h3 className="text-base font-semibold text-gray-700 mb-2">🕓 Timer Logs</h3>
-          {timerLogs.length === 0 ? (
-            <p className='text-sm text-gray-400'>No Logs yet</p>
-          ) : (
-            <ul>
-              {timerLogs.map((log,idx) => (
-                <li key={idx} className='border-b pb-1 text-xs'>
-                  <div>
-                    <b>Time:</b> {formatTime(log.duration)}
-                  </div>
-                  <div>
-                    <b>By:</b> {log.stoppedByName}
-                   </div>
-                  <div>
-                    <b>At:</b> {new Date(log.stoppedAt).toLocaleString()}
-                    </div> 
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+  <h3 className="text-base font-semibold text-gray-700 mb-2">🕓 Timer Logs</h3>
+  {timerLogs.length === 0 ? (
+    <p className='text-sm text-gray-400'>No Logs yet</p>
+  ) : (
+    <ul>
+      {timerLogs.map((log,idx) => (
+        <li key={idx} className='border-b pb-1 text-xs'>
+          <div>
+            <b>Time:</b> {formatTime(log.duration)}
+          </div>
+          <div>
+            <b>By:</b> {log.stoppedByName}
+          </div>
+          <div>
+            <b>At:</b> {new Date(log.stoppedAt).toLocaleString()}
+          </div> 
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
        
             {/* Connection */}
       <div className="mb-6">
