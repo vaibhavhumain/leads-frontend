@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
-
 const LeadTable = ({ leads, searchTerm }) => {
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
   const hasRestoredRef = useRef(false);

@@ -12,13 +12,12 @@ import { toast } from 'react-toastify';
 import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
 import StatCard from '../components/StatCard';
-import DeadLeadsPage from "./dead-leads";
-import Link from 'next/link';
+import Link from 'next/link'; 
+import downloadDailyLeadReport from '../components/Report'; 
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar,
 } from 'recharts';
-
   
 const Dashboard = () => {
   const [myLeads, setMyLeads] = useState([]);
@@ -452,6 +451,16 @@ return (
             View Dead Zone
           </button>
           </Link>
+          <button
+                  className="text-lg font-semibold text-white mb-4 mt-4 mx-3 bg-blue-500 px-6 py-2 rounded-xl shadow hover:bg-blue-600 transition"
+                  onClick={() => {
+                  const user = JSON.parse(localStorage.getItem('user')); 
+                  const today = new Date().toISOString().slice(0, 10);
+                  downloadDailyLeadReport(today, user._id); 
+                  }}
+                  >
+                    Download My Today's Report
+                  </button>
         </div>
 
         {/* Charts */}

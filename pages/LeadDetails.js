@@ -7,6 +7,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import Navbar from '../components/Navbar';
 import {useRouter} from 'next/router';
 import LifecycleToggle from '../components/LifecycleToggle';
+import downloadLeadReport from '../components/downloadLeadReport'
 import { FaEdit } from 'react-icons/fa';
 const LeadDetails = () => {
   const router=useRouter();
@@ -1110,6 +1111,15 @@ const isFrozenByCreator =
   </div>
 )}
 
+{lead.createdBy && (
+  <div className="text-xs text-gray-500 mb-3">
+    <b>Last Edited By:</b> {lead.createdBy.name}
+    {" "}
+    (<span>{lead.createdBy.email}</span>)
+  </div>
+)}
+
+
         {/* Header */}
         <div className="flex justify-between items-start gap-6 flex-wrap mb-6">
           <div className="flex flex-col gap-1">
@@ -1753,6 +1763,14 @@ const isFrozenByCreator =
     </div>
   </div>
 )}
+
+<button
+  onClick={() => downloadLeadReport(lead, timerLogs, activities)}
+  className="bg-indigo-700 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-800 transition mb-6"
+>
+  ⬇️ Download Full Lead Report
+</button>
+
 
     </div>
   </div>
