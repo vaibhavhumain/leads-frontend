@@ -11,6 +11,14 @@ const DeadLeadsPage = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const router = useRouter();
 
+  // Retrieve saved date from localStorage
+  useEffect(() => {
+    const storedDate = localStorage.getItem('selectedDeadDate');
+    if (storedDate) {
+      setSelectedDate(storedDate);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchDeadLeads = async () => {
       try {
@@ -18,22 +26,29 @@ const DeadLeadsPage = () => {
         const res = await axios.get(`${BASE_URL}/api/leads/dead-leads?status=dead`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         setDeadLeads(res.data.leads);
 
-        // Gather all unique dead dates from leads
         const dates = Array.from(new Set(res.data.leads
-          .map(l => l.deadDate && new Date(l.deadDate).toISOString().slice(0,10))
+          .map(l => l.lifecycleUpdatedAt && new Date(l.lifecycleUpdatedAt).toISOString().slice(0, 10))
           .filter(Boolean)
         ));
-        setDeadDates(dates.sort((a, b) => new Date(b) - new Date(a))); // Newest first
+        setDeadDates(dates.sort((a, b) => new Date(b) - new Date(a)));
       } catch (err) {
         console.error("Failed to fetch dead leads:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchDeadLeads();
   }, []);
+
+  const handleDateChange = (e) => {
+    const selected = e.target.value;
+    setSelectedDate(selected);
+    localStorage.setItem('selectedDeadDate', selected); // ✅ Save to localStorage
+  };
 
   const handleViewLead = (lead) => {
     localStorage.setItem('selectedLead', JSON.stringify(lead));
@@ -43,9 +58,11 @@ const DeadLeadsPage = () => {
     });
   };
 
-  // Filter by selected date if selected
   const filteredLeads = selectedDate
-    ? deadLeads.filter(l => l.deadDate && new Date(l.deadDate).toISOString().slice(0,10) === selectedDate)
+    ? deadLeads.filter(l =>
+        l.lifecycleUpdatedAt &&
+        new Date(l.lifecycleUpdatedAt).toISOString().slice(0, 10) === selectedDate
+      )
     : deadLeads;
 
   return (
@@ -59,7 +76,7 @@ const DeadLeadsPage = () => {
           <label className="font-medium text-gray-700 mr-2">Filter by Dead Date:</label>
           <select
             value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
+            onChange={handleDateChange}
             className="px-3 py-2 rounded border"
           >
             <option value="">-- All Dates --</option>
@@ -78,7 +95,9 @@ const DeadLeadsPage = () => {
         {loading ? (
           <p>Loading...</p>
         ) : filteredLeads.length === 0 ? (
-          <p className="text-gray-500 italic">No dead leads found{selectedDate ? ' for this date.' : '.'}</p>
+          <p className="text-gray-500 italic">
+            No dead leads found{selectedDate ? ' for this date.' : '.'}
+          </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredLeads.map((lead, idx) => (
@@ -100,28 +119,31 @@ const DeadLeadsPage = () => {
                 <p className="text-sm text-gray-500">
                   {lead.leadDetails?.companyName || 'No company name'}
                 </p>
-                <p className='text-sm text-gray-500 mt-1'>
-                  <span className='font-medium'>Created By:</span> {lead.createdBy?.name || 'Unknown'}
+                <p className="text-sm text-gray-500 mt-1">
+                  <span className="font-medium">Created By:</span>{' '}
+                  {lead.createdBy?.name || 'Unknown'}
                 </p>
+
                 {/* Dead Date */}
                 <p className="text-sm text-gray-500 mt-1">
                   <span className="font-medium">Dead Date:</span>{' '}
-                  {lead.deadDate
-                    ? new Date(lead.deadDate).toLocaleDateString('en-IN', {
+                  {lead.lifecycleUpdatedAt
+                    ? new Date(lead.lifecycleUpdatedAt).toLocaleDateString('en-IN', {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric',
                       })
                     : 'N/A'}
                 </p>
+
                 {lead.notes && lead.notes.length > 0 && (
-                  <div className='mt-2'>
+                  <div className="mt-2">
                     <p className="text-sm font-medium text-gray-700">📝 Notes:</p>
-                    <ul className='text-sm text-gray-600 list-disc list-inside space-y-1'>
+                    <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
                       {lead.notes.map((note, i) => (
                         <li key={i}>
-                          {note.text}{" "}
-                          <span className='text-xs text-gray-400'>
+                          {note.text}{' '}
+                          <span className="text-xs text-gray-400">
                             ({new Date(note.date).toLocaleDateString()})
                           </span>
                         </li>
@@ -129,6 +151,7 @@ const DeadLeadsPage = () => {
                     </ul>
                   </div>
                 )}
+
                 <button
                   onClick={() => handleViewLead(lead)}
                   className="mt-3 inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1 rounded"

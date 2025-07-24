@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const LifecycleToggle = ({ lead, onDead }) => {
   const [status, setStatus] = useState(lead.lifecycleStatus || 'active');
+  const [lifecycleDate, setLifecycleDate] = useState(lead.lifecycleUpdatedAt);
   const [updating, setUpdating] = useState(false);
   const router = useRouter();
 
@@ -14,18 +15,21 @@ const LifecycleToggle = ({ lead, onDead }) => {
     setUpdating(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
+      const res = await axios.put(
         `${BASE_URL}/api/leads/${lead._id}/lifecycle`,
         { lifecycleStatus: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setStatus(newStatus);
-      toast.success(`✅ Lead marked as ${newStatus}`);
-
       if (newStatus === 'dead') {
-        if (onDead) onDead(lead._id); // inform parent to remove from list
+        setLifecycleDate(res.data.lead.lifecycleUpdatedAt);
+        toast.success(`✅ Lead marked as DEAD`);
+        if (onDead) onDead(lead._id);
         if (redirect) setTimeout(() => router.push('/dead-leads'), 1000);
+      } else {
+        setLifecycleDate(null);
+        toast.success(`✅ Lead marked as ACTIVE`);
       }
     } catch (error) {
       console.error("❌ Error updating lifecycle:", error);
@@ -41,7 +45,10 @@ const LifecycleToggle = ({ lead, onDead }) => {
   };
 
   const handleSendToDeadZone = () => {
-    updateLifecycleStatus('dead', true);
+    const confirmed = window.confirm('Are you sure you want to mark this lead as DEAD?');
+    if (confirmed) {
+      updateLifecycleStatus('dead', true);
+    }
   };
 
   return (
@@ -57,14 +64,10 @@ const LifecycleToggle = ({ lead, onDead }) => {
         <option value="dead">Dead</option>
       </select>
 
-      {status === 'dead' && (
-        <button
-          onClick={handleSendToDeadZone}
-          disabled={updating}
-          className="block mt-2 bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700"
-        >
-          🪦 Send to Dead Zone
-        </button>
+      {status === 'dead' && lifecycleDate && (
+        <div className="text-sm text-red-600 mt-1">
+          🪦 Marked as Dead on: <strong>{new Date(lifecycleDate).toLocaleDateString('en-IN')}</strong>
+        </div>
       )}
     </div>
   );

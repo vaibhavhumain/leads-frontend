@@ -748,7 +748,6 @@ const updateLocation = async (leadId) => {
   }
 };
 
-
 const updatePrimaryContacts = async (leadId) => {
   try {
     const token = localStorage.getItem('token');
@@ -764,13 +763,18 @@ const updatePrimaryContacts = async (leadId) => {
       return;
     }
 
-    await axios.put(
-      `${BASE_URL}/api/leads/${leadId}/primary-contact`,
-      { contacts: cleaned },
+    const payload = cleaned.map((number, idx) => ({
+      number,
+      label: 'Primary',
+      isPrimary: idx === 0
+    }));
+
+    const res = await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/update-contacts`,
+      { contacts: payload },
       { headers }
     );
 
-    toast.success('Contacts updated ✅');
     setLeads((prev) =>
       prev.map((lead) =>
         lead._id === leadId
@@ -778,20 +782,41 @@ const updatePrimaryContacts = async (leadId) => {
               ...lead,
               leadDetails: {
                 ...lead.leadDetails,
-                contacts: cleaned.map((number) => ({ number })),
-              },
+                contacts: res.data.contacts 
+              }
             }
           : lead
       )
     );
 
+    toast.success('Contacts updated ✅');
     setEditingPrimaryContactId(null);
     setEditedPrimaryContacts([]);
+
   } catch (err) {
     toast.error('Failed to update contacts');
     console.error(err);
   }
 };
+
+const markPrimaryContact = async (leadId, contactId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    await axios.put(
+      `${BASE_URL}/api/leads/${leadId}/primary-contact`,
+      { _id: contactId }, 
+      { headers }
+    );
+
+    toast.success('Primary contact marked successfully ✅');
+  } catch (err) {
+    console.error(err);
+    toast.error(err.response?.data?.message || 'Failed to mark primary contact');
+  }
+};
+
 
 const handleEmailSave = async (leadId) => {
   const token = localStorage.getItem('token');
@@ -968,7 +993,7 @@ Gobind Coach Builders
 
   // Copy to clipboard and open
   copyToClipboard(message);
-  window.location.href = url; // ✅ Use location.href to ensure redirection
+  window.open(url, '_blank');
 };
 
 const notSendWhatsAppMessage = (lead) => {
@@ -1016,7 +1041,7 @@ Gobind Coach Builders
 
   // Copy to clipboard and open
   copyToClipboard(message);
-  window.location.href = url; // ✅ Use location.href to ensure redirection
+  window.open(url, '_blank');
 };
 
 
@@ -1051,7 +1076,8 @@ const sendWhatsAppPdf = (lead, pdfFileName = 'gcb.pdf') => {
     : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
 
   copyToClipboard(message);
-  window.location.href = url;
+  window.open(url, '_blank');
+
 };
 
 const handleDeleteAllLeads = async () => {
@@ -1078,12 +1104,8 @@ const isFrozenByCreator =
   currentLead?.forwardedTo?.user?._id &&
   currentLead?.isFrozen;
 
-
-
-
   if (loadingLead) return <p>Loading lead...</p>;
   if (!lead) return  <p>No lead found</p>
-
 
   return (  
     <ProtectedRoute>
@@ -1118,7 +1140,6 @@ const isFrozenByCreator =
     (<span>{lead.createdBy.email}</span>)
   </div>
 )}
-
 
         {/* Header */}
         <div className="flex justify-between items-start gap-6 flex-wrap mb-6">
@@ -1314,8 +1335,8 @@ const isFrozenByCreator =
     >
       ➕ Add Contact
     </button>
-    
   )}
+
   <button
   onClick={() => handleDeleteLead(lead._id)}
   className="text-red-600 underline text-sm mt-2 w-fit"

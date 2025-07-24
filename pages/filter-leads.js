@@ -9,29 +9,57 @@ const FilterLeadsPage = () => {
   const [date, setDate] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('');
   const [status, setStatus] = useState('');
-  const [hasFollowUps, setHasFollowUps] = useState('');
+  const [followUpDate, setFollowUpDate] = useState('');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [followUpDates, setFollowUpDates] = useState([]);
-  const [followUpDate, setFollowUpDate] = useState('');
   const [editedDates, setEditedDates] = useState([]);
+  const [followUpDates, setFollowUpDates] = useState([]);
 
-  // Fetch leads with current filters
+  // Restore filters and leads from localStorage
+  useEffect(() => {
+    setDate(localStorage.getItem('filter_date') || '');
+    setConnectionStatus(localStorage.getItem('filter_connectionStatus') || '');
+    setStatus(localStorage.getItem('filter_status') || '');
+    setFollowUpDate(localStorage.getItem('filter_followUpDate') || '');
+
+    const storedLeads = localStorage.getItem('filtered_leads');
+    if (storedLeads) setLeads(JSON.parse(storedLeads));
+  }, []);
+
+  // Fetch available dropdown options
+  useEffect(() => {
+    const fetchDates = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const editedRes = await axios.get(`${BASE_URL}/api/leads/edited-dates`, { headers });
+        setEditedDates(editedRes.data);
+
+        const followRes = await axios.get(`${BASE_URL}/api/leads/followup-dates`, { headers });
+        setFollowUpDates(followRes.data);
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to fetch filter options');
+      }
+    };
+    fetchDates();
+  }, []);
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
+
       const res = await axios.get(`${BASE_URL}/api/leads/filter`, {
         headers,
-        params: {
-          date, // lastEditedAt filter
-          connectionStatus,
-          status,
-          followUpDate, // follow-ups date filter
-        },
+        params: { date, connectionStatus, status, followUpDate },
       });
+
       setLeads(res.data);
+      localStorage.setItem('filtered_leads', JSON.stringify(res.data));
+
       if (res.data.length === 0) toast.info('No leads found for selected filters');
     } catch (err) {
       console.error(err);
@@ -41,29 +69,42 @@ const FilterLeadsPage = () => {
     }
   };
 
-  // Fetch last edited dates and follow-up dates
-  useEffect(() => {
-    const fetchDates = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        // Fetch edited dates
-        const editedRes = await axios.get(`${BASE_URL}/api/leads/edited-dates`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setEditedDates(editedRes.data);
+  const handleFilterChange = (key, value) => {
+    switch (key) {
+      case 'date':
+        setDate(value);
+        localStorage.setItem('filter_date', value);
+        break;
+      case 'connectionStatus':
+        setConnectionStatus(value);
+        localStorage.setItem('filter_connectionStatus', value);
+        break;
+      case 'status':
+        setStatus(value);
+        localStorage.setItem('filter_status', value);
+        break;
+      case 'followUpDate':
+        setFollowUpDate(value);
+        localStorage.setItem('filter_followUpDate', value);
+        break;
+      default:
+        break;
+    }
+  };
 
-        // Fetch follow-up dates
-        const followRes = await axios.get(`${BASE_URL}/api/leads/followup-dates`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setFollowUpDates(followRes.data);
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to fetch filter dates');
-      }
-    };
-    fetchDates();
-  }, []);
+  const handleReset = () => {
+    setDate('');
+    setConnectionStatus('');
+    setStatus('');
+    setFollowUpDate('');
+    setLeads([]);
+
+    localStorage.removeItem('filter_date');
+    localStorage.removeItem('filter_connectionStatus');
+    localStorage.removeItem('filter_status');
+    localStorage.removeItem('filter_followUpDate');
+    localStorage.removeItem('filtered_leads');
+  };
 
   return (
     <div>
@@ -73,21 +114,21 @@ const FilterLeadsPage = () => {
 
         <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow mb-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            {/* Edited Date Dropdown */}
+            {/* Last Edited Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Last Edited Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Edited Date</label>
               <select
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => handleFilterChange('date', e.target.value)}
                 className="w-full border px-3 py-2 rounded"
               >
                 <option value="">-- All --</option>
                 {editedDates.map((d, idx) => (
                   <option key={idx} value={d}>
                     {new Date(d).toLocaleDateString('en-IN', {
-                      year:'numeric',
-                      month: 'short',
                       day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
                     })}
                   </option>
                 ))}
@@ -99,7 +140,7 @@ const FilterLeadsPage = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Connection Status</label>
               <select
                 value={connectionStatus}
-                onChange={(e) => setConnectionStatus(e.target.value)}
+                onChange={(e) => handleFilterChange('connectionStatus', e.target.value)}
                 className="w-full border px-3 py-2 rounded"
               >
                 <option value="">-- All --</option>
@@ -108,12 +149,12 @@ const FilterLeadsPage = () => {
               </select>
             </div>
 
-            {/* Status */}
+            {/* Lead Status */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Lead Status</label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full border px-3 py-2 rounded"
               >
                 <option value="">-- All --</option>
@@ -123,12 +164,12 @@ const FilterLeadsPage = () => {
               </select>
             </div>
 
-            {/* Follow-up Date Dropdown */}
+            {/* Follow-up Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
               <select
                 value={followUpDate}
-                onChange={(e) => setFollowUpDate(e.target.value)}
+                onChange={(e) => handleFilterChange('followUpDate', e.target.value)}
                 className="w-full border px-3 py-2 rounded"
               >
                 <option value="">-- All --</option>
@@ -153,14 +194,7 @@ const FilterLeadsPage = () => {
               🔍 Filter
             </button>
             <button
-              onClick={() => {
-                setDate('');
-                setConnectionStatus('');
-                setStatus('');
-                setHasFollowUps('');
-                setFollowUpDate('');
-                setLeads([]);
-              }}
+              onClick={handleReset}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded shadow font-medium"
             >
               🔄 Reset
@@ -191,9 +225,7 @@ const FilterLeadsPage = () => {
                   <tr key={lead._id}>
                     <td className="border px-3 py-2">{lead.leadDetails?.clientName || 'N/A'}</td>
                     <td className="border px-3 py-2">
-                      {lead.leadDetails?.contacts?.length > 0
-                        ? lead.leadDetails.contacts.map((c) => c.number).join(', ')
-                        : 'N/A'}
+                      {lead.leadDetails?.contacts?.map((c) => c.number).join(', ') || 'N/A'}
                     </td>
                     <td className="border px-3 py-2">{lead.leadDetails?.location || 'N/A'}</td>
                     <td className="border px-3 py-2">{lead.leadDetails?.companyName || 'N/A'}</td>

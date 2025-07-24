@@ -7,25 +7,22 @@ const LeadTable = ({ leads, searchTerm }) => {
   const hasRestoredRef = useRef(false);
 
   const filteredLeads = useMemo(() => {
-    let result = leads || [];
-    if (searchTerm && searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().replace(/\D/g, '');
-      const termString = searchTerm.toLowerCase();
-      result = leads.filter(lead => {
-        const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
-        if (clientName.includes(termString)) return true;
-        const contacts = lead.leadDetails?.contacts || [];
-        return contacts.some(c =>
-          (c?.number || '').replace(/\D/g, '').includes(term)
-        );
-      });
-    }
-    return [...result].sort((a, b) =>
-      (a.leadDetails?.clientName || a._id || '').toLowerCase().localeCompare(
-        (b.leadDetails?.clientName || b._id || '').toLowerCase()
-      )
-    );
-  }, [leads, searchTerm]);
+  let result = leads || [];
+  if (searchTerm && searchTerm.trim()) {
+    const term = searchTerm.toLowerCase().replace(/\D/g, '');
+    const termString = searchTerm.toLowerCase();
+    result = leads.filter(lead => {
+      const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
+      if (clientName.includes(termString)) return true;
+      const contacts = lead.leadDetails?.contacts || [];
+      return contacts.some(c =>
+        (c?.number || '').replace(/\D/g, '').includes(term)
+      );
+    });
+  }
+  return result; 
+}, [leads, searchTerm]);
+
 
   useEffect(() => {
     if (!hasRestoredRef.current && filteredLeads.length > 0) {
