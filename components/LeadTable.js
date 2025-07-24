@@ -3,9 +3,9 @@ import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
 const LeadTable = ({ leads, searchTerm }) => {
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
+  const [jumpNumber , setJumpNumber] = useState('');
   const hasRestoredRef = useRef(false);
 
-  // Filtered and sorted
   const filteredLeads = useMemo(() => {
     let result = leads || [];
     if (searchTerm && searchTerm.trim()) {
@@ -20,7 +20,6 @@ const LeadTable = ({ leads, searchTerm }) => {
         );
       });
     }
-    // Sort by client name, fallback to _id
     return [...result].sort((a, b) =>
       (a.leadDetails?.clientName || a._id || '').toLowerCase().localeCompare(
         (b.leadDetails?.clientName || b._id || '').toLowerCase()
@@ -28,7 +27,6 @@ const LeadTable = ({ leads, searchTerm }) => {
     );
   }, [leads, searchTerm]);
 
-  // This will restore ONCE when filteredLeads is first loaded/non-empty
   useEffect(() => {
     if (!hasRestoredRef.current && filteredLeads.length > 0) {
       const savedLeadId = localStorage.getItem('lastViewedLeadId');
@@ -42,13 +40,11 @@ const LeadTable = ({ leads, searchTerm }) => {
       }
       hasRestoredRef.current = true;
     }
-    // If you want to reset restoration when the list becomes empty (e.g., on logout), reset the flag:
     if (filteredLeads.length === 0) {
       hasRestoredRef.current = false;
     }
   }, [filteredLeads]);
 
-  // Whenever the lead changes (e.g., via Next/Prev), update lastViewedLeadId
   const lead = filteredLeads[currentLeadIndex];
   useEffect(() => {
     if (lead) {
@@ -56,7 +52,6 @@ const LeadTable = ({ leads, searchTerm }) => {
     }
   }, [lead]);
 
-  // Prev/Next
   const goToPreviousLead = () => {
     setCurrentLeadIndex(idx => Math.max(idx - 1, 0));
   };
@@ -74,6 +69,21 @@ const LeadTable = ({ leads, searchTerm }) => {
 
   return (
     <div className="w-full px-4 py-8 bg-[#e9f0ff] min-h-screen font-sans">
+      <div className='mb-4 flex justify-center items-center gap-3'>
+        <input type="number" placeholder={`Go to lead #(1-${filteredLeads.length})`} min="1" max={filteredLeads.length} className='px-4 py-2 border rounded w-52 text-sm' onChange={(e) => setJumpNumber(e.target.value)} value={jumpNumber}/>
+        <button onClick={() => {
+          const targetIndex = parseInt(jumpNumber) - 1;
+          if(!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < filteredLeads.length)
+          {
+            setCurrentLeadIndex(targetIndex);
+          }
+          else {
+            alert('Invalid lead number');
+          }
+        }} className='bg-blue-600 text-white px-4 py-2 rounded text-sm'>
+          Go
+        </button>
+      </div>
       <div className="bg-white p-6 rounded-2xl shadow-lg max-w-6xl mx-auto">
         <div className="flex flex-col gap-2 mb-6">
           <h2 className="text-xl font-bold text-gray-800">
