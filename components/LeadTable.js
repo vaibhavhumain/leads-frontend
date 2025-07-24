@@ -9,55 +9,47 @@ const LeadTable = ({ leads, searchTerm }) => {
   const [deadLeadId, setDeadLeadId] = useState(null);
   const hasRestoredRef = useRef(false);
 
- const filteredLeads = useMemo(() => {
-  let result = leads || [];
+  const filteredLeads = useMemo(() => {
+    let result = leads || [];
 
-  const deadLeadIds = JSON.parse(localStorage.getItem('deadLeads') || '[]');
-
-  if (deadLeadIds.length > 0) {
-    result = result.filter(l => !deadLeadIds.includes(l._id));
-  }
-
-  if (searchTerm && searchTerm.trim()) {
-    const term = searchTerm.toLowerCase().replace(/\D/g, '');
-    const termString = searchTerm.toLowerCase();
-    result = result.filter(lead => {
-      const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
-      if (clientName.includes(termString)) return true;
-      const contacts = lead.leadDetails?.contacts || [];
-      return contacts.some(c =>
-        (c?.number || '').replace(/\D/g, '').includes(term)
-      );
-    });
-  }
-
-  return result;
-}, [leads, searchTerm]);
-
-
-useEffect(() => {
-  const savedLeadId = localStorage.getItem('lastViewedLeadId');
-  const deadLeadIds = JSON.parse(localStorage.getItem('deadLeads') || '[]');
-
-  if (currentLeadIndex < filteredLeads.length) return;
-
-  if (filteredLeads.length > 0) {
-    setCurrentLeadIndex(filteredLeads.length - 1);
-  }
-
-  if (!hasRestoredRef.current && savedLeadId && filteredLeads.length > 0) {
-    const foundIndex = filteredLeads.findIndex(
-      l => l._id?.toString() === savedLeadId && !deadLeadIds.includes(l._id)
-    );
-    if (foundIndex !== -1) {
-      setCurrentLeadIndex(foundIndex);
-    } else {
-      setCurrentLeadIndex(0); 
+    if (deadLeadId) {
+      result = result.filter(l => l._id !== deadLeadId);
     }
-    hasRestoredRef.current = true;
-  }
-}, [filteredLeads, currentLeadIndex]);
 
+    if (searchTerm && searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().replace(/\D/g, '');
+      const termString = searchTerm.toLowerCase();
+      result = result.filter(lead => {
+        const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
+        if (clientName.includes(termString)) return true;
+        const contacts = lead.leadDetails?.contacts || [];
+        return contacts.some(c =>
+          (c?.number || '').replace(/\D/g, '').includes(term)
+        );
+      });
+    }
+
+    return result;
+  }, [leads, searchTerm, deadLeadId]);
+
+  useEffect(() => {
+    if (!hasRestoredRef.current && filteredLeads.length > 0) {
+      const savedLeadId = localStorage.getItem('lastViewedLeadId');
+      if (savedLeadId) {
+        const foundIndex = filteredLeads.findIndex(
+          l => l._id?.toString() === savedLeadId.toString()
+        );
+        setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
+      } else {
+        setCurrentLeadIndex(0);
+      }
+      hasRestoredRef.current = true;
+    }
+
+    if (filteredLeads.length === 0) {
+      hasRestoredRef.current = false;
+    }
+  }, [filteredLeads]);
 
   const lead = filteredLeads[currentLeadIndex];
 
@@ -75,25 +67,12 @@ useEffect(() => {
     setCurrentLeadIndex(idx => Math.min(idx + 1, filteredLeads.length - 1));
   };
 
-const handleDeadLead = useCallback((deadId) => {
-  const updatedDeadLeads = JSON.parse(localStorage.getItem('deadLeads') || '[]');
-  updatedDeadLeads.push(deadId);
-  localStorage.setItem('deadLeads', JSON.stringify(updatedDeadLeads));
-
+  const handleDeadLead = useCallback((deadId) => {
   const isLast = currentLeadIndex === filteredLeads.length - 1;
-  const nextIndex = isLast ? currentLeadIndex - 1 : currentLeadIndex + 1;
-
-  const nextLead = filteredLeads[nextIndex];
-  if (nextLead?._id) {
-    localStorage.setItem('lastViewedLeadId', nextLead._id.toString());
-  } else {
-    localStorage.removeItem('lastViewedLeadId'); 
-  }
-
+  const nextIndex = isLast ? currentLeadIndex - 1 : currentLeadIndex;
   setCurrentLeadIndex(Math.max(nextIndex, 0));
   setDeadLeadId(deadId);
-}, [currentLeadIndex, filteredLeads]);
-
+}, [currentLeadIndex, filteredLeads.length]);
 
   if (!lead) {
     return (
@@ -183,7 +162,6 @@ const handleDeadLead = useCallback((deadId) => {
           Next <FaArrowRight />
         </button>
       </div>
-
     </div>
   );
 };
