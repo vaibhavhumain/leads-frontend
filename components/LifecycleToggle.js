@@ -22,6 +22,7 @@ const LifecycleToggle = ({ lead, onDead }) => {
       );
 
       setStatus(newStatus);
+
       if (newStatus === 'dead') {
         setLifecycleDate(res.data.lead.lifecycleUpdatedAt);
         toast.success(`✅ Lead marked as DEAD`);
@@ -41,14 +42,11 @@ const LifecycleToggle = ({ lead, onDead }) => {
 
   const handleChange = (e) => {
     const newStatus = e.target.value;
-    updateLifecycleStatus(newStatus);
-  };
-
-  const handleSendToDeadZone = () => {
-    const confirmed = window.confirm('Are you sure you want to mark this lead as DEAD?');
-    if (confirmed) {
-      updateLifecycleStatus('dead', true);
+    if (newStatus === 'dead') {
+      const confirmed = window.confirm('Are you sure you want to mark this lead as DEAD?');
+      if (!confirmed) return;
     }
+    updateLifecycleStatus(newStatus); 
   };
 
   return (

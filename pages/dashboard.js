@@ -13,9 +13,7 @@ import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
 import StatCard from '../components/StatCard';
 import Link from 'next/link'; 
-import downloadDailyLeadReport from '../components/Report'; 
-import downloadWeeklyLeadReport from '../components/downloadWeeklyLeadReport';
-import downloadMonthlyLeadReport from '../components/downloadMonthlyLeadReport';
+import ShowReports from "./showReports";
 
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -454,49 +452,12 @@ return (
             View Dead Zone
           </button>
           </Link>
-          <button
-                  className="text-lg font-semibold text-white mb-4 mt-4 mx-3 bg-blue-500 px-6 py-2 rounded-xl shadow hover:bg-blue-600 transition"
-                  onClick={() => {
-                  const user = JSON.parse(localStorage.getItem('user')); 
-                  const today = new Date().toISOString().slice(0, 10);
-                  downloadDailyLeadReport(today, user._id); 
-                  }}
-                  >
-                    Download My Today's Report
-                  </button>
-
-                  <button
-  className="text-lg font-semibold text-white mb-4 mt-4 mx-3 bg-purple-500 px-6 py-2 rounded-xl shadow hover:bg-purple-600 transition"
-  onClick={() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const today = new Date();
-    const lastWeek = new Date(today);
-    lastWeek.setDate(today.getDate() - 7);
-
-    const start = lastWeek.toISOString().slice(0, 10);
-    const end = today.toISOString().slice(0, 10);
-    downloadWeeklyLeadReport(start, end, user._id);
-  }}
->
-  Download My Weekly Report
-</button>
-
-<button
-  className="text-lg font-semibold text-white mb-4 mt-4 mx-3 bg-green-500 px-6 py-2 rounded-xl shadow hover:bg-green-600 transition"
-  onClick={() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-    const start = firstDay.toISOString().slice(0, 10);
-    const end = lastDay.toISOString().slice(0, 10);
-    downloadMonthlyLeadReport(start, end, user._id);
-  }}
->
-  Download My Monthly Report
-</button>
-
+          <Link href="/showReports">
+            <button className="px-4 py-2 bg-purple-600 text-white rounded
+              text-sm">
+              View Reports
+            </button>
+          </Link>
         </div>
 
         {/* Charts */}

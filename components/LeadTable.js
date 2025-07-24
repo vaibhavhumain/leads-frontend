@@ -1,17 +1,27 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
+import LifecycleToggle from './LifecycleToggle';
+
 const LeadTable = ({ leads, searchTerm }) => {
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
-  const [jumpNumber , setJumpNumber] = useState('');
+  const [jumpNumber, setJumpNumber] = useState('');
+  const [deadLeadId, setDeadLeadId] = useState(null);
   const hasRestoredRef = useRef(false);
 
-  const filteredLeads = useMemo(() => {
+ const filteredLeads = useMemo(() => {
   let result = leads || [];
+
+  const deadLeadIds = JSON.parse(localStorage.getItem('deadLeads') || '[]');
+
+  if (deadLeadIds.length > 0) {
+    result = result.filter(l => !deadLeadIds.includes(l._id));
+  }
+
   if (searchTerm && searchTerm.trim()) {
     const term = searchTerm.toLowerCase().replace(/\D/g, '');
     const termString = searchTerm.toLowerCase();
-    result = leads.filter(lead => {
+    result = result.filter(lead => {
       const clientName = lead.leadDetails?.clientName?.toLowerCase() || '';
       if (clientName.includes(termString)) return true;
       const contacts = lead.leadDetails?.contacts || [];
@@ -20,29 +30,37 @@ const LeadTable = ({ leads, searchTerm }) => {
       );
     });
   }
-  return result; 
+
+  return result;
 }, [leads, searchTerm]);
 
 
-  useEffect(() => {
-    if (!hasRestoredRef.current && filteredLeads.length > 0) {
-      const savedLeadId = localStorage.getItem('lastViewedLeadId');
-      if (savedLeadId) {
-        const foundIndex = filteredLeads.findIndex(
-          l => l._id?.toString() === savedLeadId.toString()
-        );
-        setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
-      } else {
-        setCurrentLeadIndex(0);
-      }
-      hasRestoredRef.current = true;
+useEffect(() => {
+  const savedLeadId = localStorage.getItem('lastViewedLeadId');
+  const deadLeadIds = JSON.parse(localStorage.getItem('deadLeads') || '[]');
+
+  if (currentLeadIndex < filteredLeads.length) return;
+
+  if (filteredLeads.length > 0) {
+    setCurrentLeadIndex(filteredLeads.length - 1);
+  }
+
+  if (!hasRestoredRef.current && savedLeadId && filteredLeads.length > 0) {
+    const foundIndex = filteredLeads.findIndex(
+      l => l._id?.toString() === savedLeadId && !deadLeadIds.includes(l._id)
+    );
+    if (foundIndex !== -1) {
+      setCurrentLeadIndex(foundIndex);
+    } else {
+      setCurrentLeadIndex(0); 
     }
-    if (filteredLeads.length === 0) {
-      hasRestoredRef.current = false;
-    }
-  }, [filteredLeads]);
+    hasRestoredRef.current = true;
+  }
+}, [filteredLeads, currentLeadIndex]);
+
 
   const lead = filteredLeads[currentLeadIndex];
+
   useEffect(() => {
     if (lead) {
       localStorage.setItem('lastViewedLeadId', lead._id.toString());
@@ -52,9 +70,30 @@ const LeadTable = ({ leads, searchTerm }) => {
   const goToPreviousLead = () => {
     setCurrentLeadIndex(idx => Math.max(idx - 1, 0));
   };
+
   const goToNextLead = () => {
     setCurrentLeadIndex(idx => Math.min(idx + 1, filteredLeads.length - 1));
   };
+
+const handleDeadLead = useCallback((deadId) => {
+  const updatedDeadLeads = JSON.parse(localStorage.getItem('deadLeads') || '[]');
+  updatedDeadLeads.push(deadId);
+  localStorage.setItem('deadLeads', JSON.stringify(updatedDeadLeads));
+
+  const isLast = currentLeadIndex === filteredLeads.length - 1;
+  const nextIndex = isLast ? currentLeadIndex - 1 : currentLeadIndex + 1;
+
+  const nextLead = filteredLeads[nextIndex];
+  if (nextLead?._id) {
+    localStorage.setItem('lastViewedLeadId', nextLead._id.toString());
+  } else {
+    localStorage.removeItem('lastViewedLeadId'); 
+  }
+
+  setCurrentLeadIndex(Math.max(nextIndex, 0));
+  setDeadLeadId(deadId);
+}, [currentLeadIndex, filteredLeads]);
+
 
   if (!lead) {
     return (
@@ -67,20 +106,30 @@ const LeadTable = ({ leads, searchTerm }) => {
   return (
     <div className="w-full px-4 py-8 bg-[#e9f0ff] min-h-screen font-sans">
       <div className='mb-4 flex justify-center items-center gap-3'>
-        <input type="number" placeholder={`Go to lead #(1-${filteredLeads.length})`} min="1" max={filteredLeads.length} className='px-4 py-2 border rounded w-52 text-sm' onChange={(e) => setJumpNumber(e.target.value)} value={jumpNumber}/>
-        <button onClick={() => {
-          const targetIndex = parseInt(jumpNumber) - 1;
-          if(!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < filteredLeads.length)
-          {
-            setCurrentLeadIndex(targetIndex);
-          }
-          else {
-            alert('Invalid lead number');
-          }
-        }} className='bg-blue-600 text-white px-4 py-2 rounded text-sm'>
+        <input
+          type="number"
+          placeholder={`Go to lead #(1-${filteredLeads.length})`}
+          min="1"
+          max={filteredLeads.length}
+          className='px-4 py-2 border rounded w-52 text-sm'
+          onChange={(e) => setJumpNumber(e.target.value)}
+          value={jumpNumber}
+        />
+        <button
+          onClick={() => {
+            const targetIndex = parseInt(jumpNumber) - 1;
+            if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < filteredLeads.length) {
+              setCurrentLeadIndex(targetIndex);
+            } else {
+              alert('Invalid lead number');
+            }
+          }}
+          className='bg-blue-600 text-white px-4 py-2 rounded text-sm'
+        >
           Go
         </button>
       </div>
+
       <div className="bg-white p-6 rounded-2xl shadow-lg max-w-6xl mx-auto">
         <div className="flex flex-col gap-2 mb-6">
           <h2 className="text-xl font-bold text-gray-800">
@@ -108,6 +157,7 @@ const LeadTable = ({ leads, searchTerm }) => {
           )}
         </div>
       </div>
+
       <Link href={`/LeadDetails?leadId=${lead._id}`}>
         <button className="text-lg font-semibold text-white mb-4 mt-4 bg-blue-500 px-6 py-2 rounded-xl shadow hover:bg-blue-600 transition">
           View Lead Details
@@ -133,6 +183,7 @@ const LeadTable = ({ leads, searchTerm }) => {
           Next <FaArrowRight />
         </button>
       </div>
+
     </div>
   );
 };
