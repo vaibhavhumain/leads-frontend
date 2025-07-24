@@ -21,7 +21,6 @@ export default async function downloadDailyLeadReport(date, userId) {
     const marginLeft = 14;
     let yPos = 20;
 
-    // Header
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text(`Daily Lead Edit Report`, marginLeft, yPos);
@@ -34,7 +33,6 @@ export default async function downloadDailyLeadReport(date, userId) {
     doc.text(`User: ${leads[0]?.createdBy?.name || "N/A"}`, marginLeft, yPos);
     yPos += 10;
 
-    // Define table headers
     const tableHead = [
       [
         "S.No",
@@ -46,7 +44,6 @@ export default async function downloadDailyLeadReport(date, userId) {
       ],
     ];
 
-    // Build table rows
     const tableBody = leads.map((lead, idx) => {
       const followUpsText = (lead.followUps || [])
         .map(

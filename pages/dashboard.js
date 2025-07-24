@@ -14,11 +14,14 @@ import NotificationBell from "../components/NotificationBell";
 import StatCard from '../components/StatCard';
 import Link from 'next/link'; 
 import downloadDailyLeadReport from '../components/Report'; 
+import downloadWeeklyLeadReport from '../components/downloadWeeklyLeadReport';
+import downloadMonthlyLeadReport from '../components/downloadMonthlyLeadReport';
+
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar,
 } from 'recharts';
-  
+
 const Dashboard = () => {
   const [myLeads, setMyLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
@@ -461,6 +464,39 @@ return (
                   >
                     Download My Today's Report
                   </button>
+
+                  <button
+  className="text-lg font-semibold text-white mb-4 mt-4 mx-3 bg-purple-500 px-6 py-2 rounded-xl shadow hover:bg-purple-600 transition"
+  onClick={() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const today = new Date();
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 7);
+
+    const start = lastWeek.toISOString().slice(0, 10);
+    const end = today.toISOString().slice(0, 10);
+    downloadWeeklyLeadReport(start, end, user._id);
+  }}
+>
+  Download My Weekly Report
+</button>
+
+<button
+  className="text-lg font-semibold text-white mb-4 mt-4 mx-3 bg-green-500 px-6 py-2 rounded-xl shadow hover:bg-green-600 transition"
+  onClick={() => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const start = firstDay.toISOString().slice(0, 10);
+    const end = lastDay.toISOString().slice(0, 10);
+    downloadMonthlyLeadReport(start, end, user._id);
+  }}
+>
+  Download My Monthly Report
+</button>
+
         </div>
 
         {/* Charts */}
