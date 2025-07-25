@@ -239,6 +239,7 @@ const FilterLeadsPage = () => {
             <table className="w-full border text-sm">
               <thead className="bg-gray-100 text-gray-700">
                 <tr>
+                  <th className='border px-3 py-2 text-left'>Sr. No.</th>
                   <th className="border px-3 py-2 text-left">Client Name</th>
                   <th className="border px-3 py-2 text-left">Contact(s)</th>
                   <th className="border px-3 py-2 text-left">Location</th>
@@ -250,8 +251,9 @@ const FilterLeadsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {leads.map((lead) => (
+                {leads.map((lead , idx) => (
                   <tr key={lead._id}>
+                    <td className='border px-3 py-2'>{idx + 1}</td>
                     <td className="border px-3 py-2">{lead.leadDetails?.clientName || 'N/A'}</td>
                     <td className="border px-3 py-2">
                       {lead.leadDetails?.contacts?.map((c) => c.number).join(', ') || 'N/A'}

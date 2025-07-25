@@ -93,6 +93,9 @@ const DeadLeadsPage = () => {
           <button onClick={() => {setSelectedDate('');}} className='bg-gray-200 hover:bg-gray-300 text-sm px-3 py-1 rounded text-gray-700 mx-4 border-1'>
               🔄 Reset
           </button>
+          <span className='ml-auto text-sm text-gray-600 font-medium'>
+            Showing {filteredLeads.length} of {deadLeads.length} dead leads
+          </span>
         </div>
 
         {loading ? (
@@ -106,7 +109,7 @@ const DeadLeadsPage = () => {
             {filteredLeads.map((lead, idx) => (
               <div key={idx} className="bg-white rounded shadow p-4 border">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  {lead.leadDetails?.clientName || 'Unnamed Lead'}
+                  {idx + 1 }. {lead.leadDetails?.clientName || 'Unnamed Lead'}
                 </h2>
                 <p className="text-sm text-gray-600">
                   {lead.leadDetails?.contacts?.map((c, i) => (
