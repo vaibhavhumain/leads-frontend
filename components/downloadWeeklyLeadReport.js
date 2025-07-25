@@ -17,10 +17,11 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     });
 
     const leads = res.data.leads;
-    const doc = new jsPDF();
+    const doc = new jsPDF("landscape", "mm", "a4"); 
     const marginLeft = 14;
     let yPos = 20;
 
+    // 📌 Header
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Weekly Lead Edit Report", marginLeft, yPos);
@@ -33,7 +34,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     doc.text(`User: ${leads[0]?.createdBy?.name || "N/A"}`, marginLeft, yPos);
     yPos += 10;
 
-    // 🧠 Summary Calculation
+    // 📊 Summary Calculation
     let totalCalls = 0;
     let connectedCalls = 0;
     let prospects = 0;
@@ -41,7 +42,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     let meetings = 0;
     let totalFollowUps = 0;
 
-    leads.forEach(lead => {
+    leads.forEach((lead) => {
       const followUps = lead.followUps || [];
       const notes = lead.notes || [];
 
@@ -51,7 +52,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       if (lead.connectionStatus === "Connected") connectedCalls++;
       if (lead.status === "Hot" || lead.status === "Warm") prospects++;
 
-      [...followUps, ...notes].forEach(entry => {
+      [...followUps, ...notes].forEach((entry) => {
         const text = (entry.notes || entry.text || "").toLowerCase();
         if (text.includes("factory visit")) factoryVisits++;
         if (text.includes("meeting")) meetings++;
@@ -72,21 +73,41 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     doc.text(`Total Follow-ups: ${totalFollowUps}`, marginLeft, yPos); yPos += 10;
 
     // 📋 Table
-    const tableHead = [["S.No", "Client Name", "Status", "Location", "Follow-ups", "Notes"]];
+    const tableHead = [
+      [
+        "S.No",
+        "Client Name",
+        "Status",
+        "Location",
+        "LifeCycle",
+        "Time Taken",
+        "Follow-ups",
+        "Notes",
+      ],
+    ];
 
     const tableBody = leads.map((lead, idx) => {
       const followUpsText = (lead.followUps || [])
         .map(f => `${f.date?.split("T")[0]} by ${f.by?.name || "N/A"}:\n${f.notes}`)
-        .join("\n\n");
+        .join("\n--------------------\n");
+
       const notesText = (lead.notes || [])
         .map(n => `${n.date?.split("T")[0]} by ${n.addedBy?.name || "N/A"}:\n${n.text}`)
-        .join("\n\n");
+        .join("\n--------------------\n");
+
+      const lifecycle = lead.lifecycleStatus || "N/A";
+      const totalTimeMinutes = (lead.timerLogs || []).reduce((total, log) => {
+        return total + (log.pausedDuration || 0);
+      }, 0);
+      const timeTakenFormatted = totalTimeMinutes > 0 ? `${totalTimeMinutes} min` : "-";
 
       return [
         idx + 1,
         lead.leadDetails.clientName || "N/A",
         lead.status || "N/A",
         lead.leadDetails.location || "N/A",
+        lifecycle,
+        timeTakenFormatted,
         followUpsText || "-",
         notesText || "-",
       ];
@@ -96,15 +117,27 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       head: tableHead,
       body: tableBody,
       startY: yPos,
-      styles: { fontSize: 9, cellPadding: 3, valign: "top" },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: "center" },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        valign: "top",
+        overflow:"linebreak",
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        halign: "center",
+      },
+      useCss:true,
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 25 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20 },     
         3: { cellWidth: 30 },
-        4: { cellWidth: 45 },
-        5: { cellWidth: 45 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 24 },
+        6: { cellWidth: 60, overflow: "linebreak" },
+        7: { cellWidth: 50, overflow: "linebreak" },
       },
     });
 

@@ -12,24 +12,32 @@ const FilterLeadsPage = () => {
   const [connectionStatus, setConnectionStatus] = useState('');
   const [status, setStatus] = useState('');
   const [followUpDate, setFollowUpDate] = useState(null);
+  const [hasFollowUps, setHasFollowUps] = useState('');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [userRole, setUserRole] = useState('');
   const [followUpDateStrings, setFollowUpDateStrings] = useState([]);
   const [editedDateStrings, setEditedDateStrings] = useState([]);
 
+  // Load saved filters and user info
   useEffect(() => {
-    const savedDate = localStorage.getItem('filter_date');
-    const savedFollowUp = localStorage.getItem('filter_followUpDate');
-    setDate(savedDate ? new Date(savedDate) : null);
-    setFollowUpDate(savedFollowUp ? new Date(savedFollowUp) : null);
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      setUserRole(parsed?.role || '');
+    }
+
+    setDate(localStorage.getItem('filter_date') ? new Date(localStorage.getItem('filter_date')) : null);
+    setFollowUpDate(localStorage.getItem('filter_followUpDate') ? new Date(localStorage.getItem('filter_followUpDate')) : null);
     setConnectionStatus(localStorage.getItem('filter_connectionStatus') || '');
     setStatus(localStorage.getItem('filter_status') || '');
+    setHasFollowUps(localStorage.getItem('filter_hasFollowUps') || '');
     const storedLeads = localStorage.getItem('filtered_leads');
     if (storedLeads) setLeads(JSON.parse(storedLeads));
   }, []);
 
-  // Fetch follow-up and edited dates
+  // Fetch date highlight data
   useEffect(() => {
     const fetchAllDates = async () => {
       try {
@@ -49,44 +57,29 @@ const FilterLeadsPage = () => {
     fetchAllDates();
   }, []);
 
-  // Memoize dates as Date objects
   const followUpDateObjs = useMemo(() => followUpDateStrings.map(d => new Date(d)), [followUpDateStrings]);
   const editedDateObjs = useMemo(() => editedDateStrings.map(d => new Date(d)), [editedDateStrings]);
 
-  // Helpers for dot classes
   const getDotClassForFollowUp = (calendarDate) => {
     const today = new Date();
-    today.setHours(0,0,0,0);
-
-    // Check if this date is a follow-up date
-    const isFollowUp = followUpDateObjs.some(
-      d => d.getDate() === calendarDate.getDate() &&
-           d.getMonth() === calendarDate.getMonth() &&
-           d.getFullYear() === calendarDate.getFullYear()
+    today.setHours(0, 0, 0, 0);
+    const isFollowUp = followUpDateObjs.some(d =>
+      d.getDate() === calendarDate.getDate() &&
+      d.getMonth() === calendarDate.getMonth() &&
+      d.getFullYear() === calendarDate.getFullYear()
     );
     if (!isFollowUp) return undefined;
-
-    // Green dot for today or future
-    if (calendarDate >= today) return 'has-dot-green';
-    // Red dot for past
-    return 'has-dot-red';
+    return calendarDate >= today ? 'has-dot-green' : 'has-dot-red';
   };
 
   const getDotClassForEdited = (calendarDate) => {
     const today = new Date();
-    today.setHours(0,0,0,0);
-
-    // Check if this date is an edited date
-    const isEdited = editedDateObjs.some(
-      d => d.getDate() === calendarDate.getDate() &&
-           d.getMonth() === calendarDate.getMonth() &&
-           d.getFullYear() === calendarDate.getFullYear()
+    today.setHours(0, 0, 0, 0);
+    const isEdited = editedDateObjs.some(d =>
+      d.toDateString() === calendarDate.toDateString()
     );
     if (!isEdited) return undefined;
-
-    // Red dot for past
-    if (calendarDate < today) return 'has-dot-red';
-    return undefined;
+    return calendarDate >= today ? 'has-dot-green' : 'has-dot-red';
   };
 
   const fetchLeads = async () => {
@@ -101,6 +94,7 @@ const FilterLeadsPage = () => {
           connectionStatus,
           status,
           followUpDate: followUpDate ? followUpDate.toISOString() : '',
+          hasFollowUps,
         },
       });
       setLeads(res.data);
@@ -119,11 +113,13 @@ const FilterLeadsPage = () => {
     setFollowUpDate(null);
     setConnectionStatus('');
     setStatus('');
+    setHasFollowUps('');
     setLeads([]);
     localStorage.removeItem('filter_date');
     localStorage.removeItem('filter_connectionStatus');
     localStorage.removeItem('filter_status');
     localStorage.removeItem('filter_followUpDate');
+    localStorage.removeItem('filter_hasFollowUps');
     localStorage.removeItem('filtered_leads');
   };
 
@@ -131,10 +127,10 @@ const FilterLeadsPage = () => {
     <div>
       <Navbar />
       <div className="min-h-screen bg-gray-50 py-10 px-4 font-sans">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">🎯 Filter Leads</h1>
+        <h1 className="text-2xl font-bold mb-2 text-center text-gray-800">🎯 Filter Leads</h1>
         <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow mb-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            {/* Edited Date */}
+            {/* Last Edited Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Last Edited Date</label>
               <DatePicker
@@ -184,7 +180,7 @@ const FilterLeadsPage = () => {
                 <option value="Cold">Cold</option>
               </select>
             </div>
-            {/* Follow-Up Date (with dot highlights) */}
+            {/* Follow-Up Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
               <DatePicker
@@ -201,7 +197,24 @@ const FilterLeadsPage = () => {
                 dayClassName={getDotClassForFollowUp}
               />
             </div>
+            {/* Follow-Ups Exists */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Follow-Ups</label>
+              <select
+                value={hasFollowUps}
+                onChange={e => {
+                  setHasFollowUps(e.target.value);
+                  localStorage.setItem('filter_hasFollowUps', e.target.value);
+                }}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="">-- All --</option>
+                <option value="true">Has Follow-Ups</option>
+                <option value="false">No Follow-Ups</option>
+              </select>
+            </div>
           </div>
+
           <div className="flex gap-4">
             <button
               onClick={fetchLeads}
@@ -217,6 +230,7 @@ const FilterLeadsPage = () => {
             </button>
           </div>
         </div>
+
         {loading ? (
           <div className="text-center text-gray-600 text-sm">Loading...</div>
         ) : leads.length > 0 ? (

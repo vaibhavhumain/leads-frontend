@@ -17,10 +17,11 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     });
 
     const leads = res.data.leads;
-    const doc = new jsPDF();
+    const doc = new jsPDF("landscape", "mm", "a4"); 
     const marginLeft = 14;
     let yPos = 20;
 
+    // 📌 Heading
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Monthly Lead Edit Report", marginLeft, yPos);
@@ -33,6 +34,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     doc.text(`User: ${leads[0]?.createdBy?.name || "N/A"}`, marginLeft, yPos);
     yPos += 10;
 
+    // 🧠 Summary
     let totalCalls = 0;
     let connectedCalls = 0;
     let prospects = 0;
@@ -40,7 +42,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     let meetings = 0;
     let totalFollowUps = 0;
 
-    leads.forEach(lead => {
+    leads.forEach((lead) => {
       const followUps = lead.followUps || [];
       const notes = lead.notes || [];
 
@@ -50,7 +52,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
       if (lead.connectionStatus === "Connected") connectedCalls++;
       if (lead.status === "Hot" || lead.status === "Warm") prospects++;
 
-      [...followUps, ...notes].forEach(entry => {
+      [...followUps, ...notes].forEach((entry) => {
         const text = (entry.notes || entry.text || "").toLowerCase();
         if (text.includes("factory visit")) factoryVisits++;
         if (text.includes("meeting")) meetings++;
@@ -69,21 +71,49 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     doc.text(`Meetings Generated: ${meetings}`, marginLeft, yPos); yPos += 6;
     doc.text(`Total Follow-ups: ${totalFollowUps}`, marginLeft, yPos); yPos += 10;
 
-    const tableHead = [["S.No", "Client Name", "Status", "Location", "Follow-ups", "Notes"]];
+    // 📋 Table
+    const tableHead = [
+      [
+        "S.No",
+        "Client Name",
+        "Status",
+        "Location",
+        "LifeCycle",
+        "Time Taken",
+        "Follow-ups",
+        "Notes",
+      ],
+    ];
 
     const tableBody = leads.map((lead, idx) => {
       const followUpsText = (lead.followUps || [])
-        .map(f => `${f.date?.split("T")[0]} by ${f.by?.name || "N/A"}:\n${f.notes}`)
-        .join("\n\n");
+        .map(
+          (f) =>
+            `${f.date?.split("T")[0]} by ${f.by?.name || "N/A"}:\n${f.notes}`
+        )
+        .join("\n--------------------\n");
+
       const notesText = (lead.notes || [])
-        .map(n => `${n.date?.split("T")[0]} by ${n.addedBy?.name || "N/A"}:\n${n.text}`)
-        .join("\n\n");
+        .map(
+          (n) =>
+            `${n.date?.split("T")[0]} by ${n.addedBy?.name || "N/A"}:\n${n.text}`
+        )
+        .join("\n--------------------\n");
+
+      const lifecycle = lead.lifecycleStatus || "N/A";
+      const totalTimeMinutes = (lead.timerLogs || []).reduce((total, log) => {
+        return total + (log.pausedDuration || 0);
+      }, 0);
+      const timeTakenFormatted =
+        totalTimeMinutes > 0 ? `${totalTimeMinutes} min` : "-";
 
       return [
         idx + 1,
         lead.leadDetails.clientName || "N/A",
         lead.status || "N/A",
         lead.leadDetails.location || "N/A",
+        lifecycle,
+        timeTakenFormatted,
         followUpsText || "-",
         notesText || "-",
       ];
@@ -93,15 +123,27 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
       head: tableHead,
       body: tableBody,
       startY: yPos,
-      styles: { fontSize: 9, cellPadding: 3, valign: "top" },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255, halign: "center" },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        valign: "top",
+        overflow:"linebreak",
+      },
+      useCss:true,
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        halign: "center",
+      },
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 45 },
-        5: { cellWidth: 45 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 28 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 22 },
+        6: { cellWidth: 60, overflow: 'linebreak' },
+        7: { cellWidth: 50, overflow: 'linebreak' },
       },
     });
 

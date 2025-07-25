@@ -1,7 +1,6 @@
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
-// Format seconds to human string
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -9,14 +8,12 @@ function formatTime(seconds) {
   return `${h > 0 ? `${h}h ` : ''}${m > 0 ? `${m}m ` : ''}${s}s`;
 }
 
-// Main export function
 const downloadLeadReport = (lead, timerLogs = [], activities = []) => {
   if (!lead) {
     alert("No lead loaded!");
     return;
   }
 
-  // --- Basic Info ---
   const basicInfo = {
     "Client Name": lead.leadDetails?.clientName || "",
     "Company Name": lead.leadDetails?.companyName || "",
@@ -37,7 +34,6 @@ const downloadLeadReport = (lead, timerLogs = [], activities = []) => {
     Value: value,
   }));
 
-  // --- Timer Logs ---
   const timerLogsSheet = timerLogs.length
     ? [
         ["Time", "By", "At"],
@@ -49,7 +45,6 @@ const downloadLeadReport = (lead, timerLogs = [], activities = []) => {
       ]
     : [["No timer logs"]];
 
-  // --- Notes ---
   const notesArr = Array.isArray(lead.notes) && lead.notes.length
     ? [
         ["Date", "By", "Note"],
@@ -61,7 +56,6 @@ const downloadLeadReport = (lead, timerLogs = [], activities = []) => {
       ]
     : [["No notes"]];
 
-  // --- Follow-Ups ---
   const followUpsArr = Array.isArray(lead.followUps) && lead.followUps.length
     ? [
         ["Date", "By", "Notes"],
@@ -73,7 +67,6 @@ const downloadLeadReport = (lead, timerLogs = [], activities = []) => {
       ]
     : [["No follow-ups"]];
 
-  // --- Activities ---
   const activitiesArr = Array.isArray(activities) && activities.length
     ? [
         ["Type", "By", "Date", "Location", "Outcome", "Remarks"],
@@ -88,15 +81,12 @@ const downloadLeadReport = (lead, timerLogs = [], activities = []) => {
       ]
     : [["No activities"]];
 
-  // --- Build Workbook ---
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(basicArr), "Basic Info");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(timerLogsSheet), "Timer Logs");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(notesArr), "Notes");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(followUpsArr), "Follow-Ups");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(activitiesArr), "Activities");
-
-  // --- Save file ---
   const blob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   saveAs(
     new Blob([blob]),

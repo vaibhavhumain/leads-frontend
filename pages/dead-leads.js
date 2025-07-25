@@ -90,6 +90,9 @@ const DeadLeadsPage = () => {
               </option>
             ))}
           </select>
+          <button onClick={() => {setSelectedDate('');}} className='bg-gray-200 hover:bg-gray-300 text-sm px-3 py-1 rounded text-gray-700 mx-4 border-1'>
+              🔄 Reset
+          </button>
         </div>
 
         {loading ? (

@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { useCallback } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
 import LifecycleToggle from './LifecycleToggle';
@@ -8,7 +9,7 @@ const LeadTable = ({ leads, searchTerm }) => {
   const [jumpNumber, setJumpNumber] = useState('');
   const [deadLeadId, setDeadLeadId] = useState(null);
   const hasRestoredRef = useRef(false);
-
+  const wasManuallyShiftedRef = useRef(false);
   const filteredLeads = useMemo(() => {
     let result = leads || [];
 
@@ -33,23 +34,24 @@ const LeadTable = ({ leads, searchTerm }) => {
   }, [leads, searchTerm, deadLeadId]);
 
   useEffect(() => {
-    if (!hasRestoredRef.current && filteredLeads.length > 0) {
-      const savedLeadId = localStorage.getItem('lastViewedLeadId');
-      if (savedLeadId) {
-        const foundIndex = filteredLeads.findIndex(
-          l => l._id?.toString() === savedLeadId.toString()
-        );
-        setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
-      } else {
-        setCurrentLeadIndex(0);
-      }
-      hasRestoredRef.current = true;
+  if (!hasRestoredRef.current && !wasManuallyShiftedRef.current && filteredLeads.length > 0) {
+    const savedLeadId = localStorage.getItem('lastViewedLeadId');
+    if (savedLeadId) {
+      const foundIndex = filteredLeads.findIndex(
+        l => l._id?.toString() === savedLeadId.toString()
+      );
+      setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
+    } else {
+      setCurrentLeadIndex(0);
     }
+    hasRestoredRef.current = true;
+  }
 
-    if (filteredLeads.length === 0) {
-      hasRestoredRef.current = false;
-    }
-  }, [filteredLeads]);
+  if (filteredLeads.length === 0) {
+    hasRestoredRef.current = false;
+    wasManuallyShiftedRef.current = false;
+  }
+}, [filteredLeads]);
 
   const lead = filteredLeads[currentLeadIndex];
 
@@ -68,11 +70,12 @@ const LeadTable = ({ leads, searchTerm }) => {
   };
 
   const handleDeadLead = useCallback((deadId) => {
-  const isLast = currentLeadIndex === filteredLeads.length - 1;
-  const nextIndex = isLast ? currentLeadIndex - 1 : currentLeadIndex;
-  setCurrentLeadIndex(Math.max(nextIndex, 0));
-  setDeadLeadId(deadId);
-}, [currentLeadIndex, filteredLeads.length]);
+    const isLast = currentLeadIndex === filteredLeads.length - 1;
+    const nextIndex = isLast ? currentLeadIndex - 1 : currentLeadIndex;
+    setCurrentLeadIndex(Math.max(nextIndex, 0));
+    setDeadLeadId(deadId);
+    wasManuallyShiftedRef.current = true;
+  }, [currentLeadIndex, filteredLeads.length]);
 
   if (!lead) {
     return (
@@ -162,6 +165,7 @@ const LeadTable = ({ leads, searchTerm }) => {
           Next <FaArrowRight />
         </button>
       </div>
+      <LifecycleToggle lead={lead} onDead={handleDeadLead}/>
     </div>
   );
 };
