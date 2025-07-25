@@ -10,6 +10,7 @@ const LeadTable = ({ leads, searchTerm }) => {
   const [deadLeadId, setDeadLeadId] = useState(null);
   const hasRestoredRef = useRef(false);
   const wasManuallyShiftedRef = useRef(false);
+
   const filteredLeads = useMemo(() => {
     let result = leads || [];
 
@@ -34,24 +35,24 @@ const LeadTable = ({ leads, searchTerm }) => {
   }, [leads, searchTerm, deadLeadId]);
 
   useEffect(() => {
-  if (!hasRestoredRef.current && !wasManuallyShiftedRef.current && filteredLeads.length > 0) {
-    const savedLeadId = localStorage.getItem('lastViewedLeadId');
-    if (savedLeadId) {
-      const foundIndex = filteredLeads.findIndex(
-        l => l._id?.toString() === savedLeadId.toString()
-      );
-      setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
-    } else {
-      setCurrentLeadIndex(0);
+    if (!hasRestoredRef.current && !wasManuallyShiftedRef.current && filteredLeads.length > 0) {
+      const savedLeadId = localStorage.getItem('lastViewedLeadId');
+      if (savedLeadId) {
+        const foundIndex = filteredLeads.findIndex(
+          l => l._id?.toString() === savedLeadId.toString()
+        );
+        setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
+      } else {
+        setCurrentLeadIndex(0);
+      }
+      hasRestoredRef.current = true;
     }
-    hasRestoredRef.current = true;
-  }
 
-  if (filteredLeads.length === 0) {
-    hasRestoredRef.current = false;
-    wasManuallyShiftedRef.current = false;
-  }
-}, [filteredLeads]);
+    if (filteredLeads.length === 0) {
+      hasRestoredRef.current = false;
+      wasManuallyShiftedRef.current = false;
+    }
+  }, [filteredLeads]);
 
   const lead = filteredLeads[currentLeadIndex];
 
@@ -77,6 +78,42 @@ const LeadTable = ({ leads, searchTerm }) => {
     wasManuallyShiftedRef.current = true;
   }, [currentLeadIndex, filteredLeads.length]);
 
+  const handleJump = () => {
+    const input = jumpNumber.trim().toLowerCase();
+
+    // Jump by number (1-based index)
+    const asNumber = parseInt(input);
+    if (!isNaN(asNumber) && asNumber >= 1 && asNumber <= filteredLeads.length) {
+      setCurrentLeadIndex(asNumber - 1);
+      wasManuallyShiftedRef.current = true;
+      return;
+    }
+
+    // Jump by client name
+    const nameMatch = filteredLeads.findIndex(lead =>
+      lead.leadDetails?.clientName?.toLowerCase().includes(input)
+    );
+    if (nameMatch !== -1) {
+      setCurrentLeadIndex(nameMatch);
+      wasManuallyShiftedRef.current = true;
+      return;
+    }
+
+    // Jump by contact number (supports partial match)
+    const contactMatch = filteredLeads.findIndex(lead =>
+      lead.leadDetails?.contacts?.some(c =>
+        c?.number?.replace(/\D/g, '').includes(input.replace(/\D/g, ''))
+      )
+    );
+    if (contactMatch !== -1) {
+      setCurrentLeadIndex(contactMatch);
+      wasManuallyShiftedRef.current = true;
+      return;
+    }
+
+    alert('No matching lead found by number, name or contact');
+  };
+
   if (!lead) {
     return (
       <div className="w-full px-4 py-8 min-h-screen flex items-center justify-center text-gray-500">
@@ -89,23 +126,14 @@ const LeadTable = ({ leads, searchTerm }) => {
     <div className="w-full px-4 py-8 bg-[#e9f0ff] min-h-screen font-sans">
       <div className='mb-4 flex justify-center items-center gap-3'>
         <input
-          type="number"
-          placeholder={`Go to lead #(1-${filteredLeads.length})`}
-          min="1"
-          max={filteredLeads.length}
-          className='px-4 py-2 border rounded w-52 text-sm'
+          type="text"
+          placeholder="Go to lead by number, name or contact"
+          className='px-4 py-2 border rounded w-72 text-sm'
           onChange={(e) => setJumpNumber(e.target.value)}
           value={jumpNumber}
         />
         <button
-          onClick={() => {
-            const targetIndex = parseInt(jumpNumber) - 1;
-            if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < filteredLeads.length) {
-              setCurrentLeadIndex(targetIndex);
-            } else {
-              alert('Invalid lead number');
-            }
-          }}
+          onClick={handleJump}
           className='bg-blue-600 text-white px-4 py-2 rounded text-sm'
         >
           Go
@@ -165,7 +193,8 @@ const LeadTable = ({ leads, searchTerm }) => {
           Next <FaArrowRight />
         </button>
       </div>
-      <LifecycleToggle lead={lead} onDead={handleDeadLead}/>
+
+      <LifecycleToggle lead={lead} onDead={handleDeadLead} />
     </div>
   );
 };
