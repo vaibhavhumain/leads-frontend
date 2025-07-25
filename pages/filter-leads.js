@@ -197,22 +197,6 @@ const FilterLeadsPage = () => {
                 dayClassName={getDotClassForFollowUp}
               />
             </div>
-            {/* Follow-Ups Exists */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Follow-Ups</label>
-              <select
-                value={hasFollowUps}
-                onChange={e => {
-                  setHasFollowUps(e.target.value);
-                  localStorage.setItem('filter_hasFollowUps', e.target.value);
-                }}
-                className="w-full border px-3 py-2 rounded"
-              >
-                <option value="">-- All --</option>
-                <option value="true">Has Follow-Ups</option>
-                <option value="false">No Follow-Ups</option>
-              </select>
-            </div>
           </div>
 
           <div className="flex gap-4">
@@ -247,6 +231,7 @@ const FilterLeadsPage = () => {
                   <th className="border px-3 py-2 text-left">Connection</th>
                   <th className="border px-3 py-2 text-left">Status</th>
                   <th className="border px-3 py-2 text-left">Follow-Ups</th>
+                  <th className='border px-3 py-2 text-left'>Lifecycle Status</th>
                   <th className="border px-3 py-2 text-left">View Full Lead</th>
                 </tr>
               </thead>
@@ -262,7 +247,20 @@ const FilterLeadsPage = () => {
                     <td className="border px-3 py-2">{lead.leadDetails?.companyName || 'N/A'}</td>
                     <td className="border px-3 py-2">{lead.connectionStatus || 'N/A'}</td>
                     <td className="border px-3 py-2">{lead.status || 'N/A'}</td>
-                    <td className="border px-3 py-2">{lead.followUps?.length || 0}</td>
+                    <td className='border px-3 py-2 whitespace-pre-wrap'>
+                      {lead.followUps.length > 0 ? (
+                        <ul className="list-disc pl-4 space-y-`">
+                          {lead.followUps.map((fup,idx) => (
+                            <li key={idx} className='text-xs text-gray-700'>
+                              <div><b>{new Date(fup.date).toLocaleDateString()}</b>:{fup.notes}</div>
+                            </li>
+                          ))}
+                        </ul>
+                      ):(
+                        <span className='text-gray-400 italic text-sm'>No follow ups</span>
+                      )}
+                    </td>
+                    <td className='border px-3 py-2'>{lead.lifecycleStatus || 'N/A'}</td>
                     <td className="border px-3 py-2">
                       <Link
                         href={{

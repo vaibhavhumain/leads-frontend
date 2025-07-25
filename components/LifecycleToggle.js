@@ -11,41 +11,55 @@ const LifecycleToggle = ({ lead, onDead }) => {
   const [updating, setUpdating] = useState(false);
   const router = useRouter();
 
-  const updateLifecycleStatus = async (newStatus, redirect = false) => {
-    setUpdating(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.put(
-        `${BASE_URL}/api/leads/${lead._id}/lifecycle`,
-        { lifecycleStatus: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+ const updateLifecycleStatus = async (newStatus, redirect = false) => {
+  setUpdating(true);
+  try {
+    const token = localStorage.getItem('token');
+    const res = await axios.put(
+      `${BASE_URL}/api/leads/${lead._id}/lifecycle`,
+      { lifecycleStatus: newStatus },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setStatus(newStatus);
+    setStatus(newStatus);
 
-      if (newStatus === 'dead') {
-        setLifecycleDate(res.data.lead.lifecycleUpdatedAt);
-        toast.success(`✅ Lead marked as DEAD`);
-        if (onDead) onDead(lead._id);
-        if (redirect) setTimeout(() => router.push('/dead-leads'), 1000);
-      } else {
-        setLifecycleDate(null);
-        toast.success(`✅ Lead marked as ACTIVE`);
-      }
-    } catch (error) {
-      console.error("❌ Error updating lifecycle:", error);
-      toast.error("❌ Failed to update status");
-    } finally {
-      setUpdating(false);
+    if (newStatus === 'dead') {
+      setLifecycleDate(res.data.lead.lifecycleUpdatedAt);
+      toast.success(`✅ Lead marked as DEAD`);
+
+      if (onDead) onDead(lead._id);
+
+      // 👇 Automatically revert to ACTIVE after 3 seconds
+      setTimeout(async () => {
+        try {
+          const revertRes = await axios.put(
+            `${BASE_URL}/api/leads/${lead._id}/lifecycle`,
+            { lifecycleStatus: 'active' },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setStatus('active');
+          setLifecycleDate(null);
+          toast.info("🔄 Automatically reverted to ACTIVE");
+        } catch (revertError) {
+          console.error("❌ Error reverting to active:", revertError);
+          toast.error("❌ Failed to revert to active");
+        }
+      }, 3000);
+    } else {
+      setLifecycleDate(null);
+      toast.success(`✅ Lead marked as ACTIVE`);
     }
-  };
+  } catch (error) {
+    console.error("❌ Error updating lifecycle:", error);
+    toast.error("❌ Failed to update status");
+  } finally {
+    setUpdating(false);
+  }
+};
+
 
   const handleChange = (e) => {
     const newStatus = e.target.value;
-    if (newStatus === 'dead') {
-      const confirmed = window.confirm('Are you sure you want to mark this lead as DEAD?');
-      if (!confirmed) return;
-    }
     updateLifecycleStatus(newStatus); 
   };
 
