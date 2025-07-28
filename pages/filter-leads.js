@@ -126,7 +126,7 @@ const FilterLeadsPage = () => {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 py-10 px-4 font-sans">
+      <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8 font-sans">
         <h1 className="text-2xl font-bold mb-2 text-center text-gray-800">🎯 Filter Leads</h1>
         <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow mb-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -199,7 +199,7 @@ const FilterLeadsPage = () => {
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={fetchLeads}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow font-medium"
@@ -251,7 +251,7 @@ const FilterLeadsPage = () => {
                     <td className="border px-3 py-2">{lead.status || 'N/A'}</td>
                     <td className='border px-3 py-2 whitespace-pre-wrap'>
                       {lead.followUps.length > 0 ? (
-                        <ul className="list-disc pl-4 space-y-`">
+                        <ul className="list-disc pl-4 space-y-1 break-words`">
                           {lead.followUps.map((fup,idx) => (
                             <li key={idx} className='text-xs text-gray-700'>
                               <div><b>{new Date(fup.date).toLocaleDateString()}</b>:{fup.notes}</div>
