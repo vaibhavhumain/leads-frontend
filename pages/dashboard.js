@@ -13,7 +13,6 @@ import { BiImport } from "react-icons/bi";
 import NotificationBell from "../components/NotificationBell";
 import StatCard from '../components/StatCard';
 import Link from 'next/link'; 
-import ShowReports from "./showReports";
 
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -348,13 +347,6 @@ const handlePauseResume = async () => {
 return (
   <ProtectedRoute>
     <div className="flex min-h-screen bg-gray-100">
-      <button
-        className="fixed top-4 left-4 z-50 p-2 bg-white border rounded md:hidden"
-        onClick={() => setSidebarOpen(true)}
-      >
-        <FiMenu size={26} />
-      </button>
-
       <div className="flex-1 flex flex-col px-4 py-6">
         {/* Top Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
