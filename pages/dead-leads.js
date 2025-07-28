@@ -68,11 +68,11 @@ const DeadLeadsPage = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen p-6 bg-gray-100">
+      <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 bg-gray-100">
         <h1 className="text-2xl font-bold mb-4">🪦 Dead Leads</h1>
 
         {/* DEAD DATE FILTER */}
-        <div className="mb-6">
+        <div className="mb-6 flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-wrap">
           <label className="font-medium text-gray-700 mr-2">Filter by Dead Date:</label>
           <select
             value={selectedDate}
