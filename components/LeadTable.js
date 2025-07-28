@@ -142,26 +142,26 @@ const LeadTable = ({ leads, searchTerm }) => {
 
       <div className="bg-white w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 rounded-2xl shadow-lg">
         <div className="flex flex-col gap-2 mb-6">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-gray-800 break-words">
             {lead.leadDetails?.clientName || 'No Name'}
           </h2>
           {lead.leadDetails?.companyName && (
-            <div className="text-sm text-indigo-700 font-medium">
+            <div className="text-sm text-indigo-700 font-medium break-words">
               🏢 {lead.leadDetails.companyName}
             </div>
           )}
           {lead.leadDetails?.location && (
-            <div className="text-sm text-blue-600 font-medium">
+            <div className="text-sm text-blue-600 font-medium break-words">
               📍 {lead.leadDetails.location}
             </div>
           )}
           {lead.leadDetails?.contacts?.length > 0 && (
-            <div className="text-sm text-blue-600 mt-1">
+            <div className="text-sm text-blue-600 mt-1 break-words">
               📞 <b>Contacts:</b> {lead.leadDetails.contacts.map(c => c.number).join(', ')}
             </div>
           )}
           {lead.leadDetails?.email && (
-            <div className="text-sm text-gray-700 mt-1">
+            <div className="text-sm text-gray-700 mt-1 break-words">
               📧 {lead.leadDetails.email}
             </div>
           )}
@@ -169,7 +169,7 @@ const LeadTable = ({ leads, searchTerm }) => {
       </div>
 
       <Link href={`/LeadDetails?leadId=${lead._id}`}>
-        <button className="text-lg font-semibold text-white mb-4 mt-4 bg-blue-500 px-6 py-2 rounded-xl shadow hover:bg-blue-600 transition">
+        <button className="text-lg font-semibold text-white mb-4 mt-4 bg-blue-500 px-6 py-2 rounded-xl shadow hover:bg-blue-600 transition w-full sm:w-auto">
           View Lead Details
         </button>
       </Link>
@@ -193,8 +193,9 @@ const LeadTable = ({ leads, searchTerm }) => {
           Next <FaArrowRight />
         </button>
       </div>
-
+      <div className='mt-8 flex flex-col sm:flex-row justify-center items-center gap-y-2 sm:gap-x-4'>
       <LifecycleToggle lead={lead} onDead={handleDeadLead} />
+      </div>
     </div>
   );
 };
