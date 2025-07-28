@@ -123,24 +123,24 @@ const LeadTable = ({ leads, searchTerm }) => {
   }
 
   return (
-    <div className="w-full px-4 py-8 bg-[#e9f0ff] min-h-screen font-sans">
-      <div className='mb-4 flex justify-center items-center gap-3'>
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-8 bg-[#e9f0ff] min-h-screen font-sans">
+      <div className='mb-4 flex flex-col sm:flex-row justify-center items-center gap-3'>
         <input
           type="text"
           placeholder="Go to lead by number, name or contact"
-          className='px-4 py-2 border rounded w-72 text-sm'
+          className='px-4 py-2 border rounded w-full sm:w-72 text-sm'
           onChange={(e) => setJumpNumber(e.target.value)}
           value={jumpNumber}
         />
         <button
           onClick={handleJump}
-          className='bg-blue-600 text-white px-4 py-2 rounded text-sm'
+          className='bg-blue-600 text-white px-4 py-2 rounded text-sm w-full sm:w-auto'
         >
           Go
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-lg max-w-6xl mx-auto">
+      <div className="bg-white w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 rounded-2xl shadow-lg">
         <div className="flex flex-col gap-2 mb-6">
           <h2 className="text-xl font-bold text-gray-800">
             {lead.leadDetails?.clientName || 'No Name'}
@@ -174,7 +174,7 @@ const LeadTable = ({ leads, searchTerm }) => {
         </button>
       </Link>
 
-      <div className="flex justify-center items-center gap-6 mt-10">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 mt-10 px-4">
         <button
           onClick={goToPreviousLead}
           disabled={currentLeadIndex === 0}
