@@ -234,7 +234,13 @@ const getUserDurationDistribution = (timerLogs) => {
     return getCreatorNameByLeadId(log.leadId);
   };
 
-
+  if (!loading && loggedInUser && loggedInUser.role !== 'admin') {
+  return (
+    <div className="flex items-center justify-center h-screen text-red-600 font-bold text-xl">
+      🚫 Access Denied: Admins Only
+    </div>
+  );
+}
 
   return (
   <ProtectedRoute>
