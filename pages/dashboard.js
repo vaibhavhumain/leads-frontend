@@ -66,6 +66,12 @@ useEffect(() => {
       const user = userRes.data;
       setLoggedInUser(user);
 
+      if(user.Role==='admin')
+      {
+        router.replace('/admin');
+        return;
+      }
+
       if (user.role === 'admin') {
         const allLeadsRes = await axios.get(`${BASE_URL}/api/leads/all`, { headers });
         setMyLeads(allLeadsRes.data);

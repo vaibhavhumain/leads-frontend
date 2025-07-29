@@ -692,7 +692,9 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
     <FaUser className='text-indigo-500'/> Download Reports for Users
   </h2>
   <div className='grid grid-cols-1 md:grid-cols=2 lg:grid-cols-3 gap-6'>
-    {users.map(user => (
+    {users
+    .filter(user => user._id !== loggedInUser?._id && user.name !== 'Admin')
+    .map(user => (
       <div key={user._id} className='bg-indigo-50 border border-indigo-200 rounded-lg p-4 shadow'>
         <h3 className='text-lg font-semibold text-indigo-800 mb-2'>{user.name}</h3>
         <button onClick={() => downloadDailyLeadReport(today, user._id)} className='bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded shadow mb-4 mx-4 mt-4'>
