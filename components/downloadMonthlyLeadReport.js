@@ -11,13 +11,20 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
   }
 
   try {
+    // 👤 Get user's name
+    const userRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const userName = userRes.data?.name || "N/A";
+
+    // 📦 Get leads
     const res = await axios.get(`${BASE_URL}/api/leads/leads-edited`, {
       params: { startDate, endDate, userId },
       headers: { Authorization: `Bearer ${token}` },
     });
 
     const leads = res.data.leads;
-    const doc = new jsPDF("landscape", "mm", "a4"); 
+    const doc = new jsPDF("landscape", "mm", "a4");
     const marginLeft = 14;
     let yPos = 20;
 
@@ -31,10 +38,10 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     doc.setFont("helvetica", "normal");
     doc.text(`From: ${startDate} To: ${endDate}`, marginLeft, yPos);
     yPos += 6;
-    doc.text(`User: ${leads[0]?.createdBy?.name || "N/A"}`, marginLeft, yPos);
+    doc.text(`User: ${userName}`, marginLeft, yPos);
     yPos += 10;
 
-    // 🧠 Summary
+    // 📊 Summary
     let totalCalls = 0;
     let connectedCalls = 0;
     let prospects = 0;
@@ -50,7 +57,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
       totalFollowUps += followUps.length;
 
       if (lead.connectionStatus === "Connected") connectedCalls++;
-      if (lead.status === "Hot" || lead.status === "Warm") prospects++;
+      if (["Hot", "Warm"].includes(lead.status)) prospects++;
 
       [...followUps, ...notes].forEach((entry) => {
         const text = (entry.notes || entry.text || "").toLowerCase();
@@ -59,10 +66,10 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
       });
     });
 
+    // 🧾 Summary Section
     doc.setFont("helvetica", "bold");
     doc.text("Summary:", marginLeft, yPos);
     yPos += 7;
-
     doc.setFont("helvetica", "normal");
     doc.text(`Total Calls: ${totalCalls}`, marginLeft, yPos); yPos += 6;
     doc.text(`Connected Calls: ${connectedCalls}`, marginLeft, yPos); yPos += 6;
@@ -71,7 +78,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     doc.text(`Meetings Generated: ${meetings}`, marginLeft, yPos); yPos += 6;
     doc.text(`Total Follow-ups: ${totalFollowUps}`, marginLeft, yPos); yPos += 10;
 
-    // 📋 Table
+    // 📋 Table Header
     const tableHead = [
       [
         "S.No",
@@ -85,6 +92,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
       ],
     ];
 
+    // 📋 Table Body
     const tableBody = leads.map((lead, idx) => {
       const followUpsText = (lead.followUps || [])
         .map(
@@ -101,17 +109,22 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
         .join("\n--------------------\n");
 
       const lifecycle = lead.lifecycleStatus || "N/A";
-      const totalTimeMinutes = (lead.timerLogs || []).reduce((total, log) => {
-        return total + (log.pausedDuration || 0);
-      }, 0);
+
+      // ⏱️ Time Taken from timerLogs
+      const totalSeconds = (lead.timerLogs || []).reduce((sum, log) => sum + (log.duration || 0), 0);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
       const timeTakenFormatted =
-        totalTimeMinutes > 0 ? `${totalTimeMinutes} min` : "-";
+        totalSeconds > 0
+          ? `${hours > 0 ? hours + "h " : ""}${minutes > 0 ? minutes + "m " : ""}${seconds}s`
+          : "-";
 
       return [
         idx + 1,
-        lead.leadDetails.clientName || "N/A",
+        lead.leadDetails?.clientName || "N/A",
         lead.status || "N/A",
-        lead.leadDetails.location || "N/A",
+        lead.leadDetails?.location || "N/A",
         lifecycle,
         timeTakenFormatted,
         followUpsText || "-",
@@ -119,6 +132,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
       ];
     });
 
+    // 🖨️ Render Table
     autoTable(doc, {
       head: tableHead,
       body: tableBody,
@@ -127,9 +141,9 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
         fontSize: 9,
         cellPadding: 3,
         valign: "top",
-        overflow:"linebreak",
+        overflow: "linebreak",
       },
-      useCss:true,
+      useCss: true,
       headStyles: {
         fillColor: [41, 128, 185],
         textColor: 255,
@@ -142,12 +156,13 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
         3: { cellWidth: 28 },
         4: { cellWidth: 20 },
         5: { cellWidth: 22 },
-        6: { cellWidth: 60, overflow: 'linebreak' },
-        7: { cellWidth: 50, overflow: 'linebreak' },
+        6: { cellWidth: 60, overflow: "linebreak" },
+        7: { cellWidth: 50, overflow: "linebreak" },
       },
     });
 
-    doc.save(`MonthlyLeadReport_${startDate}_to_${endDate}.pdf`);
+    // 💾 Save PDF
+    doc.save(`MonthlyLeadReport_${startDate}_to_${endDate}_${userName}.pdf`);
   } catch (err) {
     console.error(err);
     alert("Could not generate monthly report. Try again!");

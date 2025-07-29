@@ -11,13 +11,20 @@ export default async function downloadDailyLeadReport(date, userId) {
   }
 
   try {
+    // ✅ Fetch user name using userId
+    const userRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const userName = userRes.data?.name || "N/A";
+
+    // ✅ Fetch leads edited by user on given date
     const res = await axios.get(`${BASE_URL}/api/leads/leads-edited`, {
       params: { date, userId },
       headers: { Authorization: `Bearer ${token}` },
     });
 
     const leads = res.data.leads;
-    const doc = new jsPDF("landscape", "mm", "a4"); 
+    const doc = new jsPDF("landscape", "mm", "a4");
     const marginLeft = 14;
     let yPos = 20;
 
@@ -31,7 +38,7 @@ export default async function downloadDailyLeadReport(date, userId) {
     doc.setFont("helvetica", "normal");
     doc.text(`Date: ${date}`, marginLeft, yPos);
     yPos += 6;
-    doc.text(`User: ${leads[0]?.createdBy?.name || "N/A"}`, marginLeft, yPos);
+    doc.text(`User: ${userName}`, marginLeft, yPos);
     yPos += 10;
 
     // 📋 Table Definition
@@ -65,17 +72,25 @@ export default async function downloadDailyLeadReport(date, userId) {
 
       const lifecycle = lead.lifecycleStatus || "N/A";
 
-      // ⏱️ Calculate Total Time
-      const totalTimeMinutes = (lead.timerLogs || []).reduce((total, log) => {
-        return total + (log.pausedDuration || 0);
+      // ⏱️ Correct: Use log.duration (not pausedDuration)
+      const totalSeconds = (lead.timerLogs || []).reduce((total, log) => {
+        return total + (log.duration || 0);
       }, 0);
-      const timeTakenFormatted = totalTimeMinutes > 0 ? `${totalTimeMinutes} min` : "-";
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const timeTakenFormatted =
+        totalSeconds > 0
+          ? `${hours > 0 ? `${hours}h ` : ""}${minutes > 0 ? `${minutes}m ` : ""}${seconds}s`
+          : "-";
 
       return [
         idx + 1,
-        lead.leadDetails.clientName || "N/A",
+        lead.leadDetails?.clientName || "N/A",
         lead.status || "N/A",
-        lead.leadDetails.location || "N/A",
+        lead.leadDetails?.location || "N/A",
         lifecycle,
         timeTakenFormatted,
         followUpsText || "-",
@@ -92,9 +107,9 @@ export default async function downloadDailyLeadReport(date, userId) {
         fontSize: 9,
         cellPadding: 3,
         valign: "top",
-        overflow:"linebreak",
+        overflow: "linebreak",
       },
-      useCss:true,
+      useCss: true,
       headStyles: {
         fillColor: [41, 128, 185],
         textColor: 255,
@@ -106,13 +121,14 @@ export default async function downloadDailyLeadReport(date, userId) {
         2: { cellWidth: 22 },
         3: { cellWidth: 28 },
         4: { cellWidth: 20 },
-        5: { cellWidth: 22 },
+        5: { cellWidth: 25 },
         6: { cellWidth: 60, overflow: "linebreak" },
         7: { cellWidth: 50, overflow: "linebreak" },
       },
     });
 
-    doc.save(`LeadReport_${date}.pdf`);
+    // ✅ Save with user name in filename
+    doc.save(`LeadReport_${date}_${userName}.pdf`);
   } catch (err) {
     console.error(err);
     alert("Could not generate report. Try again!");

@@ -7,6 +7,9 @@ import { motion , AnimatePresence} from 'framer-motion';
 import { FaUser , FaChevronLeft , FaChevronRight , FaUserTie , FaPhoneAlt , FaBuilding , FaMapMarkerAlt  } from 'react-icons/fa';
 import { MdAlarm } from 'react-icons/md';
 import { toast } from 'react-toastify';
+import downloadDailyLeadReport from '../components/Report'; 
+import downloadWeeklyLeadReport from '../components/downloadWeeklyLeadReport';
+import downloadMonthlyLeadReport from '../components/downloadMonthlyLeadReport';
 import { MdPauseCircle , MdPlayCircle , MdAccessTime } from 'react-icons/md';
 import {
   PieChart,
@@ -33,6 +36,7 @@ const STATUS_COLORS = [
 ];
 const Admin = () => {
   const [leads, setLeads] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -61,6 +65,64 @@ const Admin = () => {
     inputRef.current.focus();
   }
 }, [searchOpen]);
+
+useEffect(() => {
+  const fetchAdminLeads = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const userRes = await axios.get(`${BASE_URL}/api/users/me`, { headers });
+      setLoggedInUser(userRes.data);
+
+      const allUsersRes = await axios.get(`${BASE_URL}/api/users`, { headers });
+      setUsers(allUsersRes.data);
+
+      const leadsRes = await axios.get(`${BASE_URL}/api/leads/all`, { headers });
+      setLeads(leadsRes.data);
+
+      const timerRes = await axios.get(`${BASE_URL}/api/timer-logs/all`, { headers });
+      setTimerLogs(timerRes.data);
+
+      const pauseRes = await axios.get(`${BASE_URL}/api/pause-logs/all`, { headers });
+      setPauseLogs(pauseRes.data);
+
+    } catch (err) {
+      console.error('Error fetching leads/timers/pause logs for admin:', err);
+      setError('Failed to load leads');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAdminLeads();
+}, []);
+
+const today = new Date().toISOString().slice(0, 10);
+
+const getWeekRange = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(now.setDate(diffToMonday));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return {
+    start: monday.toISOString().slice(0, 10),
+    end: sunday.toISOString().slice(0, 10),
+  };
+};
+
+const getMonthRange = () => {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return {
+    start: firstDay.toISOString().slice(0, 10),
+    end: lastDay.toISOString().slice(0, 10),
+  };
+};
+
 
  useEffect(() => {
   const fetchAdminLeads = async () => {
@@ -623,6 +685,28 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
       </AnimatePresence>
     </>
   )}
+</div>
+
+<div className='bg-white rounded-2xl shadow-lg p-6 mb-10'>
+  <h2 className='text-2xl font-bold text-indigo-700 mb-6 flex items-center gap-2'>
+    <FaUser className='text-indigo-500'/> Download Reports for Users
+  </h2>
+  <div className='grid grid-cols-1 md:grid-cols=2 lg:grid-cols-3 gap-6'>
+    {users.map(user => (
+      <div key={user._id} className='bg-indigo-50 border border-indigo-200 rounded-lg p-4 shadow'>
+        <h3 className='text-lg font-semibold text-indigo-800 mb-2'>{user.name}</h3>
+        <button onClick={() => downloadDailyLeadReport(today, user._id)} className='bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded shadow mb-4 mx-4 mt-4'>
+          Daily Report
+        </button>
+        <button onClick={() => {const {start,end}=getWeekRange(); downloadWeeklyLeadReport(start,end,user._id);}} className='bg-pink-600 hover:bg-pink-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
+          Weekly Report
+        </button>
+        <button onClick={()=> {const {start,end}=getMonthRange(); downloadMonthlyLeadReport(start,end,user._id);}} className='bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
+          Monthly Report
+        </button>
+      </div>
+    ))}
+  </div>
 </div>
     </div>
   </ProtectedRoute>

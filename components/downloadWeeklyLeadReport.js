@@ -11,6 +11,13 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
   }
 
   try {
+    // ✅ Fetch user name
+    const userRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const userName = userRes.data?.name || "N/A";
+
+    // ✅ Fetch leads edited in date range
     const res = await axios.get(`${BASE_URL}/api/leads/leads-edited`, {
       params: { startDate, endDate, userId },
       headers: { Authorization: `Bearer ${token}` },
@@ -31,7 +38,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     doc.setFont("helvetica", "normal");
     doc.text(`From: ${startDate} To: ${endDate}`, marginLeft, yPos);
     yPos += 6;
-    doc.text(`User: ${leads[0]?.createdBy?.name || "N/A"}`, marginLeft, yPos);
+    doc.text(`User: ${userName}`, marginLeft, yPos);
     yPos += 10;
 
     // 📊 Summary Calculation
@@ -96,16 +103,26 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
         .join("\n--------------------\n");
 
       const lifecycle = lead.lifecycleStatus || "N/A";
-      const totalTimeMinutes = (lead.timerLogs || []).reduce((total, log) => {
-        return total + (log.pausedDuration || 0);
+
+      // ✅ Time Taken from timerLogs using duration (in seconds)
+      const totalSeconds = (lead.timerLogs || []).reduce((total, log) => {
+        return total + (log.duration || 0);
       }, 0);
-      const timeTakenFormatted = totalTimeMinutes > 0 ? `${totalTimeMinutes} min` : "-";
+
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const timeTakenFormatted =
+        totalSeconds > 0
+          ? `${hours > 0 ? `${hours}h ` : ""}${minutes > 0 ? `${minutes}m ` : ""}${seconds}s`
+          : "-";
 
       return [
         idx + 1,
-        lead.leadDetails.clientName || "N/A",
+        lead.leadDetails?.clientName || "N/A",
         lead.status || "N/A",
-        lead.leadDetails.location || "N/A",
+        lead.leadDetails?.location || "N/A",
         lifecycle,
         timeTakenFormatted,
         followUpsText || "-",
@@ -113,6 +130,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       ];
     });
 
+    // 📑 Render Table
     autoTable(doc, {
       head: tableHead,
       body: tableBody,
@@ -121,14 +139,14 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
         fontSize: 9,
         cellPadding: 3,
         valign: "top",
-        overflow:"linebreak",
+        overflow: "linebreak",
       },
       headStyles: {
         fillColor: [41, 128, 185],
         textColor: 255,
         halign: "center",
       },
-      useCss:true,
+      useCss: true,
       columnStyles: {
         0: { cellWidth: 10 },
         1: { cellWidth: 30 },
@@ -141,9 +159,11 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       },
     });
 
-    doc.save(`WeeklyLeadReport_${startDate}_to_${endDate}.pdf`);
+    // ✅ Save with user name in filename
+    doc.save(`WeeklyLeadReport_${startDate}_to_${endDate}_${userName}.pdf`);
   } catch (err) {
     console.error(err);
     alert("Could not generate weekly report. Try again!");
   }
 }
+ 
