@@ -493,7 +493,7 @@ const getUserDurationDistribution = (timerLogs) => {
     <div className="mb-4">
       <input
         type="text"
-        placeholder="🔍 Search by Stopped By Name"
+        placeholder="🔍 Search by Name"
         className="border px-3 py-2 rounded w-full sm:w-80 shadow"
         value={timerLogSearch}
         onChange={(e) => setTimerLogSearch(e.target.value)}
