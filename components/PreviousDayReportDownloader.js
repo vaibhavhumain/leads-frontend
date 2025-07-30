@@ -4,8 +4,7 @@ import downloadWeeklyLeadReport from "./downloadWeeklyLeadReport";
 
 const PreviousDayReportDownloader = ({ userId, userName }) => {
   const [loading, setLoading] = useState(false);
-  const [date, setDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd")); // default to yesterday
-
+  const [date, setDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd")); 
   const handleDownload = async () => {
     setLoading(true);
     try {

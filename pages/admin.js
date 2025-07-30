@@ -353,7 +353,7 @@ const getUserDurationDistribution = (timerLogs) => {
     <span className="text-2xl font-bold text-indigo-700">Lead Details</span>
   </div>
   <div className='mb-4'>
-    <input type="text" placeholder='🔍 Search Lead' className="border px-3 py-2 rounded w-full sm:w-80 shadow" value={leadDetailsSearch} onChange={(e) => setLeadDetailsSearch(e.target.value)}/>
+    <input type="text" placeholder='🔍 Search User Lead' className="border px-3 py-2 rounded w-full sm:w-80 shadow" value={leadDetailsSearch} onChange={(e) => setLeadDetailsSearch(e.target.value)}/>
   </div>
   {filteredCount === 0 ? (
     <div className="italic text-gray-400 py-10">No leads found.</div>
