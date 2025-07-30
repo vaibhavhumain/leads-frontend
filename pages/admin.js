@@ -9,6 +9,7 @@ import { MdAlarm } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import downloadDailyLeadReport from '../components/Report'; 
 import downloadWeeklyLeadReport from '../components/downloadWeeklyLeadReport';
+import PreviousDayReportDownloader from "../components/PreviousDayReportDownloader";
 import downloadMonthlyLeadReport from '../components/downloadMonthlyLeadReport';
 import { MdPauseCircle , MdPlayCircle , MdAccessTime } from 'react-icons/md';
 import {
@@ -47,10 +48,21 @@ const Admin = () => {
   const [pauseLogs, setPauseLogs] = useState([]);
   const [pauseSearch, setPauseSearch] = useState("");
   const [filteredIdx , setFilteredIdx] = useState(0);
+  const [leadDetailsSearch, setLeadDetailsSearch] = useState('');
+  const [timerLogSearch, setTimerLogSearch] = useState('');
+  const [allLeadsSearch, setAllLeadsSearch] = useState('');
   const [leadIdx , setLeadIdx] = useState(0);
     const filteredLeads = leads.filter(lead =>
-    lead.createdBy?.name?.toLowerCase().includes(creatorSearch.toLowerCase())
+    lead.createdBy?.name?.toLowerCase().includes(creatorSearch.toLowerCase()) && lead.createdBy?.name?.toLowerCase().includes(leadDetailsSearch.toLowerCase())
   );
+  const filteredTimerLogs = timerLogs.filter(log =>
+  log.stoppedByName?.toLowerCase().includes(timerLogSearch.toLowerCase())
+);
+const filteredAllLeads = leads.filter(
+  (lead) =>
+    lead.createdBy?.name?.toLowerCase().includes(allLeadsSearch.toLowerCase())
+);
+
   const filteredCount =  filteredLeads.length;
   const totalLeads = leads.length;
 
@@ -340,6 +352,9 @@ const getUserDurationDistribution = (timerLogs) => {
     <FaUser className="text-indigo-500 text-2xl" />
     <span className="text-2xl font-bold text-indigo-700">Lead Details</span>
   </div>
+  <div className='mb-4'>
+    <input type="text" placeholder='🔍 Search Lead' className="border px-3 py-2 rounded w-full sm:w-80 shadow" value={leadDetailsSearch} onChange={(e) => setLeadDetailsSearch(e.target.value)}/>
+  </div>
   {filteredCount === 0 ? (
     <div className="italic text-gray-400 py-10">No leads found.</div>
   ) : (
@@ -463,53 +478,65 @@ const getUserDurationDistribution = (timerLogs) => {
 
       {/* LEAD TIMER STOP LOGS */}
       <motion.div
-        className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-blue-100"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <div className="bg-white rounded-2xl shadow-lg p-6 mt-10 mb-10">
-  <div className="flex items-center gap-3 mb-5">
-    <MdAlarm className="text-pink-500 text-2xl" />
-    <span className="text-2xl font-bold text-pink-500">Lead Timer Stop Logs</span>
-  </div>
-  <div className="overflow-x-auto">
-    {timerLogs.length === 0 ? (
-      <div className="italic text-gray-400 text-center py-8">No timer logs yet.</div>
-    ) : (
-      <table className="min-w-full text-left rounded-2xl">
-        <thead>
-          <tr className="bg-gray-100 text-gray-700">
-            <th className="p-4 font-semibold">Lead</th>
-            <th className="p-4 font-semibold">Stopped By</th>
-            <th className="p-4 font-semibold">Time Spent</th>
-            <th className="p-4 font-semibold">Date/Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {timerLogs.map((log, i) => (
-            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-              <td className="p-4">
-                <div className="bg-pink-50 rounded-xl px-3 py-2 font-semibold">{log.leadName}</div>
-              </td>
-              <td className="p-4">
-                <div className="bg-pink-50 rounded-xl px-3 py-2">{log.stoppedByName}</div>
-              </td>
-              <td className="p-4">
-                <div className="bg-pink-50 rounded-xl px-3 py-2">{formatDuration(log.duration)}</div>
-              </td>
-              <td className="p-4">
-                <div className="bg-pink-50 rounded-xl px-3 py-2">{new Date(log.createdAt).toLocaleString()}</div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )}
-  </div>
-</div>
+  className="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl p-6 mb-12 border border-blue-100"
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.3 }}
+>
+  <div className="bg-white rounded-2xl shadow-lg p-6 mt-10 mb-10">
+    <div className="flex items-center gap-3 mb-5">
+      <MdAlarm className="text-pink-500 text-2xl" />
+      <span className="text-2xl font-bold text-pink-500">Lead Timer Stop Logs</span>
+    </div>
 
-      </motion.div>
+    {/* 🔍 Search Bar */}
+    <div className="mb-4">
+      <input
+        type="text"
+        placeholder="🔍 Search by Stopped By Name"
+        className="border px-3 py-2 rounded w-full sm:w-80 shadow"
+        value={timerLogSearch}
+        onChange={(e) => setTimerLogSearch(e.target.value)}
+      />
+    </div>
+
+    <div className="overflow-x-auto">
+      {filteredTimerLogs.length === 0 ? (
+        <div className="italic text-gray-400 text-center py-8">No timer logs found.</div>
+      ) : (
+        <table className="min-w-full text-left rounded-2xl">
+          <thead>
+            <tr className="bg-gray-100 text-gray-700">
+              <th className="p-4 font-semibold">Lead</th>
+              <th className="p-4 font-semibold">Stopped By</th>
+              <th className="p-4 font-semibold">Time Spent</th>
+              <th className="p-4 font-semibold">Date/Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTimerLogs.map((log, i) => (
+              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                <td className="p-4">
+                  <div className="bg-pink-50 rounded-xl px-3 py-2 font-semibold">{log.leadName}</div>
+                </td>
+                <td className="p-4">
+                  <div className="bg-pink-50 rounded-xl px-3 py-2">{log.stoppedByName}</div>
+                </td>
+                <td className="p-4">
+                  <div className="bg-pink-50 rounded-xl px-3 py-2">{formatDuration(log.duration)}</div>
+                </td>
+                <td className="p-4">
+                  <div className="bg-pink-50 rounded-xl px-3 py-2">{new Date(log.createdAt).toLocaleString()}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  </div>
+</motion.div>
+
 
       {/* USER PAUSE/RESUME SESSION LOGS */}
       <motion.div
@@ -712,6 +739,7 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
         <button onClick={()=> {const {start,end}=getMonthRange(); downloadMonthlyLeadReport(start,end,user._id);}} className='bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
           Monthly Report
         </button>
+         <PreviousDayReportDownloader userId={user._id} userName={user.name} />
       </div>
     ))}
   </div>
