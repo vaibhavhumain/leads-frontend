@@ -30,7 +30,7 @@ const Login = () => {
     localStorage.setItem('user', JSON.stringify(profileRes.data));
 
     if (profileRes.data.role === 'admin') {
-      router.push('/admin/AdminDashboard');
+      router.push('/admin');
     } else {
       router.push('/dashboard');
     }  {/*yes*/}
@@ -39,7 +39,6 @@ const Login = () => {
     setError(error.response?.data?.message || 'Login failed');
   }
 };
-
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#c2e9fb] via-[#a1c4fd] to-[#fbc2eb]">
