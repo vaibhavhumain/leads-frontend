@@ -30,7 +30,7 @@ const Login = () => {
     localStorage.setItem('user', JSON.stringify(profileRes.data));
 
     if (profileRes.data.role === 'admin') {
-      router.push('/admin');
+      router.push('/admin/AdminDashboard');
     } else {
       router.push('/dashboard');
     }   

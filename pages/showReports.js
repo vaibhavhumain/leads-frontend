@@ -1,22 +1,27 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
-import downloadDailyLeadReport from '../components/Report'; 
+import downloadDailyLeadReport from '../components/Report';
 import downloadWeeklyLeadReport from '../components/downloadWeeklyLeadReport';
 import downloadMonthlyLeadReport from '../components/downloadMonthlyLeadReport';
+import PreviousDayReportDownloader from '../components/PreviousDayReportDownloader';
 
 const ShowReports = () => {
   const today = new Date().toISOString().slice(0, 10);
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userId = user?._id;
+  const userName = user?.name || user?.username || "User";
+
   const getWeekRange = () => {
     const now = new Date();
-    const day = now.getDay(); // 0 (Sun) to 6 (Sat)
+    const day = now.getDay();
     const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(now.setDate(diffToMonday));
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-
-    const start = monday.toISOString().slice(0, 10);
-    const end = sunday.toISOString().slice(0, 10);
-    return { start, end };
+    return {
+      start: monday.toISOString().slice(0, 10),
+      end: sunday.toISOString().slice(0, 10),
+    };
   };
 
   const getMonthRange = () => {
@@ -30,23 +35,20 @@ const ShowReports = () => {
   };
 
   const handleDailyDownload = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
     if (!user) return alert("User not logged in");
-    downloadDailyLeadReport(today, user._id);
+    downloadDailyLeadReport(today, userId);
   };
 
   const handleWeeklyDownload = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
     if (!user) return alert("User not logged in");
     const { start, end } = getWeekRange();
-    downloadWeeklyLeadReport(start, end, user._id);
+    downloadWeeklyLeadReport(start, end, userId);
   };
 
   const handleMonthlyDownload = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
     if (!user) return alert("User not logged in");
     const { start, end } = getMonthRange();
-    downloadMonthlyLeadReport(start, end, user._id);
+    downloadMonthlyLeadReport(start, end, userId);
   };
 
   const reports = [
@@ -88,6 +90,10 @@ const ShowReports = () => {
               <p className="text-gray-600 text-sm">{report.description}</p>
             </div>
           ))}
+        </div>
+
+        <div className="max-w-md mx-auto mt-10">
+          <PreviousDayReportDownloader userId={userId} userName={userName} />
         </div>
       </div>
     </>
