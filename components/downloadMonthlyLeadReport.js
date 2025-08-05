@@ -31,7 +31,7 @@ export default async function downloadMonthlyLeadReport(startDate, endDate, user
     // 📌 Heading
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("Monthly Lead Edit Report", marginLeft, yPos);
+    doc.text("Monthly Lead Report", marginLeft, yPos);
     yPos += 8;
 
     doc.setFontSize(12);

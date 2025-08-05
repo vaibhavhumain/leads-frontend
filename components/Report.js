@@ -11,13 +11,11 @@ export default async function downloadDailyLeadReport(date, userId) {
   }
 
   try {
-    // ✅ Fetch user name using userId
     const userRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const userName = userRes.data?.name || "N/A";
 
-    // ✅ Fetch leads edited by user on given date
     const res = await axios.get(`${BASE_URL}/api/leads/leads-edited`, {
       params: { date, userId },
       headers: { Authorization: `Bearer ${token}` },
@@ -28,10 +26,9 @@ export default async function downloadDailyLeadReport(date, userId) {
     const marginLeft = 14;
     let yPos = 20;
 
-    // 🧾 Report Header
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text(`Daily Lead Edit Report`, marginLeft, yPos);
+    doc.text(`Daily Lead Report`, marginLeft, yPos);
     yPos += 8;
 
     doc.setFontSize(12);
@@ -72,7 +69,6 @@ export default async function downloadDailyLeadReport(date, userId) {
 
       const lifecycle = lead.lifecycleStatus || "N/A";
 
-      // ⏱️ Correct: Use log.duration (not pausedDuration)
       const totalSeconds = (lead.timerLogs || []).reduce((total, log) => {
         return total + (log.duration || 0);
       }, 0);
@@ -127,7 +123,6 @@ export default async function downloadDailyLeadReport(date, userId) {
       },
     });
 
-    // ✅ Save with user name in filename
     doc.save(`LeadReport_${date}_${userName}.pdf`);
   } catch (err) {
     console.error(err);

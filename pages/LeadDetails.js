@@ -26,6 +26,10 @@ const LeadDetails = () => {
   const [editedPrimaryContacts, setEditedPrimaryContacts] = useState([]);
   const [editedEmail, setEditedEmail] = useState('');
   const [followUp, setFollowUp] = useState({ date: '', notes: '' });
+  const [allFollowUpSuggestions, setAllFollowUpSuggestions] = useState([]);
+  const [followUpSuggestions , setFollowUpSuggestions ] = useState([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]); 
+  const [showSuggestions, setShowSuggestions ] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [users, setUsers] = useState([]);
   const [showFollowUps, setShowFollowUps] = useState(true);
@@ -59,6 +63,21 @@ const LeadDetails = () => {
   const [activityLoading, setActivityLoading] = useState(true);
 
   const isDeadLead = lead?.lifecycleStatus === 'dead';
+
+  useEffect(() => {
+  const fetchFollowUpSuggestions = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.get(`${BASE_URL}/api/leads/followups/suggestions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllFollowUpSuggestions(res.data.suggestions || []);
+    } catch {
+      setAllFollowUpSuggestions([]);
+    }
+  };
+  fetchFollowUpSuggestions();
+}, []);
 
   useEffect(() => {
   if (!lead || !lead._id) return;
@@ -1513,29 +1532,70 @@ const isFrozenByCreator =
 
 
       {/* Follow-Up Section */}
-      <div className="mb-8">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">Add Follow-Up</label>
-        <input
-          type="date"
-          value={followUp.date}
-          onChange={(e) => setFollowUp({ ...followUp, date: e.target.value })}
-          className="w-full border px-3 py-2 rounded mb-2 focus:ring-2 focus:ring-purple-300"
-        />
-        <textarea
-          placeholder="Enter follow-up"
-          rows="3"
-          value={followUp.notes}
-          onChange={(e) => setFollowUp({ ...followUp, notes: e.target.value })}
-          className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-purple-300"
-        />
-        <button
-          onClick={handleAddFollowUp}
-          className="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded font-medium shadow-md transition"
-        >
-          Add Follow-Up
-        </button>
-      </div>
+      {/* Follow-Up Section */}
+<div className='mb-8'>
+  <label className='block text-sm font-semibold text-gray-700 mb-2'>Add Follow Up</label>
+  <input
+    type="date"
+    value={followUp.date}
+    onChange={(e) => setFollowUp({ ...followUp, date: e.target.value })}
+    className='w-full border px-3 py-2 rounded mb-2 focus:ring-2 focus:ring-purple-300'
+  />
+  <div className='relative'>
+    <textarea
+      placeholder='Enter Follow Up'
+      rows='3'
+      value={followUp.notes}
+      onChange={(e) => {
+        const value = e.target.value;
+        setFollowUp({ ...followUp, notes: value });
+        if (value.length > 0) {
+          const filtered = allFollowUpSuggestions
+            .filter(
+              (note) =>
+                note &&
+                note.toLowerCase().startsWith(value.toLowerCase()) &&
+                note.toLowerCase() !== value.toLowerCase()
+            )
+            .slice(0, 5);
+          setFilteredSuggestions(filtered);
+          setShowSuggestions(filtered.length > 0);
+        } else {
+          setFilteredSuggestions([]);
+          setShowSuggestions(false);
+        }
+      }}
+      className='w-full border px-3 py-2 rounded focus:ring-2 focus:ring-purple-300'
+      onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+      onFocus={() => {
+        if (filteredSuggestions.length > 0) setShowSuggestions(true);
+      }}
+    />
+    {showSuggestions && filteredSuggestions.length > 0 && (
+      <ul className="absolute left-0 right-0 z-50 bg-white border border-gray-200 rounded mt-1 shadow max-h-40 overflow-y-auto">
+        {filteredSuggestions.map((suggestion, idx) => (
+          <li
+            key={idx}
+            className="px-3 py-2 cursor-pointer hover:bg-purple-100 text-sm"
+            onMouseDown={() => {
+              setFollowUp({ ...followUp, notes: suggestion });
+              setShowSuggestions(false);
+            }}
+          >
+            {suggestion}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
 
+  <button
+    onClick={handleAddFollowUp}
+    className="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded font-medium shadow-md transition"
+  >
+    Add Follow-Up
+  </button>
+</div>
       {/* Follow-Up Toggle */}
       <div className="mb-4">
         <button

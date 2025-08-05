@@ -31,7 +31,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     // 📌 Header
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("Weekly Lead Edit Report", marginLeft, yPos);
+    doc.text("Weekly Lead Report", marginLeft, yPos);
     yPos += 8;
 
     doc.setFontSize(12);
