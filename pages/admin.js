@@ -110,6 +110,19 @@ useEffect(() => {
   fetchAdminLeads();
 }, []);
 
+
+function getPreviousMonthRange() {
+  const now = new Date();
+  const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const month = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  return {
+    start: firstDay.toISOString().slice(0, 10),
+    end: lastDay.toISOString().slice(0, 10),
+  };
+}
+
 const today = new Date().toISOString().slice(0, 10);
 
 const getWeekRange = () => {
@@ -736,9 +749,22 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
         <button onClick={() => {const {start,end}=getWeekRange(); downloadWeeklyLeadReport(start,end,user._id);}} className='bg-pink-600 hover:bg-pink-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
           Weekly Report
         </button>
-        <button onClick={()=> {const {start,end}=getMonthRange(); downloadMonthlyLeadReport(start,end,user._id);}} className='bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
-          Monthly Report
-        </button>
+        {loggedInUser?.role === 'admin' && (
+  <>
+    <button onClick={() => {
+      const {start, end} = getMonthRange();
+      downloadMonthlyLeadReport(start, end, user._id);
+    }} className='bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
+      Monthly Report
+    </button>
+    <button onClick={() => {
+      const {start, end} = getPreviousMonthRange();
+      downloadMonthlyLeadReport(start, end, user._id);
+    }} className='bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded shadow mx-4'>
+      Previous Month Report
+    </button>
+  </>
+)}
          <PreviousDayReportDownloader userId={user._id} userName={user.name} />
       </div>
     ))}
