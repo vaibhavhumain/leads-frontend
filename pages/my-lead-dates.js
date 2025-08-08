@@ -57,11 +57,8 @@ const MyLeadDatesPage = () => {
       setLoadingLeads(false);
     }
   };
-
-  // For react-calendar's tileClassName
   const tileClassName = ({ date, view }) => {
     if (view === 'month') {
-      // local date string (YYYY-MM-DD)
       const d = date.toLocaleDateString('en-CA');
       if (dates.includes(d)) {
         return 'has-dot-red';
@@ -89,7 +86,6 @@ const MyLeadDatesPage = () => {
               </span>
             </div>
 
-            {/* Calendar */}
             <div className="mb-6">
               {loadingDates ? (
                 <div className="text-cyan-600 text-center text-lg my-6">Loading calendar...</div>
