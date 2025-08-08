@@ -17,7 +17,6 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     });
     const userName = userRes.data?.name || "N/A";
 
-    // ✅ Fetch leads edited in date range
     const res = await axios.get(`${BASE_URL}/api/leads/leads-edited`, {
       params: { startDate, endDate, userId },
       headers: { Authorization: `Bearer ${token}` },
@@ -28,7 +27,6 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     const marginLeft = 14;
     let yPos = 20;
 
-    // 📌 Header
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Weekly Lead Report", marginLeft, yPos);
@@ -41,8 +39,9 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     doc.text(`User: ${userName}`, marginLeft, yPos);
     yPos += 10;
 
-    // 📊 Summary Calculation
-    let totalCalls = 0;
+    // --- SUMMARY ---
+    let totalCalls = leads.length; // Each lead is an original call
+    let followUpCalls = 0;
     let connectedCalls = 0;
     let prospects = 0;
     let factoryVisits = 0;
@@ -52,9 +51,12 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     leads.forEach((lead) => {
       const followUps = lead.followUps || [];
       const notes = lead.notes || [];
+      const count = followUps.length;
 
-      totalCalls += followUps.length;
-      totalFollowUps += followUps.length;
+      // Count follow-up calls: only those after the first one for each lead
+      if (count > 1) {
+        followUpCalls += (count - 1);
+      }
 
       if (lead.connectionStatus === "Connected") connectedCalls++;
       if (lead.status === "Hot" || lead.status === "Warm") prospects++;
@@ -64,22 +66,23 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
         if (text.includes("factory visit")) factoryVisits++;
         if (text.includes("meeting")) meetings++;
       });
+
+      totalFollowUps += followUps.length;
     });
 
-    // 📝 Summary Section
     doc.setFont("helvetica", "bold");
     doc.text("Summary:", marginLeft, yPos);
     yPos += 7;
 
     doc.setFont("helvetica", "normal");
     doc.text(`Total Calls: ${totalCalls}`, marginLeft, yPos); yPos += 6;
+    doc.text(`Follow-up Calls: ${followUpCalls}`, marginLeft, yPos); yPos += 6;
     doc.text(`Connected Calls: ${connectedCalls}`, marginLeft, yPos); yPos += 6;
     doc.text(`Prospects (Hot/Warm): ${prospects}`, marginLeft, yPos); yPos += 6;
     doc.text(`Factory Visits: ${factoryVisits}`, marginLeft, yPos); yPos += 6;
     doc.text(`Meetings Generated: ${meetings}`, marginLeft, yPos); yPos += 6;
     doc.text(`Total Follow-ups: ${totalFollowUps}`, marginLeft, yPos); yPos += 10;
 
-    // 📋 Table
     const tableHead = [
       [
         "S.No",
@@ -104,7 +107,6 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
 
       const lifecycle = lead.lifecycleStatus || "N/A";
 
-      // ✅ Time Taken from timerLogs using duration (in seconds)
       const totalSeconds = (lead.timerLogs || []).reduce((total, log) => {
         return total + (log.duration || 0);
       }, 0);
@@ -159,11 +161,9 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       },
     });
 
-    // ✅ Save with user name in filename
     doc.save(`WeeklyLeadReport_${startDate}_to_${endDate}_${userName}.pdf`);
   } catch (err) {
     console.error(err);
     alert("Could not generate weekly report. Try again!");
   }
 }
- 

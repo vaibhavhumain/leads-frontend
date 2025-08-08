@@ -451,10 +451,14 @@ return (
           </button>
           </Link>
           <Link href="/showReports">
-            <button className="px-4 py-2 bg-purple-600 text-white rounded
-              text-sm">
+            <button className="px-4 py-2 bg-purple-600 text-white roundedtext-sm">
               View Reports
             </button>
+          </Link>
+          <Link href="/my-lead-dates">
+          <button className="px-4 py-2 bg-cyan-600 text-white rounded text-sm">
+            View my Lead Dates
+          </button>
           </Link>
         </div>
 

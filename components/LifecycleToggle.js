@@ -28,23 +28,6 @@ const LifecycleToggle = ({ lead, onDead }) => {
       toast.success(`✅ Lead marked as DEAD`);
 
       if (onDead) onDead(lead._id);
-
-      // 👇 Automatically revert to ACTIVE after 3 seconds
-      setTimeout(async () => {
-        try {
-          const revertRes = await axios.put(
-            `${BASE_URL}/api/leads/${lead._id}/lifecycle`,
-            { lifecycleStatus: 'active' },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          setStatus('active');
-          setLifecycleDate(null);
-          toast.info("🔄 Automatically reverted to ACTIVE");
-        } catch (revertError) {
-          console.error("❌ Error reverting to active:", revertError);
-          toast.error("❌ Failed to revert to active");
-        }
-      }, 3000);
     } else {
       setLifecycleDate(null);
       toast.success(`✅ Lead marked as ACTIVE`);
@@ -56,7 +39,6 @@ const LifecycleToggle = ({ lead, onDead }) => {
     setUpdating(false);
   }
 };
-
 
   const handleChange = (e) => {
     const newStatus = e.target.value;
