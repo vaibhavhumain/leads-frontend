@@ -11,7 +11,6 @@ const DeadLeadsPage = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const router = useRouter();
 
-  // Retrieve saved date from localStorage
   useEffect(() => {
     const storedDate = localStorage.getItem('selectedDeadDate');
     if (storedDate) {

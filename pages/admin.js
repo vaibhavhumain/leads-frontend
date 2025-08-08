@@ -630,9 +630,7 @@ const getUserDurationDistribution = (timerLogs) => {
     )}
   </div>
 </div>
-
       </motion.div>
-
       <button
   onClick={async () => {
     if (!window.confirm("Are you sure you want to delete ALL leads?")) return;
@@ -650,9 +648,7 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
 >
   Delete All Leads
 </button>
-
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 flex flex-col items-center">
-        
   <div className="flex items-center gap-3 mb-5">
     <FaUser className="text-indigo-500 text-2xl" />
     <span className="text-2xl font-bold text-indigo-700">All Leads</span>
@@ -664,15 +660,13 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={handlePrevAll}
-          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition"
-        >
+          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition">
           <FaChevronLeft size={22} className="text-indigo-600" />
         </button>
         <span className="font-semibold text-indigo-700 text-lg">{leadIdx + 1} / {totalLeads}</span>
         <button
           onClick={handleNextAll}
-          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition"
-        >
+          className="p-3 bg-indigo-100 hover:bg-indigo-200 rounded-full shadow transition">
           <FaChevronRight size={22} className="text-indigo-600" />
         </button>
       </div>
@@ -683,8 +677,7 @@ className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded text-sm font
           initial={{ opacity: 0, scale: 0.96, y: 60 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: -60 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        >
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}>
           <div className="flex items-center justify-between mb-2">
             <span className="inline-flex items-center gap-2 text-indigo-700 font-bold text-lg">
               <FaUserTie className="text-indigo-500" />
