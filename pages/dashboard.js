@@ -349,7 +349,6 @@ const handlePauseResume = async () => {
   setIsPaused(prev => !prev);
 };
 
-
 return (
   <ProtectedRoute>
     <div className="flex min-h-screen bg-gray-100">

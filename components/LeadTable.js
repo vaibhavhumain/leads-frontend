@@ -3,7 +3,8 @@ import { useCallback } from 'react';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import Link from 'next/link';
 import LifecycleToggle from './LifecycleToggle';
-
+import DedupeButton from './DedupeButton';
+import DeleteMyLeadsButton from './DeleteMyLeadsButton';
 const LeadTable = ({ leads, searchTerm }) => {
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
   const [jumpNumber, setJumpNumber] = useState('');
@@ -81,7 +82,6 @@ const LeadTable = ({ leads, searchTerm }) => {
   const handleJump = () => {
     const input = jumpNumber.trim().toLowerCase();
 
-    // Jump by number (1-based index)
     const asNumber = parseInt(input);
     if (!isNaN(asNumber) && asNumber >= 1 && asNumber <= filteredLeads.length) {
       setCurrentLeadIndex(asNumber - 1);
@@ -89,7 +89,6 @@ const LeadTable = ({ leads, searchTerm }) => {
       return;
     }
 
-    // Jump by client name
     const nameMatch = filteredLeads.findIndex(lead =>
       lead.leadDetails?.clientName?.toLowerCase().includes(input)
     );
@@ -99,7 +98,6 @@ const LeadTable = ({ leads, searchTerm }) => {
       return;
     }
 
-    // Jump by contact number (supports partial match)
     const contactMatch = filteredLeads.findIndex(lead =>
       lead.leadDetails?.contacts?.some(c =>
         c?.number?.replace(/\D/g, '').includes(input.replace(/\D/g, ''))
@@ -138,7 +136,15 @@ const LeadTable = ({ leads, searchTerm }) => {
         >
           Go
         </button>
+        <DedupeButton
+        createdByOnly={true}
+        onDeleted={() => {
+          if(typeof window !== 'undefined') window.location.reload();
+        }}
+        />
+        <DeleteMyLeadsButton/>
       </div>
+      
 
       <div className="bg-white w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 rounded-2xl shadow-lg">
         <div className="flex flex-col gap-2 mb-6">
