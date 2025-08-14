@@ -42,6 +42,10 @@ const LeadDetails = () => {
   const [leads,setLeads] = useState([]);
   const [timerLogs, setTimerLogs] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]); 
+  const [newContactNumber, setNewContactNumber] = useState([]);
+  const [newContact, setNewContact] = useState({ number: "", label: "" });
+  const [savingContact, setSavingContact] = useState(false);
+  const [newContactLabel, setNewContactLabel] = useState([]);
   const [currentLeadIndex, setCurrentLeadIndex] = useState(0);
   const [hasRestoredIndex, setHasRestoredIndex] = useState(false);
   const [contactPicker, setContactPicker] = useState({
@@ -767,6 +771,51 @@ const updateLocation = async (leadId) => {
   }
 };
 
+const handleAddContact = async (leadId) => {
+  const raw = (newContact.number || "").toString();
+  const normalized = raw.replace(/\s+/g, "");
+  const digits = normalized.replace(/\D/g, "");
+  const label = newContact.label?.trim() || "Other";
+
+  if (!digits) return alert("Phone number is required");
+  if (digits.length < 10) return alert("Enter a valid phone number");
+
+  try {
+    setSavingContact(true);
+    const token = localStorage.getItem("token");
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    // Option A: use your single-add route
+    const { data: updated } = await axios.post(
+      `${BASE_URL}/api/leads/${leadId}/add-contact`,
+      { number: digits, label },
+      { headers }
+    );
+
+    setLead((prev) => ({
+      ...prev,
+      leadDetails: {
+        ...prev.leadDetails,
+        contacts:
+          updated.contacts || updated.leadDetails?.contacts || prev.leadDetails.contacts,
+      },
+    }));
+
+    setNewContact({ number: "", label: "" });
+    setNewContactLeadId(null);
+    toast.success("Contact added ✅");
+  } catch (e) {
+    console.error(e);
+    alert(e.response?.data?.message || e.message || "Failed to add contact");
+  } finally {
+    setSavingContact(false);
+  }
+};
+
+
 const updatePrimaryContacts = async (leadId) => {
   try {
     const token = localStorage.getItem('token');
@@ -1317,51 +1366,53 @@ const isFrozenByCreator =
 
   {/* Add new contact input */}
   {newContactLeadId === lead._id ? (
-    <div className="mt-2 flex flex-col gap-2">
-      <input
-        type="text"
-        value={newContactNumber}
-        onChange={(e) => setNewContactNumber(e.target.value)}
-        placeholder="Enter 10-digit number"
-        className="border rounded px-2 py-1 text-sm"
-      />
-      <input
-        type="text"
-        value={newContactLabel}
-        onChange={(e) => setNewContactLabel(e.target.value)}
-        placeholder="Label (e.g., Work, Alternate)"
-        className="border rounded px-2 py-1 text-sm"
-      />
-      <div className="flex gap-3 mt-1">
-        <button
-          onClick={() => handleAddContact(lead._id)}
-          className="bg-green-500 text-white px-3 py-1 rounded text-sm"
-        >
-          ✅ Add
-        </button>
-        <button
-          onClick={() => setNewContactLeadId(null)}
-          className="text-red-500 text-sm"
-        >
-          ❌ Cancel
-        </button>
-      </div>
+  <div className="mt-2 flex flex-col gap-2">
+    <input
+      type="tel"
+      inputMode="tel"
+      value={newContact.number}
+      onChange={(e) =>
+        setNewContact((p) => ({ ...p, number: e.target.value }))
+      }
+      placeholder="Enter number (e.g., +91 9876543210)"
+      className="border rounded px-2 py-1 text-sm"
+    />
+    <input
+      type="text"
+      value={newContact.label}
+      onChange={(e) =>
+        setNewContact((p) => ({ ...p, label: e.target.value }))
+      }
+      placeholder="Label (e.g., Work, Alternate)"
+      className="border rounded px-2 py-1 text-sm"
+    />
+    <div className="flex gap-3 mt-1">
+      <button
+        onClick={() => handleAddContact(lead._id)}
+        disabled={savingContact}
+        className="bg-green-500 text-white px-3 py-1 rounded text-sm disabled:opacity-60"
+      >
+        {savingContact ? "Adding..." : "✅ Add"}
+      </button>
+      <button
+        onClick={() => {
+          setNewContactLeadId(null);
+          setNewContact({ number: "", label: "" });
+        }}
+        className="text-red-500 text-sm"
+      >
+        ❌ Cancel
+      </button>
     </div>
-  ) : (
-    <button
-      onClick={() => setNewContactLeadId(lead._id)}
-      className="text-blue-500 underline text-sm mt-1 w-fit"
-    >
-      ➕ Add Contact
-    </button>
-  )}
-
+  </div>
+) : (
   <button
-  onClick={() => handleDeleteLead(lead._id)}
-  className="text-red-600 underline text-sm mt-2 w-fit"
->
-  ❌ Delete this Lead
-</button>
+    onClick={() => setNewContactLeadId(lead._id)}
+    className="text-blue-500 underline text-sm mt-1 w-fit"
+  >
+    ➕ Add Contact
+  </button>
+)}
 {/* Email */}
         <div className="mb-4 text-sm text-gray-700">
           {editingEmailId === lead._id ? (

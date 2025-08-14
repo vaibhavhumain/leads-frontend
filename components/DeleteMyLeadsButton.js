@@ -8,7 +8,7 @@ export default function DeleteMyLeadsButton() {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [isDeveloper, setIsDeveloper] = useState(false);
-  const [cooldown, setCooldown] = useState(false); // <- 5s cooldown after delete
+  const [cooldown, setCooldown] = useState(false); 
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
