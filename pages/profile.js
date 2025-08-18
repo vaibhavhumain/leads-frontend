@@ -101,7 +101,6 @@ const ProfilePage = () => {
     );
 
     toast.success('Lead updated successfully');
-    // Optional: clean up the statusUpdates entry
     setStatusUpdates((prev) => {
       const updated = { ...prev };
       delete updated[leadId];

@@ -38,7 +38,6 @@ export default async function downloadDailyLeadReport(date, userId) {
     doc.text(`User: ${userName}`, marginLeft, yPos);
     yPos += 10;
 
-    // 📋 Table Definition
     const tableHead = [
       [
         "S.No",
@@ -94,7 +93,6 @@ export default async function downloadDailyLeadReport(date, userId) {
       ];
     });
 
-    // 📑 AutoTable Rendering
     autoTable(doc, {
       head: tableHead,
       body: tableBody,

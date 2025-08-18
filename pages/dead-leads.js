@@ -46,7 +46,7 @@ const DeadLeadsPage = () => {
   const handleDateChange = (e) => {
     const selected = e.target.value;
     setSelectedDate(selected);
-    localStorage.setItem('selectedDeadDate', selected); // ✅ Save to localStorage
+    localStorage.setItem('selectedDeadDate', selected);
   };
 
   const handleViewLead = (lead) => {

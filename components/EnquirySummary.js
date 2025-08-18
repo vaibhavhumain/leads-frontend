@@ -1,7 +1,9 @@
 import { generateEnquiryPDF } from '@/utils/pdfGenerator';
-
+import Navbar from './Navbar';
 const EnquirySummary = ({ data }) => {
   return (
+    <div>
+      <Navbar />
     <div className="bg-white p-6 rounded-lg shadow-md mt-8">
       <div id="enquiry-summary">
         <h2 className="text-2xl font-bold mb-4">Enquiry Summary</h2>
@@ -15,6 +17,7 @@ const EnquirySummary = ({ data }) => {
           <div><strong>Total Seats:</strong> {data.totalSeats}</div>
           <div><strong>Seating Pattern:</strong> {data.seatingPattern}</div>
         </div>
+      </div>
       </div>
 
       <button

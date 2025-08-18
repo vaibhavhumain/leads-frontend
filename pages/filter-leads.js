@@ -20,7 +20,6 @@ const FilterLeadsPage = () => {
   const [followUpDateStrings, setFollowUpDateStrings] = useState([]);
   const [editedDateStrings, setEditedDateStrings] = useState([]);
 
-  // Load saved filters and user info
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -37,7 +36,6 @@ const FilterLeadsPage = () => {
     if (storedLeads) setLeads(JSON.parse(storedLeads));
   }, []);
 
-  // Fetch date highlight data
   useEffect(() => {
     const fetchAllDates = async () => {
       try {

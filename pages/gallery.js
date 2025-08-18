@@ -26,7 +26,6 @@ export default function Gallery() {
   const [selectedImages, setSelectedImages] = useState(new Set());
   const [swiperInstance, setSwiperInstance] = useState(null);
 
-  // Set beautiful gradient background on mount
   useEffect(() => {
     const prev = document.body.style.background;
     document.body.style.background =
@@ -36,12 +35,10 @@ export default function Gallery() {
     };
   }, []);
 
-  // Fetch categories on mount
   useEffect(() => {
     sanity.fetch(`*[_type == "category"]{_id, title}`).then(setCategories);
   }, []);
 
-  // Fetch models when category selected
   useEffect(() => {
     if (!selectedCategory) return setModels([]);
     sanity
@@ -56,7 +53,6 @@ export default function Gallery() {
     setImages([]);
   }, [selectedCategory]);
 
-  // Fetch buses when model selected
   useEffect(() => {
     if (!selectedModel) return setBuses([]);
     sanity
@@ -69,7 +65,6 @@ export default function Gallery() {
     setImages([]);
   }, [selectedModel]);
 
-  // Fetch images when bus selected
   useEffect(() => {
     if (!selectedBus) return setImages([]);
     sanity
@@ -81,12 +76,10 @@ export default function Gallery() {
     setSelectedImages(new Set());
   }, [selectedBus]);
 
-  // WhatsApp share: Use Web Share API for images (mobile only, or prompt download for desktop)
   async function handleWhatsAppShareSelected() {
   const imgs = images.filter((img) => selectedImages.has(img._id));
   if (imgs.length === 0) return alert("No images selected!");
 
-  // ✅ Try native share (mobile)
   if (
     navigator.canShare &&
     navigator.canShare({ files: [new File([], "a.jpg", { type: "image/jpeg" })] })
@@ -112,7 +105,6 @@ export default function Gallery() {
     }
   }
 
-  // ❌ Fallback: ZIP and generate link
   const zip = new JSZip();
   for (const img of imgs) {
     const imgUrl = urlFor(img.image);
@@ -124,7 +116,6 @@ export default function Gallery() {
   const zipBlob = await zip.generateAsync({ type: "blob" });
   const zipFile = new File([zipBlob], "bus-images.zip", { type: "application/zip" });
 
-  // ✅ Upload ZIP to a temporary endpoint or Blob URL
   const zipUrl = URL.createObjectURL(zipFile);
   const message = `Dear Customer,\n\nPlease find the selected bus images:\n${zipUrl}`;
   const encodedMessage = encodeURIComponent(message);
@@ -143,7 +134,6 @@ export default function Gallery() {
   alert("WhatsApp message prepared. ZIP also ready for manual sending if needed.");
 }
 
-  // Download an image
   async function handleDownloadImage(imgUrl, label = "bus-image") {
     const response = await fetch(imgUrl);
     const blob = await response.blob();
@@ -155,7 +145,6 @@ export default function Gallery() {
     link.remove();
   }
 
-  // Image select toggle
   function toggleSelectImage(imgId) {
     setSelectedImages((prev) => {
       const s = new Set(prev);
@@ -165,7 +154,6 @@ export default function Gallery() {
     });
   }
 
-  // --- Select All/Deselect All Logic ---
   const allSelected = images.length > 0 && selectedImages.size === images.length;
   function handleSelectAllToggle() {
     if (allSelected) {
@@ -175,7 +163,6 @@ export default function Gallery() {
     }
   }
 
-  // Keyboard navigation in modal (Esc to close, arrows to switch)
   useEffect(() => {
     if (!modalOpen) return;
     function onKey(e) {
@@ -189,7 +176,6 @@ export default function Gallery() {
     return () => window.removeEventListener("keydown", onKey);
   }, [modalOpen, modalIndex, images.length]);
 
-  // Swiper next/prev buttons
   const handlePrev = () => {
     if (swiperInstance && modalIndex > 0) {
       swiperInstance.slidePrev();

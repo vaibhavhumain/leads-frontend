@@ -35,33 +35,45 @@ const LeadTable = ({ leads, searchTerm }) => {
     return result;
   }, [leads, searchTerm, deadLeadId]);
 
-  useEffect(() => {
-    if (!hasRestoredRef.current && !wasManuallyShiftedRef.current && filteredLeads.length > 0) {
-      const savedLeadId = localStorage.getItem('lastViewedLeadId');
-      if (savedLeadId) {
-        const foundIndex = filteredLeads.findIndex(
-          l => l._id?.toString() === savedLeadId.toString()
-        );
-        setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
+useEffect(() => {
+  if (!hasRestoredRef.current && filteredLeads.length > 0) {
+    const savedLeadId = localStorage.getItem('lastViewedLeadId');
+    const savedLeadIndex = localStorage.getItem('lastViewedLeadIndex');
+
+    if (savedLeadIndex) {
+      const index = parseInt(savedLeadIndex, 10);
+      if (!isNaN(index) && index >= 0 && index < filteredLeads.length) {
+        setCurrentLeadIndex(index);
       } else {
         setCurrentLeadIndex(0);
       }
-      hasRestoredRef.current = true;
+    } else if (savedLeadId) {
+      const foundIndex = filteredLeads.findIndex(
+        l => l._id?.toString() === savedLeadId.toString()
+      );
+      setCurrentLeadIndex(foundIndex !== -1 ? foundIndex : 0);
+    } else {
+      setCurrentLeadIndex(0);
     }
 
-    if (filteredLeads.length === 0) {
-      hasRestoredRef.current = false;
-      wasManuallyShiftedRef.current = false;
-    }
-  }, [filteredLeads]);
+    hasRestoredRef.current = true;
+  }
+
+  if (filteredLeads.length === 0) {
+    hasRestoredRef.current = false;
+    wasManuallyShiftedRef.current = false;
+  }
+}, [filteredLeads]);
 
   const lead = filteredLeads[currentLeadIndex];
 
-  useEffect(() => {
-    if (lead) {
-      localStorage.setItem('lastViewedLeadId', lead._id.toString());
-    }
-  }, [lead]);
+ useEffect(() => {
+  if (lead) {
+    localStorage.setItem('lastViewedLeadId', lead._id.toString());
+    localStorage.setItem('lastViewedLeadIndex', currentLeadIndex.toString());
+  }
+}, [lead, currentLeadIndex]);
+
 
   const goToPreviousLead = () => {
     setCurrentLeadIndex(idx => Math.max(idx - 1, 0));

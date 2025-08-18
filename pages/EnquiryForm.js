@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Select from 'react-select';
 import BASE_URL from '../utils/api';
 import { useRouter } from 'next/router'
+import Navbar from '../components/Navbar';
 export default function EnquiryForm() {
   const [stage, setStage] = useState(1);
   const [category, setCategory] = useState('');
@@ -317,6 +318,8 @@ useEffect(() => {
   };
 
   return (
+     <div className="min-h-screen bg-gray-50">
+      <Navbar />
     <div className="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Customer Enquiry Form</h2>
       <div className="mt-6 text-center">
@@ -332,7 +335,7 @@ useEffect(() => {
   }}
   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
 >
-  View All PDFs for This Lead
+  View All enquiries for This Lead
 </button>
 
 </div>
@@ -421,6 +424,18 @@ useEffect(() => {
                 
 
 <form className="space-y-6" onSubmit={handleSubmit}>
+  <div>
+    <label className="block font-medium mb-1 text-gray-700">Suggested Model</label>
+    <select
+      name="suggestedModel"
+      value={formData.suggestedModel}
+      onChange={handleChange}
+      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-red-400 transition"
+    >
+      <option value="">Select</option>
+      {suggestedModels.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+    </select>
+  </div>
   <div>
     <label className="block font-medium mb-1 text-gray-700">Window</label>
     <select 
@@ -585,18 +600,7 @@ useEffect(() => {
     />
   </div>
 
-  <div>
-    <label className="block font-medium mb-1 text-gray-700">Suggested Model</label>
-    <select
-      name="suggestedModel"
-      value={formData.suggestedModel}
-      onChange={handleChange}
-      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring focus:ring-red-400 transition"
-    >
-      <option value="">Select</option>
-      {suggestedModels.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-    </select>
-  </div>
+  
 
   <div>
     <label className="block font-medium mb-1 text-gray-700">Optional Features</label>
@@ -669,7 +673,9 @@ useEffect(() => {
   </div>
 )}
     </div>
+    </div>
   );
+  
 }
 
 const InputField = ({ label, name, value, onChange, type = 'text', required = false }) => (
@@ -702,4 +708,5 @@ const SelectField = ({ label, name, value, onChange, options }) => (
     </select>
 
   </div>
+  
 );  

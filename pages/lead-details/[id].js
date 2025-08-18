@@ -41,7 +41,6 @@ const handleAddActivity = async () => {
     toast.success('Activity added!');
     setActivityForm({ type: '', date: '', location: '', remarks: '', outcome: '' });
 
-    // Refresh activities
     const res = await axios.get(`${BASE_URL}/api/leads/${id}/activities`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -63,7 +62,6 @@ const handleAddActivity = async () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Fetch both lead and users
       const [leadRes, usersRes] = await Promise.all([
         axios.get(`${BASE_URL}/api/leads/${id}`, { headers }),
         axios.get(`${BASE_URL}/api/users`, { headers }),
@@ -123,9 +121,9 @@ useEffect(() => {
     });
 
     toast.success('Lead updated successfully');
-    setRemarkInput(''); // Clear input
+    setRemarkInput(''); 
     setUpdating(false);
-    router.reload(); // reload lead data
+    router.reload(); 
   } catch (err) {
     console.error('Error updating remarks:', err.response?.data || err.message);
     toast.error('Failed to update remarks');

@@ -2,7 +2,6 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import BASE_URL from '../../../utils/api';
 import Link from 'next/link';
-
 export default function PdfViewer() {
   const router = useRouter();
   const { id } = router.query;
@@ -125,6 +124,11 @@ export default function PdfViewer() {
       <Link href="/EnquiryForm">
         <button className="mt-8 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition">
           Go to enquiry form
+        </button>
+      </Link>
+      <Link href="/dashboard">
+        <button className="mt-8 px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition mx-4">
+          Go to Dashboard
         </button>
       </Link>
     </div>

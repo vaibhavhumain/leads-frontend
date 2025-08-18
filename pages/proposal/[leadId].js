@@ -10,7 +10,6 @@ export default function ProposalPage() {
   const [error, setError] = useState(null);
   const [enquiryId, setEnquiryId] = useState('');
 
-  // 🔁 Generate Proposal when page loads
   useEffect(() => {
     if (!router.isReady || !leadId) return;
 
@@ -34,7 +33,7 @@ export default function ProposalPage() {
         if (!res.ok) {
           setError(data.error || 'Failed to generate proposal');
         } else {
-          setEnquiryId(data.enquiryId); // ✅ Save enquiryId for download
+          setEnquiryId(data.enquiryId); 
         }
       } catch (err) {
         console.error('Error generating proposal:', err);
@@ -47,7 +46,6 @@ export default function ProposalPage() {
     generateProposal();
   }, [router.isReady, leadId]);
 
-  // 📥 Actual Download Function (you asked about)
   const downloadProposalPdf = async () => {
     const token = localStorage.getItem('token');
     if (!token) return alert('Token missing!');

@@ -11,7 +11,6 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
   }
 
   try {
-    // ✅ Fetch user name
     const userRes = await axios.get(`${BASE_URL}/api/users/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -39,8 +38,7 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
     doc.text(`User: ${userName}`, marginLeft, yPos);
     yPos += 10;
 
-    // --- SUMMARY ---
-    let totalCalls = leads.length; // Each lead is an original call
+    let totalCalls = leads.length; 
     let followUpCalls = 0;
     let connectedCalls = 0;
     let prospects = 0;
@@ -53,7 +51,6 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       const notes = lead.notes || [];
       const count = followUps.length;
 
-      // Count follow-up calls: only those after the first one for each lead
       if (count > 1) {
         followUpCalls += (count - 1);
       }
@@ -132,7 +129,6 @@ export default async function downloadWeeklyLeadReport(startDate, endDate, userI
       ];
     });
 
-    // 📑 Render Table
     autoTable(doc, {
       head: tableHead,
       body: tableBody,

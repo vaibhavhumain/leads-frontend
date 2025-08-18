@@ -8,12 +8,12 @@ export default function DedupeButton({
   sinceISO,
   createdByOnly = true,
   onDeleted
-}) {
+}) 
+{
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
-  const [cooldown, setCooldown] = useState(false); // <- 5s cooldown after delete
+  const [cooldown, setCooldown] = useState(false); 
 
-  // Default: last 24 hours if sinceISO not provided
   const effectiveSince = useMemo(() => {
     if (sinceISO) return sinceISO;
     const d = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -60,7 +60,6 @@ export default function DedupeButton({
       return;
     }
 
-    // optional: confirm via toast? Keeping built-in confirm for simplicity
     if (!confirm(`Delete ${preview.duplicatesFound} duplicate lead(s)? This cannot be undone.`)) return;
 
     setLoading(true);
@@ -82,7 +81,6 @@ export default function DedupeButton({
       setPreview(null);
       onDeleted?.();
 
-      // Start 5s cooldown where buttons stay disabled and label changes
       setCooldown(true);
       setTimeout(() => setCooldown(false), 5000);
     } catch (err) {
@@ -134,7 +132,6 @@ export default function DedupeButton({
         </div>
       )}
 
-      {/* Toast container (place once in your app; safe to keep here if this component mounts where needed) */}
       <ToastContainer position="bottom-right" newestOnTop closeOnClick pauseOnHover />
     </div>
   );

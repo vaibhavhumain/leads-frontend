@@ -4,9 +4,8 @@ import { useRouter } from 'next/router';
 const LuxuryBusForm = () => {
   const router = useRouter();
   const [luxuryData, setLuxuryData] = useState({});
-  const [isClient, setIsClient] = useState(false); // Ensure SSR safety
+  const [isClient, setIsClient] = useState(false); 
 
-  // Run only on client to access localStorage
   useEffect(() => {
     setIsClient(true);
     const saved = localStorage.getItem('luxuryForm');
@@ -15,7 +14,6 @@ const LuxuryBusForm = () => {
     }
   }, []);
 
-  // Save form data to localStorage on every update
   useEffect(() => {
     if (isClient) {
       localStorage.setItem('luxuryForm', JSON.stringify(luxuryData));
@@ -110,7 +108,7 @@ const LuxuryBusForm = () => {
         checked={luxuryData["Seat Belt"] === opt}
         onChange={() => {
           handleChange("Seat Belt", opt);
-          if (opt === "No") handleChange("Belt Type", ""); // reset belt type if No
+          if (opt === "No") handleChange("Belt Type", "");
         }}
       />
       {opt}

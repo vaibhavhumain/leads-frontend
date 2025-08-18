@@ -18,7 +18,6 @@ const MyLeadDatesPage = () => {
 
   const router = useRouter();
 
-  // Fetch all unique lead creation/import dates (YYYY-MM-DD)
   useEffect(() => {
     const fetchDates = async () => {
       setLoadingDates(true);
@@ -38,9 +37,9 @@ const MyLeadDatesPage = () => {
     fetchDates();
   }, []);
 
-  // On calendar date selection
   const handleDateChange = async (date) => {
-    const formatted = date.toLocaleDateString('en-CA'); // <-- local date, always correct!
+    const formatted = date.toLocaleDateString('en-CA'); 
+    
     setSelectedDate(formatted);
     setLeads([]);
     setLoadingLeads(true);
@@ -101,7 +100,6 @@ const MyLeadDatesPage = () => {
                   className="rounded-2xl border-cyan-300 shadow"
                 />
               )}
-              {/* You can keep your dot CSS in global.css, no need for style jsx here */}
             </div>
 
             {/* Selected date and leads */}

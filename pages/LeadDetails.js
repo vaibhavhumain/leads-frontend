@@ -91,10 +91,7 @@ const LeadDetails = () => {
   const paused = localStorage.getItem(`timer_${lead._id}_paused`) === '1';
 
   if (start && !paused) {
-    // Timer was running: resume ticking from correct value!
-    const startTimestamp = parseInt(start, 10);
-
-    // Immediately set initial state to avoid lag:
+   const startTimestamp = parseInt(start, 10);
     setLeadTimers(prev => ({
       ...prev,
       [lead._id]: {
@@ -105,7 +102,6 @@ const LeadDetails = () => {
       },
     }));
 
-    // Start ticking!
     if (intervalRefs.current[lead._id]) clearInterval(intervalRefs.current[lead._id]);
     intervalRefs.current[lead._id] = setInterval(() => {
       const now = Date.now();
@@ -123,7 +119,6 @@ const LeadDetails = () => {
       localStorage.setItem(`timer_${lead._id}_elapsed`, elapsedSeconds);
     }, 1000);
   } else {
-    // Not running (paused or stopped)
     setLeadTimers(prev => ({
       ...prev,
       [lead._id]: {
@@ -139,7 +134,6 @@ const LeadDetails = () => {
     }
   }
 
-  // Clean up on unmount
   return () => {
     if (intervalRefs.current[lead._id]) {
       clearInterval(intervalRefs.current[lead._id]);
@@ -209,7 +203,6 @@ useEffect(() => {
   }
 }, [lead]);
 
-// Start or Resume timer for a lead
 const startTimer = (leadId) => {
   const prev = leadTimers[leadId] || {};
   const isResuming = prev.paused && prev.startTimestamp;
@@ -218,15 +211,12 @@ const startTimer = (leadId) => {
   let elapsed = prev.time || 0;
 
   if (isResuming) {
-    // If resuming, offset startTimestamp by elapsed time
     startTimestamp = Date.now() - elapsed * 1000;
   } else {
-    // If starting fresh, reset elapsed
     elapsed = 0;
     startTimestamp = Date.now();
   }
 
-  // Save to localStorage
   localStorage.setItem(`timer_${leadId}_start`, startTimestamp);
   localStorage.setItem(`timer_${leadId}_elapsed`, elapsed);
 
@@ -269,7 +259,6 @@ const pauseTimer = (leadId) => {
   if (prev.startTimestamp) {
     elapsed = Math.floor((now - prev.startTimestamp) / 1000) + (prev.time || 0);
   }
-  // Save
   localStorage.setItem(`timer_${leadId}_paused`, '1');
   localStorage.setItem(`timer_${leadId}_elapsed`, elapsed);
   setLeadTimers(prev2 => ({
@@ -288,7 +277,6 @@ const resumeTimer = (leadId) => {
   const elapsed = parseInt(localStorage.getItem(`timer_${leadId}_elapsed`) || prev.time || 0, 10);
   const startTimestamp = Date.now() - elapsed * 1000;
 
-  // Save
   localStorage.setItem(`timer_${leadId}_start`, startTimestamp);
   localStorage.removeItem(`timer_${leadId}_paused`);
 
@@ -326,13 +314,10 @@ const stopTimer = async (leadId) => {
     clearInterval(intervalRefs.current[leadId]);
     intervalRefs.current[leadId] = null;
   }
-
-  // Get the duration from state – don't add extra seconds!
   const prev = leadTimers[leadId] || {};
   const duration = prev.time || 0;
   const startTime = prev.startTimestamp ? new Date(prev.startTimestamp).toISOString() : null;
 
-  // Reset storage & state
   localStorage.removeItem(`timer_${leadId}_start`);
   localStorage.removeItem(`timer_${leadId}_elapsed`);
   localStorage.removeItem(`timer_${leadId}_paused`);
@@ -368,7 +353,7 @@ const stopTimer = async (leadId) => {
 const fetchTimerLogs = async () => {
   try {
     const token = localStorage.getItem('token');
-    console.log('Timer log token:', token); // Debug
+    console.log('Timer log token:', token); 
     if (!token) {
       setTimerLogs([]);
       return;
@@ -381,7 +366,6 @@ const fetchTimerLogs = async () => {
     setTimerLogs([]);
     console.error('Failed to fetch timer logs', err?.response?.data || err.message);
     if (err?.response?.status === 401) {
-      // Token invalid/expired, handle logout or redirect
       localStorage.clear();
       window.location.href = '/login';
     }
@@ -569,7 +553,7 @@ const [loadingLead, setLoadingLead] = useState(true);
   }
 
   try {
-    // Add follow-up
+
     await axios.post(
       `${BASE_URL}/api/leads/followup`,
       {
@@ -788,7 +772,6 @@ const handleAddContact = async (leadId) => {
       Authorization: `Bearer ${token}`,
     };
 
-    // Option A: use your single-add route
     const { data: updated } = await axios.post(
       `${BASE_URL}/api/leads/${leadId}/add-contact`,
       { number: digits, label },
@@ -1020,7 +1003,6 @@ const sendWhatsAppMessage = (lead) => {
     return;
   }
 
-  // Prompt for number
   const index = parseInt(prompt(
     numbers.map((c, i) => `${i + 1}. ${c.label}: ${c.number}`).join('\n') + `\n\nSelect number 1-${numbers.length}`
   )) - 1;
@@ -1052,14 +1034,12 @@ Gobind Coach Builders
 
   const encodedText = encodeURIComponent(message);
 
-  // Prompt for app vs web
   const openInApp = confirm("Click OK to open in WhatsApp App\nClick Cancel to open in WhatsApp Web");
 
   const url = openInApp
     ? `https://wa.me/${phoneNumber}?text=${encodedText}`
     : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
 
-  // Copy to clipboard and open
   copyToClipboard(message);
   window.open(url, '_blank');
 };
@@ -1071,7 +1051,6 @@ const notSendWhatsAppMessage = (lead) => {
     return;
   }
 
-  // Prompt for number
   const index = parseInt(prompt(
     numbers.map((c, i) => `${i + 1}. ${c.label}: ${c.number}`).join('\n') + `\n\nSelect number 1-${numbers.length}`
   )) - 1;
@@ -1100,14 +1079,12 @@ Gobind Coach Builders
 
   const encodedText = encodeURIComponent(message);
 
-  // Prompt for app vs web
   const openInApp = confirm("Click OK to open in WhatsApp App\nClick Cancel to open in WhatsApp Web");
 
   const url = openInApp
     ? `https://wa.me/${phoneNumber}?text=${encodedText}`
     : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`;
 
-  // Copy to clipboard and open
   copyToClipboard(message);
   window.open(url, '_blank');
 };
