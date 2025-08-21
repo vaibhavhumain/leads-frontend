@@ -9,7 +9,7 @@ import {useRouter} from 'next/router';
 import LifecycleToggle from '../components/LifecycleToggle';
 import downloadLeadReport from '../components/downloadLeadReport'
 import { FaEdit } from 'react-icons/fa';
-const LeadDetails = () => {
+const LeadDetails = () => { 
   const router=useRouter();
   const [lead, setLead] = useState(null);
   const [editingClientNameId, setEditingClientNameId] = useState(null);
@@ -1158,6 +1158,9 @@ const isFrozenByCreator =
 
   if (loadingLead) return <p>Loading lead...</p>;
   if (!lead) return  <p>No lead found</p>
+  if (!lead) {
+    return <p>Loading lead details...</p>;
+  }
 
   return (  
     <ProtectedRoute>
