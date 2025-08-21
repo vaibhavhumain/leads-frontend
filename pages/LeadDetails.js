@@ -1,3 +1,5 @@
+import dynamic from "next/dynamic";
+
 import { useEffect, useState , useRef} from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
@@ -1160,7 +1162,7 @@ const isFrozenByCreator =
   if (!lead) return  <p>No lead found</p>
   if (!lead) {
     return <p>Loading lead details...</p>;
-  }
+  } 
 
   return (  
     <ProtectedRoute>
@@ -1887,3 +1889,4 @@ const isFrozenByCreator =
 };
 
 export default LeadDetails;
+export default dynamic(() => Promise.resolve(LeadDetails), { ssr: false });
