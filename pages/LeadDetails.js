@@ -1015,22 +1015,21 @@ const sendWhatsAppMessage = (lead) => {
   const selectedNumber = numbers[index].number;
   const phoneNumber = `91${selectedNumber}`;
   const clientName = lead.leadDetails?.clientName || 'Customer';
-  const message = `Dear ${clientName}, this is Akshat Mudgal from Gobind Coach Builders.  
+  const message = `Dear ${clientName}, 
 Thank you for your time on the call today.
-As discussed, we specialize in manufacturing high-quality bus bodies – from school buses to luxury coaches – custom-built as per your needs.
+At Gobind Coach Builders, we’ve been crafting custom bus bodies – school, staff, and luxury coaches – for 30+ years with a skilled team you can rely on.
 
-If you ever require a reliable bus body partner, feel free to reach out.  
-Would be happy to assist you with designs, specs, or quotations.
+If you need designs, specs, or quotations, I’d be glad to assist.
 
-Our legacy of 30+ years, 200+ skilled workers, and a dedicated team ensures quality you can trust.
+🔗 Stay connected:
+Instagram: https://www.instagram.com/gobindcoach/
+Facebook: https://www.facebook.com/gcbuses
+YouTube: https://www.youtube.com/@gobindcoachbuilderss
 
-Looking forward to staying in touch!  
-Regards,  
-Akshat Mudgal  
-Business Development Executive  
-Gobind Coach Builders
-7888837540
-`;
+Best regards,
+${creatorName}
+Business Development Executive
+📞 7888837540`;
 
   const encodedText = encodeURIComponent(message);
 
@@ -1043,6 +1042,9 @@ Gobind Coach Builders
   copyToClipboard(message);
   window.open(url, '_blank');
 };
+
+const creatorName = lead.createdBy?.name || "Our Team";
+
 
 const notSendWhatsAppMessage = (lead) => {
   const numbers = getAllValidContacts(lead.leadDetails?.contacts, lead.leadDetails?.contact);
@@ -1063,18 +1065,23 @@ const notSendWhatsAppMessage = (lead) => {
   const selectedNumber = numbers[index].number;
   const phoneNumber = `91${selectedNumber}`;
   const clientName = lead.leadDetails?.clientName || 'Customer';
-  const message = `Dear ${clientName}, this is Akshat Mudgal from Gobind Coach Builders.  
-I tried reaching you over a quick call regarding your bus body requirements.
+  const message = `Dear ${clientName},
+This is ${creatorName} from Gobind Coach Builders.
+I tried reaching you for a quick call regarding your bus body requirements.
 
-We’re a trusted name with 30+ years in manufacturing bus bodies – school, staff, AC luxury, and more – tailored to your business needs.
+With 30+ years of expertise, we manufacture high-quality bus bodies – school, staff, AC luxury, and custom designs – built to match your business needs.
 
-Let me know a convenient time to connect or feel free to reply here if you’d like more info.
+Let me know a convenient time to connect, or simply reply here for more details.
 
-Regards,  
-Akshat Mudgal  
-Business Development Executive  
-Gobind Coach Builders
-7888837540
+🔗 Connect with us:
+Instagram: https://www.instagram.com/gobindcoach/
+Facebook: https://www.facebook.com/gcbuses
+YouTube: https://www.youtube.com/@gobindcoachbuilders
+
+Best regards,
+Akshat Mudgal
+Business Development Executive
+📞7888837540
 `;
 
   const encodedText = encodeURIComponent(message);
@@ -1798,19 +1805,7 @@ const isFrozenByCreator =
 {/* Share Buttons */}
 <div className="w-full flex justify-end">
   <div className="flex flex-wrap gap-3 mb-6 max-w-xl justify-end">
-    {/* Enquiry Form */}
-    <Link
-      href={{
-        pathname: '/EnquiryForm',
-        query: { leadId: lead._id },
-      }}
-      passHref
-      legacyBehavior
-    >
-      <a className="bg-amber-700 text-white px-4 py-2 rounded-lg shadow cursor-pointer hover:bg-amber-800 transition">
-        📃 Enquiry Form
-      </a>
-    </Link>
+    
 
     {/* WhatsApp (Connected) */}
     <button

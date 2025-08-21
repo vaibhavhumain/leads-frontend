@@ -183,6 +183,19 @@ useEffect(() => {
               📧 {lead.leadDetails.email}
             </div>
           )}
+          {/* Enquiry Form */}
+    <Link
+      href={{
+        pathname: '/EnquiryForm',
+        query: { leadId: lead._id },
+      }}
+      passHref
+      legacyBehavior
+    >
+      <a className="bg-amber-700 text-white px-4 py-2 rounded-lg shadow cursor-pointer hover:bg-amber-800 transition w-50 my-4">
+        📃 Take Enquiry 
+      </a>
+    </Link>
         </div>
       </div>
 

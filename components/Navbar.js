@@ -5,12 +5,9 @@ import { useRouter } from 'next/router';
 import BASE_URL from '../utils/api';
 import NotificationBell from './NotificationBell';
 import {
-  HomeIcon,
-  UserCircleIcon,
-  ArrowRightOnRectangleIcon,
+  BriefcaseIcon,
   Bars3Icon,
   XMarkIcon,
-  BriefcaseIcon,
 } from '@heroicons/react/24/solid';
 
 const Navbar = ({ loggedInUser }) => {
@@ -26,48 +23,53 @@ const Navbar = ({ loggedInUser }) => {
     const token = localStorage.getItem('token');
     if (!token) {
       setIsAuthenticated(false);
-      router.push('/login');
       return;
     }
 
-    axios.get(`${BASE_URL}/api/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then(res => {
-      setUserName(res.data.name || 'User');
+    const storedUser = localStorage.getItem('userName');
+    if (storedUser) {
+      setUserName(storedUser);
       setIsAuthenticated(true);
-    })
-    .catch(() => {
-      localStorage.removeItem('token');
-      setIsAuthenticated(false);
-      router.push('/login');
-    });
-  }, []);
+      return;
+    }
+
+    axios
+      .get(`${BASE_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setUserName(res.data.name || 'User');
+        localStorage.setItem('userName', res.data.name || 'User');
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userName');
+        setIsAuthenticated(false);
+        router.push('/login');
+      });
+  }, []); 
 
   const handleLogout = () => {
     localStorage.clear();
+    setIsAuthenticated(false);
+    setUserName('');
     router.push('/login');
   };
 
   return (
-    <nav className="bg-blue-600 text-white p-4 shadow-md">
+    <nav className="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         {/* Logo */}
-        <Link href="/" legacyBehavior>
-          <a className="flex items-center text-xl font-semibold gap-2">
-            <BriefcaseIcon className="w-6 h-6 text-yellow-300" />
-            Leads Portal
-          </a>
+        <Link href="/" className="flex items-center text-xl font-semibold gap-2">
+          <BriefcaseIcon className="w-6 h-6 text-yellow-300" />
+          Leads Portal
         </Link>
 
         {/* Mobile Menu Toggle */}
         <div className="sm:hidden">
           <button onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? (
-              <XMarkIcon className="w-6 h-6" />
-            ) : (
-              <Bars3Icon className="w-6 h-6" />
-            )}
+            {menuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
           </button>
         </div>
 
@@ -82,20 +84,20 @@ const Navbar = ({ loggedInUser }) => {
               </span>
 
               {loggedInUser?.role !== 'admin' && (
-                <Link href="/dashboard" legacyBehavior>
-                  <a className="hover:underline">Dashboard</a>
+                <Link href="/dashboard" className="hover:underline">
+                  Dashboard
                 </Link>
               )}
 
               {!isProfilePage && (
-                <Link href="/profile" legacyBehavior>
-                  <a className="hover:underline">Profile</a>
+                <Link href="/profile" className="hover:underline">
+                  Profile
                 </Link>
               )}
 
               {!isFilterLeadsPage && (
-                <Link href="/filter-leads" legacyBehavior>
-                  <a className="hover:underline">Filter Leads</a>
+                <Link href="/filter-leads" className="hover:underline">
+                  Filter Leads
                 </Link>
               )}
 
@@ -105,11 +107,11 @@ const Navbar = ({ loggedInUser }) => {
             </>
           ) : (
             <>
-              <Link href="/register" legacyBehavior>
-                <a className="hover:underline">Register</a>
+              <Link href="/register" className="hover:underline">
+                Register
               </Link>
-              <Link href="/login" legacyBehavior>
-                <a className="hover:underline">Login</a>
+              <Link href="/login" className="hover:underline">
+                Login
               </Link>
             </>
           )}
@@ -120,7 +122,7 @@ const Navbar = ({ loggedInUser }) => {
       {menuOpen && (
         <div className="sm:hidden mt-4 flex flex-col gap-3 text-base font-medium px-2">
           {isAuthenticated && loggedInUser?.role !== 'admin' && <NotificationBell />}
-          
+
           {isAuthenticated ? (
             <>
               <span className="px-3 py-1 bg-white text-blue-800 rounded-full font-semibold w-fit">
@@ -128,20 +130,20 @@ const Navbar = ({ loggedInUser }) => {
               </span>
 
               {loggedInUser?.role !== 'admin' && (
-                <Link href="/dashboard" legacyBehavior>
-                  <a className="hover:underline">Dashboard</a>
+                <Link href="/dashboard" className="hover:underline">
+                  Dashboard
                 </Link>
               )}
 
               {!isProfilePage && (
-                <Link href="/profile" legacyBehavior>
-                  <a className="hover:underline">Profile</a>
+                <Link href="/profile" className="hover:underline">
+                  Profile
                 </Link>
               )}
 
               {!isFilterLeadsPage && (
-                <Link href="/filter-leads" legacyBehavior>
-                  <a className="hover:underline">Filter Leads</a>
+                <Link href="/filter-leads" className="hover:underline">
+                  Filter Leads
                 </Link>
               )}
 
@@ -151,11 +153,11 @@ const Navbar = ({ loggedInUser }) => {
             </>
           ) : (
             <>
-              <Link href="/register" legacyBehavior>
-                <a className="hover:underline">Register</a>
+              <Link href="/register" className="hover:underline">
+                Register
               </Link>
-              <Link href="/login" legacyBehavior>
-                <a className="hover:underline">Login</a>
+              <Link href="/login" className="hover:underline">
+                Login
               </Link>
             </>
           )}
@@ -164,5 +166,4 @@ const Navbar = ({ loggedInUser }) => {
     </nav>
   );
 };
-
 export default Navbar;
