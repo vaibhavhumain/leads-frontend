@@ -1888,5 +1888,4 @@ const isFrozenByCreator =
 
 };
 
-export default LeadDetails;
 export default dynamic(() => Promise.resolve(LeadDetails), { ssr: false });
