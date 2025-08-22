@@ -90,15 +90,17 @@ const Navbar = ({ loggedInUser }) => {
                 </Link>
               )}
 
-              {/* Developer Reset Password */}
-              {loggedInUser?.role === 'developer' && (
-                <Link
-                  href="/developer-reset"
-                  className="text-slate-700 hover:text-blue-600"
-                >
-                  Reset Password
-                </Link>
-              )}
+              {/* Reset Password link: visible to all logged-in users */}
+              <Link
+                href={loggedInUser?.role === 'developer' ? '/developer-reset' : '#'}
+                className={`${
+                  loggedInUser?.role === 'developer'
+                    ? 'text-slate-700 hover:text-blue-600'
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Reset Password
+              </Link>
 
               {!isProfilePage && (
                 <Link
@@ -174,15 +176,17 @@ const Navbar = ({ loggedInUser }) => {
                 Dashboard
               </Link>
 
-              {/* Developer Reset Password (mobile) */}
-              {loggedInUser?.role === 'developer' && (
-                <Link
-                  href="/developer-reset"
-                  className="text-slate-700 hover:text-blue-600"
-                >
-                  Reset Password
-                </Link>
-              )}
+              {/* Reset Password link: visible to all */}
+              <Link
+                href={loggedInUser?.role === 'developer' ? '/developer-reset' : '#'}
+                className={`${
+                  loggedInUser?.role === 'developer'
+                    ? 'text-slate-700 hover:text-blue-600'
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Reset Password
+              </Link>
 
               <Link
                 href="/profile"
