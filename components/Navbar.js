@@ -58,112 +58,109 @@ const Navbar = ({ loggedInUser }) => {
   };
 
   return (
-    <nav className="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Logo */}
-        <Link href="/" className="flex items-center text-xl font-semibold gap-2">
-          <BriefcaseIcon className="w-6 h-6 text-yellow-300" />
-          Leads Portal
-        </Link>
+    <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
+    {/* Logo */}
+    <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-blue-700">
+      <BriefcaseIcon className="w-7 h-7 text-blue-600" />
+      <span className="hidden sm:inline">Leads Portal</span>
+    </Link>
 
-        {/* Mobile Menu Toggle */}
-        <div className="sm:hidden">
-          <button onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
+    {/* Desktop Menu */}
+    <div className="hidden sm:flex items-center gap-5">
+      {isAuthenticated && loggedInUser?.role !== 'admin' && <NotificationBell />}
+
+      {isAuthenticated ? (
+        <>
+          <span className="px-4 py-1.5 bg-blue-100 text-blue-800 rounded-full font-medium">
+            {userName}
+          </span>
+
+          {loggedInUser?.role !== 'admin' && (
+            <Link href="/dashboard" className="text-slate-700 hover:text-blue-600">
+              Dashboard
+            </Link>
+          )}
+
+          {!isProfilePage && (
+            <Link href="/profile" className="text-slate-700 hover:text-blue-600">
+              Profile
+            </Link>
+          )}
+
+          {!isFilterLeadsPage && (
+            <Link href="/filter-leads" className="text-slate-700 hover:text-blue-600">
+              Filter Leads
+            </Link>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="text-red-500 hover:text-red-600 font-medium"
+          >
+            Logout
           </button>
-        </div>
-
-        {/* Desktop Links */}
-        <div className="hidden sm:flex items-center gap-6 text-lg font-medium">
-          {isAuthenticated && loggedInUser?.role !== 'admin' && <NotificationBell />}
-
-          {isAuthenticated ? (
-            <>
-              <span className="hidden sm:inline-block px-3 py-1 bg-white text-blue-800 rounded-full font-semibold">
-                {userName}
-              </span>
-
-              {loggedInUser?.role !== 'admin' && (
-                <Link href="/dashboard" className="hover:underline">
-                  Dashboard
-                </Link>
-              )}
-
-              {!isProfilePage && (
-                <Link href="/profile" className="hover:underline">
-                  Profile
-                </Link>
-              )}
-
-              {!isFilterLeadsPage && (
-                <Link href="/filter-leads" className="hover:underline">
-                  Filter Leads
-                </Link>
-              )}
-
-              <button onClick={handleLogout} className="hover:underline text-red-200">
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/register" className="hover:underline">
-                Register
-              </Link>
-              <Link href="/login" className="hover:underline">
-                Login
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="sm:hidden mt-4 flex flex-col gap-3 text-base font-medium px-2">
-          {isAuthenticated && loggedInUser?.role !== 'admin' && <NotificationBell />}
-
-          {isAuthenticated ? (
-            <>
-              <span className="px-3 py-1 bg-white text-blue-800 rounded-full font-semibold w-fit">
-                {userName}
-              </span>
-
-              {loggedInUser?.role !== 'admin' && (
-                <Link href="/dashboard" className="hover:underline">
-                  Dashboard
-                </Link>
-              )}
-
-              {!isProfilePage && (
-                <Link href="/profile" className="hover:underline">
-                  Profile
-                </Link>
-              )}
-
-              {!isFilterLeadsPage && (
-                <Link href="/filter-leads" className="hover:underline">
-                  Filter Leads
-                </Link>
-              )}
-
-              <button onClick={handleLogout} className="hover:underline text-red-200 text-left">
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/register" className="hover:underline">
-                Register
-              </Link>
-              <Link href="/login" className="hover:underline">
-                Login
-              </Link>
-            </>
-          )}
-        </div>
+        </>
+      ) : (
+        <>
+          <Link href="/register" className="text-slate-700 hover:text-blue-600">
+            Register
+          </Link>
+          <Link href="/login" className="text-slate-700 hover:text-blue-600">
+            Login
+          </Link>
+        </>
       )}
-    </nav>
+    </div>
+
+    {/* Mobile Menu Toggle */}
+    <div className="sm:hidden">
+      <button onClick={() => setMenuOpen(!menuOpen)}>
+        {menuOpen ? (
+          <XMarkIcon className="w-6 h-6 text-slate-700" />
+        ) : (
+          <Bars3Icon className="w-6 h-6 text-slate-700" />
+        )}
+      </button>
+    </div>
+  </div>
+
+  {/* Mobile Menu */}
+  {menuOpen && (
+    <div className="sm:hidden flex flex-col gap-3 px-4 py-3 border-t border-slate-200 bg-white">
+      {isAuthenticated && loggedInUser?.role !== 'admin' && <NotificationBell />}
+      {isAuthenticated ? (
+        <>
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full w-fit">
+            {userName}
+          </span>
+          <Link href="/dashboard" className="text-slate-700 hover:text-blue-600">
+            Dashboard
+          </Link>
+          <Link href="/profile" className="text-slate-700 hover:text-blue-600">
+            Profile
+          </Link>
+          <Link href="/filter-leads" className="text-slate-700 hover:text-blue-600">
+            Filter Leads
+          </Link>
+          <button onClick={handleLogout} className="text-red-500 text-left">
+            Logout
+          </button>
+        </>
+      ) : (
+        <>
+          <Link href="/register" className="text-slate-700 hover:text-blue-600">
+            Register
+          </Link>
+          <Link href="/login" className="text-slate-700 hover:text-blue-600">
+            Login
+          </Link>
+        </>
+      )}
+    </div>
+  )}
+</nav>
+
   );
 };
 export default Navbar;

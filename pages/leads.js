@@ -203,7 +203,6 @@ const LeadsPage = () => {
   const prev = () => setIdx((i) => Math.max(0, i - 1));
   const next = () => setIdx((i) => Math.min(filtered.length - 1, i + 1));
 
-  // ----- UI -----
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-[#eef4ff]">

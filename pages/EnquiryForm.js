@@ -265,6 +265,52 @@ setSubmittedData({
     }
   };
 
+  // add this new function
+const handleStage1Next = async () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const createdBy = user?._id;
+  if (!createdBy) {
+    toast.error("User not logged in.");
+    return;
+  }
+
+  let theLeadId = leadId || localStorage.getItem("leadId");
+  if (!theLeadId) {
+    toast.error("Lead ID missing.");
+    return;
+  }
+
+  const dataToSave = {
+    ...formData,
+    createdBy,
+    leadId: theLeadId,
+  };
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${BASE_URL}/api/enquiry`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(dataToSave),
+    });
+    const result = await res.json();
+    if (res.ok) {
+      localStorage.setItem("enquiryId", result.enquiryId);
+      toast.success("Stage 1 saved ✅");
+      setStage(2);
+    } else {
+      toast.error(result.error || "Failed to save Stage 1");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Server error while saving Stage 1");
+  }
+};
+
+
   // when category changes, send to separate luxury page
   const handleCategoryChange = (e) => {
     const next = e.target.value;
@@ -408,16 +454,20 @@ setSubmittedData({
               <SelectField label="How did you hear about us?" name="referralSource" value={formData.referralSource} onChange={handleChange} options={['Google/Website','Insta/Youtube/Facebook','Referral','Other']} />
 
               <div className="md:col-span-2 text-center mt-4">
-                <button type="button" onClick={() => setStage(2)} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                  Next
-                </button>
+                <button
+  type="button"
+  onClick={handleStage1Next}
+  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+>
+  Next
+</button>
+
               </div>
             </motion.div>
           )}
 
           {stage === 2 && (
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-4">
-              {/* Category select that redirects if Luxury */}
               <div>
                 <label className="block text-sm font-semibold mb-1 text-gray-700">Bus Category</label>
                 <select
@@ -467,7 +517,7 @@ setSubmittedData({
         {submittedData?.enquiryId && (
           <div className="mt-6 text-center">
            <a
-  href={`/enquiry/pdf/${submittedData.leadId}?enquiryId=${submittedData.enquiryId}`}
+  href={`/api/enquiry/pdf/${submittedData.enquiryId}`}
   target="_blank"
   rel="noopener noreferrer"
   className="inline-block bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"

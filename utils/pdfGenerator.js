@@ -56,6 +56,25 @@ const buildPDF = (data) => {
 
   autoTable(doc, { startY: nextY(doc), head: [["Field", "Value"]], body: basicInfo, ...tableConfig });
 
+  // 🔹 Business & Personal Details (added section)
+  const businessPersonal = buildRows(
+    {
+      "Type of Buses in Fleet": data.businessTypeOfBuses,
+      "Number of Buses": data.businessNumberOfBuses,
+      "Previous Body Builder": data.businessPreviousBodyBuilder,
+      "Buses per Year": data.businessBusesPerYear,
+      "Employees": data.businessEmployees,
+      "Expertise Area": data.businessExpertiseArea,
+      "Education": data.education,
+      "Hobbies": data.hobbies,
+      "Behavior": data.behavior,
+      "Customer Type": data.customerType,
+    },
+    "Business & Personal Details"
+  );
+
+  autoTable(doc, { startY: nextY(doc), head: [["Field", "Value"]], body: businessPersonal, ...tableConfig });
+
   // Bus Details
   const busDetails = buildRows(
     {
