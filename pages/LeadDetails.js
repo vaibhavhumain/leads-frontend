@@ -1045,7 +1045,8 @@ Business Development Executive
   window.open(url, '_blank');
 };
 
-const creatorName = lead.createdBy?.name || "Our Team";
+const creatorName = lead?.createdBy?.name || "Our Team";
+
 
 
 const notSendWhatsAppMessage = (lead) => {
