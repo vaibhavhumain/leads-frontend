@@ -509,22 +509,9 @@ const Dashboard = () => {
                   >
                     <FiMenu />
                   </button>
-                  <div className="hidden sm:flex items-center gap-2">
-                    <div className="text-slate-700 font-semibold">Leads Portal</div>
-                  </div>
                 </div>
 
                 <div className="flex-1 max-w-2xl mx-6 hidden md:flex">
-                  <div className="relative w-full">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search by phone number…"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
                 </div>
               </div>
             </div>
