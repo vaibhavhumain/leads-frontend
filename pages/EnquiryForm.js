@@ -247,11 +247,8 @@ setSubmittedData({
   enquiryId: result.enquiryId,
 });
 
- if (category === "Luxury") {
-  router.push(`/LuxuryBusForm?leadId=${result.leadId}&enquiryId=${result.enquiryId}`);
-} else {
-  router.push(`/enquiry/pdf/${result.leadId}?enquiryId=${result.enquiryId}`);
-}
+router.push(`/EnquiryForm?leadId=${result.leadId}&enquiryId=${result.enquiryId}`);
+
   resetForm();
 }
  else {
@@ -381,16 +378,18 @@ const handleStage1Next = async () => {
       <div className="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-10">
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Customer Enquiry Form</h2>
 
-        {submittedData?.leadId && (
-  <div className="mt-6 text-center">
+       {leadId && (
+  <div className="mt-4 text-center">
     <button
-      onClick={() => router.push(`/PdfViewer?leadId=${submittedData.leadId}`)}
-      className="inline-block bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
+      type="button"
+      onClick={() => router.push(`/lead-pdfs?leadId=${leadId}`)}
+      className="inline-block bg-indigo-600 text-white px-5 py-2 rounded hover:bg-indigo-700 transition"
     >
-      View All PDFs
+      📑 View All PDFs
     </button>
   </div>
 )}
+
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {stage === 1 && (
@@ -461,7 +460,7 @@ const handleStage1Next = async () => {
 >
   Next
 </button>
-
+              
               </div>
             </motion.div>
           )}
