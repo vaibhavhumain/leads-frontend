@@ -133,10 +133,46 @@ useEffect(() => {
 
 
 
-  if (loading)
-    return <p className="text-center text-gray-500 mt-10">Loading lead...</p>;
-  if (!lead)
-    return <p className="text-center text-red-500 mt-10">Lead not found</p>;
+if (loading) {
+  return (
+    <div className="flex flex-col items-center justify-center h-64">
+      <motion.div
+        className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+      />
+      <motion.p
+        className="mt-4 text-blue-600 font-medium"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ repeat: Infinity, duration: 1.5, repeatType: "reverse" }}
+      >
+        Loading lead...
+      </motion.p>
+    </div>
+  );
+}
+
+if (!lead) {
+  return (
+    <motion.div
+      className="flex flex-col items-center justify-center h-64"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        className="w-16 h-16 bg-red-100 text-red-500 flex items-center justify-center rounded-full shadow-md"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 200, damping: 10 }}
+      >
+        ⚠️
+      </motion.div>
+      <p className="mt-4 text-red-600 font-medium">Lead not found</p>
+    </motion.div>
+  );
+}
 
   const headingVariants = {
     hidden: { opacity: 0, x: -20 },

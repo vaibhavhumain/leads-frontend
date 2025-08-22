@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic";
-
+import {motion} from "framer-motion";
 import { useEffect, useState , useRef} from 'react';
 import axios from 'axios';
 import BASE_URL from '../utils/api';
@@ -11,6 +11,7 @@ import {useRouter} from 'next/router';
 import LifecycleToggle from '../components/LifecycleToggle';
 import downloadLeadReport from '../components/downloadLeadReport'
 import { FaEdit } from 'react-icons/fa';
+import ShareSidebar from "../components/ShareSidebar";
 const LeadDetails = () => { 
   const router=useRouter();
   const [lead, setLead] = useState(null);
@@ -1159,137 +1160,149 @@ const isFrozenByCreator =
   currentLead?.forwardedTo?.user?._id &&
   currentLead?.isFrozen;
 
-  if (loadingLead) return <p>Loading lead...</p>;
-  if (!lead) return  <p>No lead found</p>
-  if (!lead) {
-    return <p>Loading lead details...</p>;
-  } 
+  if (loadingLead) {
+  return (
+    <div className="flex flex-col items-center justify-center h-64">
+      <motion.div
+        className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+      />
+      <p className="mt-4 text-blue-600 font-medium">Loading lead details...</p>
+    </div>
+  );
+}
+
+if (!lead) {
+  return (
+    <motion.div
+      className="flex flex-col items-center justify-center h-64"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.div
+        className="w-16 h-16 bg-red-100 text-red-500 flex items-center justify-center rounded-full"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 200 }}
+      >
+        ⚠️
+      </motion.div>
+      <p className="mt-4 text-red-600 font-medium">No lead found</p>
+    </motion.div>
+  );
+}
 
   return (  
-    <ProtectedRoute>
-      <Navbar />
-      <div className="relative min-h-screen w-full bg-gray-50 py-12 px-4 flex items-start justify-center overflow-hidden font-sans">
-      <div className="absolute top-0 left-0 w-80 h-80 bg-pink-200 rounded-full filter blur-3xl opacity-20" />
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-red-100 rounded-full filter blur-2xl opacity-10" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-100 rounded-full filter blur-3xl opacity-5" />
+  <ProtectedRoute>
+    <Navbar />
+    <div className="relative min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12 px-4 flex items-start justify-center font-sans">
+      {/* Background accents */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-pink-200 rounded-full filter blur-3xl opacity-10" />
+      <div className="absolute top-1/2 right-0 w-72 h-72 bg-purple-200 rounded-full filter blur-3xl opacity-10" />
+      <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-indigo-100 rounded-full filter blur-2xl opacity-10" />
 
       <Link href="/dashboard"></Link>
 
-       <div className="relative z-10 bg-white p-8 rounded-xl shadow-md border border-gray-200 w-full max-w-2xl transition">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Lead Card Details</h2>
-          {/* Last Edited Timestamp */}
-{lead.lastEditedAt && (
-  <div className="mb-3 flex items-center gap-2">
-    <span className="text-xs text-gray-500">
-      <b>Last Edited:</b>{' '}
-      {new Date(lead.lastEditedAt).toLocaleString('en-IN', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })}
-    </span>
-  </div>
-)}
+      <div className="relative z-10 bg-white p-8 rounded-2xl shadow-lg border border-gray-200 w-full max-w-3xl transition">
+        <h2 className="text-3xl font-bold text-gray-900 mb-6">Lead Card Details</h2>
 
-{lead.createdBy && (
-  <div className="text-xs text-gray-500 mb-3">
-    <b>Last Edited By:</b> {lead.createdBy.name}
-    {" "}
-    (<span>{lead.createdBy.email}</span>)
-  </div>
-)}
+        {/* Last Edited Info */}
+        {lead.lastEditedAt && (
+          <div className="mb-3 text-sm text-gray-500 flex items-center gap-2">
+            <b>Last Edited:</b>{' '}
+            {new Date(lead.lastEditedAt).toLocaleString('en-IN', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </div>
+        )}
 
-        {/* Header */}
+        {lead.createdBy && (
+          <div className="text-sm text-gray-500 mb-5">
+            <b>Edited By:</b> {lead.createdBy.name} (<span>{lead.createdBy.email}</span>)
+          </div>
+        )}
+
+        {/* Header Section */}
         <div className="flex justify-between items-start gap-6 flex-wrap mb-6">
-          <div className="flex flex-col gap-1">
-  <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-    {editingClientNameId === lead._id ? (
-      <>
-        <input
-          value={editedClientName}
-          onChange={(e) => setEditedClientName(e.target.value)}
-          className="border px-2 py-1 rounded text-base"
-        />
-        <button onClick={handleSave} className="text-green-600">Save</button>
-        <button onClick={() => setEditingClientNameId(null)} className="text-red-500">Cancel</button>
-      </>
-    ) : (
-      <>
-        <span>{lead.leadDetails?.clientName || 'No Name'}</span>
-        <FaEdit
-          className="text-indigo-400 cursor-pointer hover:text-indigo-700"
-          onClick={() => {
-            setEditingClientNameId(lead._id);
-            setEditedClientName(lead.leadDetails?.clientName || '');
-          }}
-        />
-      </>
-    )}
-  </h2>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              {/* Client Name Editable */}
+              {editingClientNameId === lead._id ? (
+                <>
+                  <input
+                    value={editedClientName}
+                    onChange={(e) => setEditedClientName(e.target.value)}
+                    className="border px-2 py-1 rounded text-base shadow-sm"
+                  />
+                  <button onClick={handleSave} className="text-green-600 font-medium hover:underline">Save</button>
+                  <button onClick={() => setEditingClientNameId(null)} className="text-red-500 font-medium hover:underline">Cancel</button>
+                </>
+              ) : (
+                <>
+                  <span>{lead.leadDetails?.clientName || 'No Name'}</span>
+                  <FaEdit
+                    className="text-indigo-500 cursor-pointer hover:text-indigo-700"
+                    onClick={() => {
+                      setEditingClientNameId(lead._id);
+                      setEditedClientName(lead.leadDetails?.clientName || '');
+                    }}
+                  />
+                </>
+              )}
+            </h2>
 
-  {/* Company */}
-  {editingCompanyNameId === lead._id ? (
-  <div className="flex gap-2 items-center mt-1">
-    <input
-      value={editedCompanyName}
-      onChange={(e) => setEditedCompanyName(e.target.value)}
-      className="border px-2 py-1 rounded text-sm"
-    />
-    <button onClick={() => updateCompanyName(lead._id)} className="text-green-600 text-sm">
-      Save
-    </button>
-    <button onClick={() => setEditingCompanyNameId(null)} className="text-red-500 text-sm">
-      Cancel
-    </button>
-  </div>
-) : (
-  lead.leadDetails?.companyName && (
-    <div
-      className="text-sm text-indigo-700 font-medium cursor-pointer hover:underline"
-      onClick={() => {
-        setEditingCompanyNameId(lead._id);
-        setEditedCompanyName(lead.leadDetails.companyName || '');
-      }}
-    >
-      🏢 {lead.leadDetails.companyName}
-    </div>
-  )
-)}
+            {/* Company */}
+            {editingCompanyNameId === lead._id ? (
+              <div className="flex gap-2 items-center mt-1">
+                <input
+                  value={editedCompanyName}
+                  onChange={(e) => setEditedCompanyName(e.target.value)}
+                  className="border px-2 py-1 rounded text-sm shadow-sm"
+                />
+                <button onClick={() => updateCompanyName(lead._id)} className="text-green-600 text-sm hover:underline">Save</button>
+                <button onClick={() => setEditingCompanyNameId(null)} className="text-red-500 text-sm hover:underline">Cancel</button>
+              </div>
+            ) : (
+              lead.leadDetails?.companyName && (
+                <div
+                  className="text-sm text-indigo-600 font-medium cursor-pointer hover:underline"
+                  onClick={() => {
+                    setEditingCompanyNameId(lead._id);
+                    setEditedCompanyName(lead.leadDetails.companyName || '');
+                  }}
+                >
+                  🏢 {lead.leadDetails.companyName}
+                </div>
+              )
+            )}
 
-{/* Location */}
-{editingLocationId === lead._id ? (
-  <div className="flex gap-2 items-center mt-1">
-    <input
-      value={editedLocation}
-      onChange={(e) => setEditedLocation(e.target.value)}
-      className="border px-2 py-1 rounded text-sm"
-    />
-    <button
-      onClick={() => updateLocation(lead._id)}
-      className="text-green-600 text-sm"
-    >
-      Save
-    </button>
-    <button
-      onClick={() => setEditingLocationId(null)}
-      className="text-red-500 text-sm"
-    >
-      Cancel
-    </button>
-  </div>
-) : (
-  lead.leadDetails?.location && (
-    <div
-      className="text-sm text-blue-600 font-medium cursor-pointer hover:underline"
-      onClick={() => {
-        setEditingLocationId(lead._id);
-        setEditedLocation(lead.leadDetails.location || '');
-      }}
-    >
-      📍 {lead.leadDetails.location}
-    </div>
-  )
-)}
+            {/* Location */}
+            {editingLocationId === lead._id ? (
+              <div className="flex gap-2 items-center mt-1">
+                <input
+                  value={editedLocation}
+                  onChange={(e) => setEditedLocation(e.target.value)}
+                  className="border px-2 py-1 rounded text-sm shadow-sm"
+                />
+                <button onClick={() => updateLocation(lead._id)} className="text-green-600 text-sm hover:underline">Save</button>
+                <button onClick={() => setEditingLocationId(null)} className="text-red-500 text-sm hover:underline">Cancel</button>
+              </div>
+            ) : (
+              lead.leadDetails?.location && (
+                <div
+                  className="text-sm text-blue-600 font-medium cursor-pointer hover:underline"
+                  onClick={() => {
+                    setEditingLocationId(lead._id);
+                    setEditedLocation(lead.leadDetails.location || '');
+                  }}
+                >
+                  📍 {lead.leadDetails.location}
+                </div>
+              )
+            )}
 
 {/* Editable Contact Numbers */}
 {editingPrimaryContactId === lead._id ? (
@@ -1809,41 +1822,13 @@ const isFrozenByCreator =
 </div>
 
 {/* Share Buttons */}
-<div className="w-full flex justify-end">
-  <div className="flex flex-wrap gap-3 mb-6 max-w-xl justify-end">
-    
-
-    {/* WhatsApp (Connected) */}
-    <button
-      onClick={() => sendWhatsAppMessage(lead)}
-      className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition"
-    >
-      📩 WhatsApp (Connected)
-    </button>
-
-    {/* WhatsApp (Not Connected) */}
-    <button
-      onClick={() => notSendWhatsAppMessage(lead)}
-      className="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 transition"
-    >
-      📩 WhatsApp (Not Connected)
-    </button>
-
-    {/* Send PDF */}
-    <button
-      onClick={() => sendWhatsAppPdf(lead)}
-      className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 transition"
-    >
-      📄 PDF
-    </button>
-
-    {/* Photos Link */}
-    <Link href="/gallery" passHref legacyBehavior>
-      <a className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 transition">
-        🖼️ Photos
-      </a>
-    </Link>
-  </div>
+<div className="w-full flex justify-end mb-6">
+  <ShareSidebar
+    lead={lead}
+    sendWhatsAppMessage={sendWhatsAppMessage}
+    notSendWhatsAppMessage={notSendWhatsAppMessage}
+    sendWhatsAppPdf={sendWhatsAppPdf}
+  />
 </div>
 
 {/* Contact Picker Modal */}
