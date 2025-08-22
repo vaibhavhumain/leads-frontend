@@ -148,7 +148,8 @@ const onSubmit = async (e) => {
   }
 
   const luxuryPayload = {
-    modelName: data.suggestedModel || "",  
+  modelName: data.suggestedModel || "",
+  luxuryData: {
     windowType: data.windowType || "",
     requiredNoEachSide: data.requiredNoEachSide || "",
     tintOfShades: data.tintOfShades || "",
@@ -175,9 +176,9 @@ const onSubmit = async (e) => {
     helperFootStep: data.helperFootStep || "",
     rearBackJaal: data.rearBackJaal || "",
     cabinType: data.cabinType || "",
-    category: "Luxury",
-  };
-
+  },
+  category: "Luxury",
+};
   try {
     // ✅ Save luxury details
     const res = await fetch(`${BASE_URL}/api/enquiry/luxury/${id}`, {
