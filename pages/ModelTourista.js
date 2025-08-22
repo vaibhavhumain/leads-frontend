@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getModelConfig, EXTRA_COST_FITMENTS } from "../utils/models";
-
-/* small helpers */
+import BASE_URL from "../utils/api";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+ 
 const otherKey = (key) => `${key}__Other`;
 
 const FieldLabel = ({ children }) => (
@@ -20,26 +22,27 @@ const Section = ({ title, subtitle, children }) => (
   </div>
 );
 
-export default function ArrowBusForm() {
+export default function TouristaBusForm() {
   const router = useRouter();
 
   // keep leadId from query or localStorage, and persist it
   const [leadId, setLeadId] = useState("");
   useEffect(() => {
     if (!router.isReady) return;
-    const fromQuery = router.query.leadId ? String(router.query.leadId) : "";
-    const stored = typeof window !== "undefined" ? localStorage.getItem("leadId") || "" : "";
-    const id = fromQuery || stored;
-    if (fromQuery) localStorage.setItem("leadId", fromQuery);
-    setLeadId(id);
+
+    const fromLead = router.query.leadId ? String(router.query.leadId) : "";
+    const storedLead =
+      typeof window !== "undefined" ? localStorage.getItem("leadId") || "" : "";
+    const lead = fromLead || storedLead;
+    if (fromLead) localStorage.setItem("leadId", fromLead);
+    setLeadId(lead);
   }, [router.isReady, router.query.leadId]);
 
   const [isClient, setIsClient] = useState(false);
   const [luxuryData, setLuxuryData] = useState({});
 
-  // ----- model config (SAFE) -----
   const MODEL_NAME = "Tourista";
-  const modelConfig = getModelConfig(MODEL_NAME); // safe: always has arrays
+  const modelConfig = getModelConfig(MODEL_NAME); 
 
   const customExtras = Array.isArray(luxuryData["EXTRA::CUSTOM_LIST"])
     ? luxuryData["EXTRA::CUSTOM_LIST"]
@@ -68,7 +71,9 @@ export default function ArrowBusForm() {
   };
 
   const updateCustomExtra = (idx, key, value) => {
-    const next = customExtras.map((row, i) => (i === idx ? { ...row, [key]: value } : row));
+    const next = customExtras.map((row, i) =>
+      i === idx ? { ...row, [key]: value } : row
+    );
     handleChange("EXTRA::CUSTOM_LIST", next);
   };
 
@@ -77,17 +82,63 @@ export default function ArrowBusForm() {
     handleChange("EXTRA::CUSTOM_LIST", next);
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    console.log("Luxury form (Arrow):", luxuryData);
-    alert("Saved luxury details ✅");
+
+    if (!leadId) {
+      alert("❌ No leadId found. Please go back and start from Enquiry form.");
+      return;
+    }
+
+    const payload = {
+      modelName: MODEL_NAME,
+      standardFitments: (getModelConfig(MODEL_NAME).standardFitments || []).map(
+        (f) => ({
+          key: f.key,
+          label: f.label,
+          suggested: f.suggested,
+          choice: luxuryData[`${f.key}__Choice`] || "Suggested",
+          otherValue: luxuryData[`${f.key}__Other`] || "",
+        })
+      ),
+      optionalFitmentsSelected: luxuryData.optionalFitmentsSelected || [],
+      extraCostFitments: EXTRA_COST_FITMENTS.map((f) => ({
+        key: f.key,
+        label: f.label,
+        checked: !!luxuryData[`${f.key}__Checked`],
+        company: luxuryData[`${f.key}__Company`] || "",
+      })),
+      customExtras: luxuryData["EXTRA::CUSTOM_LIST"] || [],
+      luxuryData,
+    };
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${BASE_URL}/api/enquiry/luxury/${leadId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to save luxury data");
+toast.success("Luxury details saved ✅");
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error("❌ Failed to save luxury details");
+
+    }
   };
 
   if (!isClient) return null;
 
   // --- renderer for standard fitments ---
   const renderStandardFitmentRow = ({ key, label, suggested }) => {
-    const choice = luxuryData[`${key}__Choice`] || (suggested ? "Suggested" : "Other");
+    const choice =
+      luxuryData[`${key}__Choice`] || (suggested ? "Suggested" : "Other");
     return (
       <div key={key} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -117,7 +168,13 @@ export default function ArrowBusForm() {
         </div>
 
         {suggested && (
-          <div className={`mt-2 text-sm ${choice === "Suggested" ? "text-gray-700" : "text-gray-400 line-through"}`}>
+          <div
+            className={`mt-2 text-sm ${
+              choice === "Suggested"
+                ? "text-gray-700"
+                : "text-gray-400 line-through"
+            }`}
+          >
             <span className="font-semibold">Suggested:</span> {suggested || "-"}
           </div>
         )}
@@ -180,8 +237,6 @@ export default function ArrowBusForm() {
         </div>
       </Section>
 
-     
-
       {/* Optional Fitment at Extra Cost */}
       <Section
         title="Optional Fitment at Extra Cost"
@@ -191,16 +246,23 @@ export default function ArrowBusForm() {
           {EXTRA_COST_FITMENTS.map(({ key, label }, idx) => {
             const checked = !!luxuryData[`${key}__Checked`];
             return (
-              <div key={key} className="rounded-xl border border-gray-200 bg-gray-50 p-4 flex flex-col gap-2">
+              <div
+                key={key}
+                className="rounded-xl border border-gray-200 bg-gray-50 p-4 flex flex-col gap-2"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <label className="flex items-center gap-3 font-medium text-gray-800">
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={(e) => handleChange(`${key}__Checked`, e.target.checked)}
+                      onChange={(e) =>
+                        handleChange(`${key}__Checked`, e.target.checked)
+                      }
                     />
                     <span className="leading-tight">
-                      <span className="mr-2 text-xs text-gray-500">#{String(idx + 1).padStart(2, "0")}</span>
+                      <span className="mr-2 text-xs text-gray-500">
+                        #{String(idx + 1).padStart(2, "0")}
+                      </span>
                       {label}
                     </span>
                   </label>
@@ -211,7 +273,9 @@ export default function ArrowBusForm() {
                   placeholder="Company / Description"
                   className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={luxuryData[`${key}__Company`] || ""}
-                  onChange={(e) => handleChange(`${key}__Company`, e.target.value)}
+                  onChange={(e) =>
+                    handleChange(`${key}__Company`, e.target.value)
+                  }
                   disabled={!checked}
                 />
               </div>
@@ -293,7 +357,9 @@ export default function ArrowBusForm() {
         >
           ← Go Back to Luxury Form
         </button>
+        <ToastContainer position="top-right" autoClose={3000} pauseOnHover={false} theme="colored" />
       </div>
     </form>
+    
   );
 }

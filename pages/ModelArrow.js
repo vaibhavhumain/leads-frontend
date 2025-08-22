@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { getModelConfig, EXTRA_COST_FITMENTS } from "../utils/models";
 import BASE_URL from "../utils/api";
-
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+ 
 const otherKey = (key) => `${key}__Other`;
 
 const FieldLabel = ({ children }) => (
@@ -22,7 +24,6 @@ const Section = ({ title, subtitle, children }) => (
 
 export default function ArrowBusForm() {
   const router = useRouter();
-
   // keep leadId from query or localStorage, and persist it
   const [leadId, setLeadId] = useState("");
   useEffect(() => {
@@ -39,9 +40,8 @@ export default function ArrowBusForm() {
   const [isClient, setIsClient] = useState(false);
   const [luxuryData, setLuxuryData] = useState({});
 
-  // ----- model config (SAFE) -----
   const MODEL_NAME = "Arrow";
-  const modelConfig = getModelConfig(MODEL_NAME); // safe: always has arrays
+  const modelConfig = getModelConfig(MODEL_NAME); 
 
   const customExtras = Array.isArray(luxuryData["EXTRA::CUSTOM_LIST"])
     ? luxuryData["EXTRA::CUSTOM_LIST"]
@@ -124,11 +124,11 @@ export default function ArrowBusForm() {
       });
 
       if (!res.ok) throw new Error("Failed to save luxury data");
-
-      alert("Luxury details saved ✅");
+toast.success("Luxury details saved ✅");
     } catch (err) {
       console.error("Save error:", err);
-      alert("❌ Failed to save luxury details");
+      toast.error("❌ Failed to save luxury details");
+
     }
   };
 
@@ -356,7 +356,9 @@ export default function ArrowBusForm() {
         >
           ← Go Back to Luxury Form
         </button>
+        <ToastContainer position="top-right" autoClose={3000} pauseOnHover={false} theme="colored" />
       </div>
     </form>
+    
   );
 }
