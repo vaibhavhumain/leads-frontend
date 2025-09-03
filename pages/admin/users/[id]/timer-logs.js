@@ -16,7 +16,7 @@ function formatDuration(seconds) {
 const UserTimerLogsPage = () => {
   const router = useRouter();
   const { id } = router.query;
-
+  
   const [timerLogs, setTimerLogs] = useState([]);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loading, setLoading] = useState(true);
