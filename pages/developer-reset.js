@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
-import BASE_URL from '../utils/api'; // make sure this points to your backend
+import BASE_URL from '../utils/api'; 
 
 export default function DeveloperResetPassword() {
   const router = useRouter();

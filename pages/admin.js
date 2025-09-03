@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import ProtectedRoute from '../components/ProtectedRoute';
-import Navbar from '../components/Navbar';
+import AdminNavbar from '../components/AdminNavbar';
 import BASE_URL from '../utils/api';
 import { motion , AnimatePresence} from 'framer-motion';
 import { FaUser , FaChevronLeft , FaChevronRight , FaUserTie , FaPhoneAlt , FaBuilding , FaMapMarkerAlt  } from 'react-icons/fa';
@@ -269,7 +269,7 @@ const getUserDurationDistribution = (timerLogs) => {
 
   return (
   <ProtectedRoute>
-    <Navbar loggedInUser={loggedInUser} />
+    <AdminNavbar loggedInUser={loggedInUser} />
       <div className="p-4 sm:p-8 bg-white min-h-screen">
       <motion.h1
   className="text-3xl sm:text-4xl font-bold text-center text-indigo-700 mb-8"
