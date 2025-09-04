@@ -4,6 +4,7 @@ import ProtectedRoute from "../../components/ProtectedRoute";
 import AdminNavbar from "../../components/AdminNavbar";
 import BASE_URL from "../../utils/api";
 import ReportsSection from "../../components/ReportSection";
+import { ReportsSectionExcel } from "../../components/reports";
 import {
   PieChart,
   Pie,
@@ -350,6 +351,9 @@ const AdminDashboard = () => {
         </div>
         <div className="mt-10">
         <ReportsSection users={users} loggedInUser={loggedInUser} />
+        </div>
+        <div className="mt-10">
+        <ReportsSectionExcel users={users} loggedInUser={loggedInUser} />
         </div>
       </div>
     </ProtectedRoute>

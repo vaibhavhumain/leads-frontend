@@ -4,7 +4,6 @@ import axios from "axios";
 import BASE_URL from "../../../../utils/api";
 import AdminNavbar from "../../../../components/AdminNavbar";
 
-// 🔹 Helper: format duration from seconds → hh:mm:ss
 function formatDuration(seconds) {
   if (!seconds || seconds <= 0) return "0s";
   const h = Math.floor(seconds / 3600);
