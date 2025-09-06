@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { FaBriefcase } from "react-icons/fa";
+import { useRouter } from "next/router";
 
 const AdminNavbar = ({ loggedInUser }) => {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
   return (
     <nav className="flex justify-between items-center px-6 py-3 bg-white shadow">
       {/* Left Section (Logo + Brand) */}
@@ -12,10 +20,11 @@ const AdminNavbar = ({ loggedInUser }) => {
 
       {/* Right Section (Links + User) */}
       <div className="flex items-center gap-6">
-        { /* Logged in user */}
+        {/* Logged in user */}
         <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 font-medium">
           {loggedInUser?.role === "admin" ? "Admin" : "User"}
         </span>
+
         {/* Dashboard */}
         <Link
           href="/admin/dashboard"
@@ -31,13 +40,14 @@ const AdminNavbar = ({ loggedInUser }) => {
         >
           Users
         </Link>
+
         {/* Logout */}
-        <Link
-          href="/logout"
-          className="text-red-600 hover:text-red-800 font-medium"
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1 rounded bg-red-100 text-red-500 hover:text-red-600 font-medium"
         >
           Logout
-        </Link>
+        </button>
       </div>
     </nav>
   );

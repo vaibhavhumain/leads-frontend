@@ -119,7 +119,6 @@ const Navbar = ({ loggedInUser }) => {
                   Filter Leads
                 </Link>
               )}
-
               <button
                 onClick={handleLogout}
                 className="text-red-500 hover:text-red-600 font-medium"
