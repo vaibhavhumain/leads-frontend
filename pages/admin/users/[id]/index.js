@@ -34,7 +34,6 @@ const UserDetailsPage = () => {
     fetchUserDetails();
   }, [id]);
 
-  // ✨ Custom Loading Animation
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gradient-to-br from-indigo-100 via-white to-indigo-200">
@@ -92,13 +91,19 @@ const UserDetailsPage = () => {
           >
             ⏱️ View Timer Logs
           </Link>
+          <Link
+            href={`/admin/users/${user._id}/edit-dates`}
+            className="px-6 py-3 bg-yellow-500 text-white rounded-xl shadow hover:bg-yellow-600 transform hover:-translate-y-1 transition"
+          >
+            🗓️ View Edit Dates
+          </Link>
         </div>
       </div>
     </>
   );
 };
 
-// ✨ Animations (Tailwind custom keyframes)
+// ✨ Animations
 const styles = `
 @tailwind base;
 @tailwind components;
