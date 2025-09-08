@@ -24,14 +24,21 @@ export default function LeadPdfsPage() {
       return;
     }
 
-    // ✅ Fetch PDFs
+    // ✅ Fetch PDFs (only latest one)
     axios
       .get(`${BASE_URL}/api/enquiry/all-pdfs/${leadId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
         setError("");
-        setPdfs(res.data);
+
+        // 🛑 Sort by createdAt (latest first)
+        const sorted = res.data.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        // ✅ Keep only the latest PDF
+        setPdfs(sorted.length > 0 ? [sorted[0]] : []);
         setLoading(false);
       })
       .catch((err) => {
@@ -86,10 +93,10 @@ export default function LeadPdfsPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <h1 className="text-2xl font-bold mb-4 text-gray-700">
-          Loading Enquiry PDFs...
+          Loading Enquiry PDF...
         </h1>
         <ul className="space-y-4">
-          {[1, 2, 3].map((i) => (
+          {[1].map((i) => (
             <li
               key={i}
               className="p-4 border rounded-lg bg-white shadow-sm animate-pulse"
@@ -109,14 +116,14 @@ export default function LeadPdfsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-2xl font-bold mb-4">
-        Enquiry PDFs for Lead:{" "}
+        Final Enquiry PDF for Lead:{" "}
         <span className="text-indigo-600 break-all">
           {leadName || leadId}
         </span>
       </h1>
 
       {pdfs.length === 0 ? (
-        <p>No PDFs found for this lead.</p>
+        <p>No final PDF found for this lead.</p>
       ) : (
         <ul className="space-y-4">
           {pdfs.map((pdf) => (
