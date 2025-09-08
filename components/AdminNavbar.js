@@ -27,7 +27,7 @@ const AdminNavbar = ({ loggedInUser }) => {
 
         {/* Dashboard */}
         <Link
-          href="/admin/dashboard"
+          href="/dashboard"
           className="text-gray-700 hover:text-blue-600 font-medium"
         >
           Dashboard
