@@ -385,7 +385,7 @@ const handleStage1Next = async () => {
       onClick={() => router.push(`/lead-pdfs?leadId=${leadId}`)}
       className="inline-block bg-indigo-600 text-white px-5 py-2 rounded hover:bg-indigo-700 transition"
     >
-      📑 View All PDFs
+      📑 View All Excels
     </button>
   </div>
 )}
@@ -516,14 +516,13 @@ const handleStage1Next = async () => {
         {submittedData?.enquiryId && (
           <div className="mt-6 text-center">
            <a
-  href={`/api/enquiry/pdf/${submittedData.enquiryId}`}
+  href={`/api/enquiry/excel/${submittedData.enquiryId}`}
   target="_blank"
   rel="noopener noreferrer"
   className="inline-block bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
 >
-  View Enquiry PDF
+  View Enquiry Excel
 </a>
-
           </div>
         )}
       </div>

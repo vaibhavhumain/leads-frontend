@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import BASE_URL from "../utils/api";
-export default function LeadPdfsPage() {
+
+export default function LeadExcelsPage() {
   const router = useRouter();
   const { leadId } = router.query;
 
-  const [pdfs, setPdfs] = useState([]);
+  const [excels, setExcels] = useState([]);
   const [leadName, setLeadName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,24 +24,23 @@ export default function LeadPdfsPage() {
     }
 
     axios
-      .get(`${BASE_URL}/api/enquiry/all-pdfs/${leadId}`, {
+      .get(`${BASE_URL}/api/enquiry/all-excels/${leadId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
         setError("");
-
         const sorted = res.data.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
-
-        setPdfs(sorted.length > 0 ? [sorted[0]] : []);
+        // show all final excels, not just one
+        setExcels(sorted.length > 0 ? [sorted[0]] : []);
         setLoading(false);
       })
       .catch((err) => {
         setError(
           err.response?.data?.error ||
             err.response?.data?.message ||
-            "Failed to load PDFs"
+            "Failed to load Excels"
         );
         setLoading(false);
       });
@@ -57,27 +57,29 @@ export default function LeadPdfsPage() {
       });
   }, [leadId]);
 
-  const handleDownload = async (pdf) => {
+  const handleDownload = async (excel) => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${BASE_URL}${pdf.pdfUrl}`, {
+      const res = await axios.get(`${BASE_URL}${excel.excelUrl}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
       });
 
-      const blob = new Blob([res.data], { type: "application/pdf" });
+      const blob = new Blob([res.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${pdf.enquiryId}.pdf`);
+      link.setAttribute("download", `${excel.enquiryId}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("❌ Error downloading PDF:", err);
-      alert("Failed to download PDF.");
+      console.error("❌ Error downloading Excel:", err);
+      alert("Failed to download Excel.");
     }
   };
 
@@ -85,7 +87,7 @@ export default function LeadPdfsPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <h1 className="text-2xl font-bold mb-4 text-gray-700">
-          Loading Enquiry PDF...
+          Loading Enquiry Excels...
         </h1>
         <ul className="space-y-4">
           {[1].map((i) => (
@@ -108,32 +110,32 @@ export default function LeadPdfsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-2xl font-bold mb-4">
-        Final Enquiry PDF for Lead:{" "}
+        Final Enquiry Excels for Lead:{" "}
         <span className="text-indigo-600 break-all">
           {leadName || leadId}
         </span>
       </h1>
 
-      {pdfs.length === 0 ? (
-        <p>No final PDF found for this lead.</p>
+      {excels.length === 0 ? (
+        <p>No final Excel found for this lead.</p>
       ) : (
         <ul className="space-y-4">
-          {pdfs.map((pdf) => (
+          {excels.map((excel) => (
             <li
-              key={pdf.enquiryId}
+              key={excel.enquiryId}
               className="p-4 border rounded-lg bg-white shadow-sm flex justify-between items-center"
             >
               <div>
-                <p className="font-medium">Enquiry ID: {pdf.enquiryId}</p>
+                <p className="font-medium">Enquiry ID: {excel.enquiryId}</p>
                 <p className="text-sm text-gray-500">
-                  Created: {new Date(pdf.createdAt).toLocaleString()}
+                  Created: {new Date(excel.createdAt).toLocaleString()}
                 </p>
               </div>
               <button
-                onClick={() => handleDownload(pdf)}
+                onClick={() => handleDownload(excel)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
-                ⬇ Download PDF
+                ⬇ Download Excel
               </button>
             </li>
           ))}
