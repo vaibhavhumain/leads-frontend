@@ -5,7 +5,7 @@ import { getModelConfig, EXTRA_COST_FITMENTS } from "../utils/models";
 import BASE_URL from "../utils/api";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
- 
+
 const otherKey = (key) => `${key}__Other`;
 
 const FieldLabel = ({ children }) => (
@@ -24,22 +24,10 @@ const Section = ({ title, subtitle, children }) => (
 
 export default function SpiderBusForm() {
   const router = useRouter();
-
-  // keep leadId from query or localStorage, and persist it
   const [leadId, setLeadId] = useState("");
-  useEffect(() => {
-    if (!router.isReady) return;
-
-    const fromLead = router.query.leadId ? String(router.query.leadId) : "";
-    const storedLead =
-      typeof window !== "undefined" ? localStorage.getItem("leadId") || "" : "";
-    const lead = fromLead || storedLead;
-    if (fromLead) localStorage.setItem("leadId", fromLead);
-    setLeadId(lead);
-  }, [router.isReady, router.query.leadId]);
-
   const [isClient, setIsClient] = useState(false);
   const [luxuryData, setLuxuryData] = useState({});
+  const [lastEnquiryId, setLastEnquiryId] = useState("");
 
   const MODEL_NAME = "Spider";
   const modelConfig = getModelConfig(MODEL_NAME); 
@@ -48,12 +36,25 @@ export default function SpiderBusForm() {
     ? luxuryData["EXTRA::CUSTOM_LIST"]
     : [];
 
-  // load saved form
+  // load leadId
+  useEffect(() => {
+    if (!router.isReady) return;
+    const fromLead = router.query.leadId ? String(router.query.leadId) : "";
+    const storedLead =
+      typeof window !== "undefined" ? localStorage.getItem("leadId") || "" : "";
+    const lead = fromLead || storedLead;
+    if (fromLead) localStorage.setItem("leadId", fromLead);
+    setLeadId(lead);
+  }, [router.isReady, router.query.leadId]);
+
+  // load saved form + enquiryId
   useEffect(() => {
     setIsClient(true);
     try {
       const saved = localStorage.getItem("luxuryForm");
       if (saved) setLuxuryData(JSON.parse(saved));
+      const storedEnq = localStorage.getItem("enquiryId") || "";
+      if (storedEnq) setLastEnquiryId(storedEnq);
     } catch {}
   }, []);
 
@@ -82,25 +83,50 @@ export default function SpiderBusForm() {
     handleChange("EXTRA::CUSTOM_LIST", next);
   };
 
+  const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const downloadExcel = async (enquiryId, fresh = false) => {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Please log in again.");
+
+    const url = `${BASE_URL}/api/enquiry/excel/${encodeURIComponent(enquiryId)}${fresh ? "?fresh=1" : ""}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("Excel fetch error:", err);
+      toast.error(err.error || err.message || "Failed to download Excel");
+      return;
+    }
+    const blob = await res.blob();
+    downloadBlob(blob, `${enquiryId}${fresh ? "-fresh" : ""}.xlsx`);
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
     if (!leadId) {
-      alert("❌ No leadId found. Please go back and start from Enquiry form.");
+      toast.error("❌ No leadId found. Please go back and start from Enquiry form.");
       return;
     }
 
     const payload = {
       modelName: MODEL_NAME,
-      standardFitments: (getModelConfig(MODEL_NAME).standardFitments || []).map(
-        (f) => ({
-          key: f.key,
-          label: f.label,
-          suggested: f.suggested,
-          choice: luxuryData[`${f.key}__Choice`] || "Suggested",
-          otherValue: luxuryData[`${f.key}__Other`] || "",
-        })
-      ),
+      standardFitments: (modelConfig.standardFitments || []).map((f) => ({
+        key: f.key,
+        label: f.label,
+        suggested: f.suggested,
+        choice: luxuryData[`${f.key}__Choice`] || "Suggested",
+        otherValue: luxuryData[`${f.key}__Other`] || "",
+      })),
       optionalFitmentsSelected: luxuryData.optionalFitmentsSelected || [],
       extraCostFitments: EXTRA_COST_FITMENTS.map((f) => ({
         key: f.key,
@@ -124,12 +150,18 @@ export default function SpiderBusForm() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to save luxury data");
-toast.success("Luxury details saved ✅");
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to save luxury data");
+
+      toast.success(result.message || "Luxury details saved ✅");
+
+      if (result.enquiry?.enquiryId) {
+        setLastEnquiryId(result.enquiry.enquiryId);
+        downloadExcel(result.enquiry.enquiryId, true); // auto-download Excel
+      }
     } catch (err) {
       console.error("Save error:", err);
       toast.error("❌ Failed to save luxury details");
-
     }
   };
 
@@ -202,9 +234,13 @@ toast.success("Luxury details saved ✅");
           <p className="text-sm text-gray-500 mt-1">
             Standard & optional fitments for <b>{MODEL_NAME}</b>.
           </p>
+          {lastEnquiryId && (
+            <p className="text-xs text-gray-500 mt-1">
+              Last enquiry ID: <span className="font-mono">{lastEnquiryId}</span>
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
-          {/* keep leadId on return */}
           <button
             type="button"
             onClick={() =>
@@ -217,6 +253,16 @@ toast.success("Luxury details saved ✅");
             className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50"
           >
             ← Back to Enquiry
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!lastEnquiryId) return toast.error("No enquiry yet.");
+              downloadExcel(lastEnquiryId, true);
+            }}
+            className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            Download Latest Excel
           </button>
           <button
             type="submit"
@@ -237,9 +283,9 @@ toast.success("Luxury details saved ✅");
         </div>
       </Section>
 
-      {/* Optional Fitment at Extra Cost */}
+      {/* Optional Fitments at Extra Cost */}
       <Section
-        title="Optional Fitment at Extra Cost"
+        title="Optional Fitments at Extra Cost"
         subtitle="Select items to include and add the Company / Description for clarity."
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -343,7 +389,6 @@ toast.success("Luxury details saved ✅");
 
       {/* Footer */}
       <div className="mt-6 flex items-center justify-end gap-3">
-        {/* Back to Luxury form, keep leadId */}
         <button
           type="button"
           onClick={() =>
@@ -360,6 +405,5 @@ toast.success("Luxury details saved ✅");
         <ToastContainer position="top-right" autoClose={3000} pauseOnHover={false} theme="colored" />
       </div>
     </form>
-    
   );
 }

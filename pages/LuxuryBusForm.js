@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import BASE_URL from "../utils/api";
+
 const Radio = ({ name, value, current, onChange, children }) => (
   <label className="inline-flex items-center gap-2 mr-4 text-sm text-gray-700">
     <input
@@ -114,126 +115,125 @@ export default function LuxuryBusForm() {
     window.URL.revokeObjectURL(url);
   };
 
-  const downloadPdf = async (enquiryId, fresh = false) => {
+  const downloadExcel = async (enquiryId, fresh = false) => {
     const token = localStorage.getItem("token");
     if (!token) return alert("Please log in again.");
 
-    const url = `${BASE_URL}/api/enquiry/pdf/${encodeURIComponent(enquiryId)}${fresh ? "?fresh=1" : ""}`;
+    const url = `${BASE_URL}/api/enquiry/excel/${encodeURIComponent(enquiryId)}${fresh ? "?fresh=1" : ""}`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error("PDF fetch error:", err);
-      alert(err.error || err.message || "Failed to download PDF");
+      console.error("Excel fetch error:", err);
+      alert(err.error || err.message || "Failed to download Excel");
       return;
     }
     const blob = await res.blob();
-    downloadBlob(blob, `${enquiryId}${fresh ? "-fresh" : ""}.pdf`);
+    downloadBlob(blob, `${enquiryId}${fresh ? "-fresh" : ""}.xlsx`);
   };
 
-const onSubmit = async (e) => {
-  e.preventDefault();
+  const onSubmit = async (e) => {
+    e.preventDefault();
 
-  const id = leadId || localStorage.getItem("leadId");
-  if (!id) {
-    alert("Lead is missing. Please start from the Enquiry form so we can link this to a Lead.");
-    return;
-  }
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("You are not logged in. Please log in and try again.");
-    return;
-  }
-
-  const luxuryPayload = {
-  modelName: data.suggestedModel || "",
-  luxuryData: {
-    windowType: data.windowType || "",
-    requiredNoEachSide: data.requiredNoEachSide || "",
-    tintOfShades: data.tintOfShades || "",
-    otherTint: data.otherTint || "",
-    totalSeats: data.totalSeats || "",
-    seatingPattern: data.seatingPattern || "",
-    seatType: data.seatType || "",
-    seatBelt: data.seatBelt || "",
-    seatBeltType: data.seatBeltType || "",
-    seatMaterial: data.seatMaterial || "",
-    curtain: data.curtain || "",
-    flooringType: data.flooringType || "",
-    passengerDoors: data.passengerDoors || "",
-    passengerDoorPosition: data.passengerDoorPosition || "",
-    doorType: data.doorType || "",
-    roofCarrier: data.roofCarrier || "",
-    diggyType: data.diggyType || "",
-    sideLuggageRequirement: data.sideLuggageRequirement || "",
-    diggyFlooring:
-      data.diggyFlooring === "other"
-        ? `other: ${data.diggyFlooringOther || ""}`
-        : data.diggyFlooring || "",
-    sideLadder: data.sideLadder || "",
-    helperFootStep: data.helperFootStep || "",
-    rearBackJaal: data.rearBackJaal || "",
-    cabinType: data.cabinType || "",
-  },
-  category: "Luxury",
-};
-  try {
-    // ✅ Save luxury details
-    const res = await fetch(`${BASE_URL}/api/enquiry/luxury/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(luxuryPayload),
-    });
-
-    const result = await res.json();
-    if (!res.ok) {
-      console.error("❌ Save error:", result);
-      alert(result.message || result.error || "Failed to save luxury details.");
+    const id = leadId || localStorage.getItem("leadId");
+    if (!id) {
+      alert("Lead is missing. Please start from the Enquiry form so we can link this to a Lead.");
       return;
     }
 
-    alert(result.message || "Luxury details saved ✅");
-    // after successful save
-router.push(`/EnquiryForm?leadId=${id}`);
-
-    // ✅ Immediately fetch the latest PDF for this lead
-    if (result.enquiry?.enquiryId) {
-      const enquiryId = result.enquiry.enquiryId;
-
-      const pdfRes = await fetch(`${BASE_URL}/api/enquiry/pdf/${encodeURIComponent(enquiryId)}?fresh=1`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (pdfRes.ok) {
-        const blob = await pdfRes.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${enquiryId}-fresh.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      } else {
-        console.error("❌ PDF fetch failed");
-        alert("Luxury details saved but PDF download failed.");
-      }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You are not logged in. Please log in and try again.");
+      return;
     }
 
-    // keep leadId in query string for next steps
-    const q = new URLSearchParams(router.query);
-    q.set("leadId", id);
-    router.replace(`${router.pathname}?${q.toString()}`, undefined, { shallow: true });
+    const luxuryPayload = {
+      modelName: data.suggestedModel || "",
+      luxuryData: {
+        windowType: data.windowType || "",
+        requiredNoEachSide: data.requiredNoEachSide || "",
+        tintOfShades: data.tintOfShades || "",
+        otherTint: data.otherTint || "",
+        totalSeats: data.totalSeats || "",
+        seatingPattern: data.seatingPattern || "",
+        seatType: data.seatType || "",
+        seatBelt: data.seatBelt || "",
+        seatBeltType: data.seatBeltType || "",
+        seatMaterial: data.seatMaterial || "",
+        curtain: data.curtain || "",
+        flooringType: data.flooringType || "",
+        passengerDoors: data.passengerDoors || "",
+        passengerDoorPosition: data.passengerDoorPosition || "",
+        doorType: data.doorType || "",
+        roofCarrier: data.roofCarrier || "",
+        diggyType: data.diggyType || "",
+        sideLuggageRequirement: data.sideLuggageRequirement || "",
+        diggyFlooring:
+          data.diggyFlooring === "other"
+            ? `other: ${data.diggyFlooringOther || ""}`
+            : data.diggyFlooring || "",
+        sideLadder: data.sideLadder || "",
+        helperFootStep: data.helperFootStep || "",
+        rearBackJaal: data.rearBackJaal || "",
+        cabinType: data.cabinType || "",
+      },
+      category: "Luxury",
+    };
 
-  } catch (err) {
-    console.error("❌ Network/Server error:", err);
-    alert("Network or server error.");
-  }
-};
+    try {
+      // ✅ Save luxury details
+      const res = await fetch(`${BASE_URL}/api/enquiry/luxury/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(luxuryPayload),
+      });
 
+      const result = await res.json();
+      if (!res.ok) {
+        console.error("❌ Save error:", result);
+        alert(result.message || result.error || "Failed to save luxury details.");
+        return;
+      }
+
+      alert(result.message || "Luxury details saved ✅");
+      router.push(`/EnquiryForm?leadId=${id}`);
+
+      // ✅ Immediately fetch the latest Excel for this lead
+      if (result.enquiry?.enquiryId) {
+        const enquiryId = result.enquiry.enquiryId;
+
+        const excelRes = await fetch(`${BASE_URL}/api/enquiry/excel/${encodeURIComponent(enquiryId)}?fresh=1`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (excelRes.ok) {
+          const blob = await excelRes.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${enquiryId}-fresh.xlsx`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } else {
+          console.error("❌ Excel fetch failed");
+          alert("Luxury details saved but Excel download failed.");
+        }
+      }
+
+      // keep leadId in query string for next steps
+      const q = new URLSearchParams(router.query);
+      q.set("leadId", id);
+      router.replace(`${router.pathname}?${q.toString()}`, undefined, { shallow: true });
+
+    } catch (err) {
+      console.error("❌ Network/Server error:", err);
+      alert("Network or server error.");
+    }
+  };
 
   const handleModelSelect = (e) => {
     const model = e.target.value;
@@ -282,16 +282,16 @@ router.push(`/EnquiryForm?leadId=${id}`);
             ← Back to Enquiry
           </button>
 
-          {/* On-demand download of latest PDF */}
+          {/* On-demand download of latest Excel */}
           <button
             type="button"
             onClick={() => {
               if (!lastEnquiryId) return alert("No enquiry yet. Please submit first.");
-              downloadPdf(lastEnquiryId, true); // fresh=1
+              downloadExcel(lastEnquiryId, true); // fresh=1
             }}
             className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50"
           >
-            Download Latest PDF
+            Download Latest Excel
           </button>
 
           <button
@@ -314,7 +314,6 @@ router.push(`/EnquiryForm?leadId=${id}`);
           </Select>
         </Field>
       </div>
-
       {/* WINDOW + TINT + TOTAL SEATS + SEATING PATTERN + SEAT TYPE */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

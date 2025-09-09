@@ -1,10 +1,8 @@
-// pages/lead-pdfs.jsx
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import BASE_URL from "../utils/api";
-
 export default function LeadPdfsPage() {
   const router = useRouter();
   const { leadId } = router.query;
@@ -24,7 +22,6 @@ export default function LeadPdfsPage() {
       return;
     }
 
-    // ✅ Fetch PDFs (only latest one)
     axios
       .get(`${BASE_URL}/api/enquiry/all-pdfs/${leadId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -32,12 +29,10 @@ export default function LeadPdfsPage() {
       .then((res) => {
         setError("");
 
-        // 🛑 Sort by createdAt (latest first)
         const sorted = res.data.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
 
-        // ✅ Keep only the latest PDF
         setPdfs(sorted.length > 0 ? [sorted[0]] : []);
         setLoading(false);
       })
@@ -50,7 +45,6 @@ export default function LeadPdfsPage() {
         setLoading(false);
       });
 
-    // ✅ Fetch Lead Name
     axios
       .get(`${BASE_URL}/api/leads/${leadId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -63,7 +57,6 @@ export default function LeadPdfsPage() {
       });
   }, [leadId]);
 
-  // Download function
   const handleDownload = async (pdf) => {
     try {
       const token = localStorage.getItem("token");
@@ -88,7 +81,6 @@ export default function LeadPdfsPage() {
     }
   };
 
-  // ✅ Skeleton Loader
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">

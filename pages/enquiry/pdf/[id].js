@@ -6,22 +6,20 @@ import Navbar from '../../../components/Navbar';
 
 const isObjectId = (v) => /^[0-9a-fA-F]{24}$/.test(String(v || ''));
 
-export default function PdfViewer() {
+export default function ExcelViewer() {
   const router = useRouter();
   const { leadId } = router.query;
 
-  const [pdfs, setPdfs] = useState([]);
+  const [excels, setExcels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
   const [paramError, setParamError] = useState('');
-  const [viewPdfUrl, setViewPdfUrl] = useState(null);
 
   useEffect(() => {
     if (!router.isReady || !leadId) return;
 
-    const fetchPDFs = async () => {
+    const fetchExcels = async () => {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
       if (!token) {
         setAuthError(true);
         setLoading(false);
@@ -39,7 +37,7 @@ export default function PdfViewer() {
         setAuthError(false);
         setParamError('');
 
-        const res = await fetch(`${BASE_URL}/api/enquiry/all-pdfs/${leadId}`, {
+        const res = await fetch(`${BASE_URL}/api/enquiry/all-excels/${leadId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -50,30 +48,22 @@ export default function PdfViewer() {
         }
 
         if (!res.ok) {
-          setPdfs([]);
+          setExcels([]);
           setLoading(false);
           return;
         }
 
-        const text = await res.text();
-console.log("PDF API raw response:", text);
-let data = [];
-try {
-  data = JSON.parse(text);
-} catch (e) {
-  console.error("Failed to parse JSON:", e);
-}
-setPdfs(Array.isArray(data) ? data : []);
-
+        const data = await res.json();
+        setExcels(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Error loading PDFs:', err);
-        setPdfs([]);
+        console.error('Error loading Excels:', err);
+        setExcels([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPDFs();
+    fetchExcels();
   }, [router.isReady, leadId]);
 
   return (
@@ -81,9 +71,9 @@ setPdfs(Array.isArray(data) ? data : []);
       <Navbar />
 
       <div className="p-6 text-center">
-        <h1 className="text-2xl font-bold mb-6">All Enquiry PDFs</h1>
+        <h1 className="text-2xl font-bold mb-6">All Enquiry Excels</h1>
 
-        {loading && <p>Loading PDFs...</p>}
+        {loading && <p>Loading Excel files...</p>}
 
         {!loading && authError && (
           <div className="mb-6 text-red-600">
@@ -97,100 +87,56 @@ setPdfs(Array.isArray(data) ? data : []);
         )}
 
         {!loading && !authError && !paramError && (
-          pdfs.length > 0 ? (
+          excels.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 max-w-4xl mx-auto">
-              {pdfs.map((pdf) => (
+              {excels.map((excel) => (
                 <div
-                  key={pdf.enquiryId}
+                  key={excel.enquiryId}
                   className="border p-4 rounded shadow-md text-left"
                 >
                   <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                    Enquiry ID: {pdf.enquiryId}
+                    Enquiry ID: {excel.enquiryId}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    Created At: {new Date(pdf.createdAt).toLocaleString()}
+                    Created At: {new Date(excel.createdAt).toLocaleString()}
                   </p>
 
                   <div className="flex gap-4 mt-4">
-                    {/* View Button */}
-                    <button
-                      onClick={async () => {
-                        const token = localStorage.getItem('token');
-                        try {
-                          const response = await fetch(`${BASE_URL}${pdf.pdfUrl}`, {
-                            headers: { Authorization: `Bearer ${token}` },
-                          });
-                          if (!response.ok) throw new Error('Failed to fetch PDF');
-
-                          const blob = await response.blob();
-                          const url = window.URL.createObjectURL(blob);
-                          setViewPdfUrl(url);
-                        } catch (err) {
-                          console.error('View error:', err);
-                          alert('Failed to load PDF.');
-                        }
-                      }}
-                      className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
-                    >
-                      View PDF
-                    </button>
-
                     {/* Download Button */}
                     <button
                       onClick={async () => {
                         const token = localStorage.getItem('token');
                         try {
-                          const response = await fetch(`${BASE_URL}${pdf.pdfUrl}`, {
+                          const response = await fetch(`${BASE_URL}${excel.excelUrl}`, {
                             headers: { Authorization: `Bearer ${token}` },
                           });
-                          if (!response.ok) throw new Error('Failed to fetch PDF');
+                          if (!response.ok) throw new Error('Failed to fetch Excel');
 
                           const blob = await response.blob();
                           const url = window.URL.createObjectURL(blob);
                           const link = document.createElement('a');
                           link.href = url;
-                          link.setAttribute('download', `${pdf.enquiryId}.pdf`);
+                          link.setAttribute('download', `${excel.enquiryId}.xlsx`);
                           document.body.appendChild(link);
                           link.click();
                           document.body.removeChild(link);
                           window.URL.revokeObjectURL(url);
                         } catch (err) {
                           console.error('Download error:', err);
-                          alert('Failed to download PDF.');
+                          alert('Failed to download Excel.');
                         }
                       }}
                       className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 transition"
                     >
-                      Download PDF 
+                      Download Excel
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-600">No PDFs found for this lead.</p>
+            <p className="text-gray-600">No Excels found for this lead.</p>
           )
-        )}
-
-        {/* Inline Preview Section */}
-        {viewPdfUrl && (
-          <div className="mt-8">
-            <h2 className="text-xl font-bold mb-4">Preview</h2>
-            <iframe
-              src={viewPdfUrl}
-              width="100%"
-              height="600px"
-              className="border rounded"
-            ></iframe>
-            <div className="mt-2">
-              <button
-                onClick={() => setViewPdfUrl(null)}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Close Preview
-              </button>
-            </div>
-          </div>
         )}
 
         <div className="mt-8 flex justify-center gap-4">
