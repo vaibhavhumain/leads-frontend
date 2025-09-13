@@ -15,10 +15,13 @@ const FilterLeadsPage = () => {
   const [hasFollowUps, setHasFollowUps] = useState('');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [editingCell, setEditingCell] = useState({ id: null, field: null });
+  const [editValue, setEditValue] = useState('');
   const [userRole, setUserRole] = useState('');
   const [followUpDateStrings, setFollowUpDateStrings] = useState([]);
   const [editedDateStrings, setEditedDateStrings] = useState([]);
+  const [newFollowUp, setNewFollowUp] = useState({}); 
+  const [newNote, setNewNote] = useState({});        
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -57,6 +60,164 @@ const FilterLeadsPage = () => {
 
   const followUpDateObjs = useMemo(() => followUpDateStrings.map(d => new Date(d)), [followUpDateStrings]);
   const editedDateObjs = useMemo(() => editedDateStrings.map(d => new Date(d)), [editedDateStrings]);
+
+ 
+const saveEdit = async (leadId, field) => {
+  if (!editValue.trim()) {
+    toast.warning('Value cannot be empty');
+    return;
+  }
+
+  const token = localStorage.getItem('token');
+  try {
+    let endpoint = '';
+    let payload = {};
+
+    switch (field) {
+      case 'clientName':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/client-name`;
+        payload = { clientName: editValue };
+        break;
+
+      case 'companyName':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/company-name`;
+        payload = { companyName: editValue };
+        break;
+
+      case 'location':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/location`;
+        payload = { location: editValue };
+        break;
+
+      case 'contacts':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/update-contacts`;
+        payload = {
+          contacts: editValue
+            .split(',')
+            .map((num, idx) => ({
+              number: num.trim(),
+              label: idx === 0 ? 'Primary' : 'Other',
+            }))
+            .filter(c => c.number !== ''),
+        };
+        break;
+
+      case 'connectionStatus':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/connection-status`;
+        payload = { connectionStatus: editValue };
+        break;
+
+      case 'status':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/status`;
+        payload = { status: editValue };
+        break;
+
+      case 'lifecycleStatus':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/lifecycle`;
+        payload = { lifecycleStatus: editValue };
+        break;
+
+      default:
+        toast.error('Unsupported field');
+        return;
+    }
+
+    // 🔥 API call
+    await axios.put(endpoint, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // 🟢 Update frontend state
+    const updatedLeads = leads.map(l => {
+      if (l._id !== leadId) return l;
+
+      // handle contacts separately (array)
+      if (field === 'contacts') {
+        return {
+          ...l,
+          leadDetails: {
+            ...l.leadDetails,
+            contacts: payload.contacts,
+          },
+        };
+      }
+
+      // handle other fields
+      if (['clientName', 'companyName', 'location'].includes(field)) {
+        return {
+          ...l,
+          leadDetails: {
+            ...l.leadDetails,
+            [field]: editValue,
+          },
+        };
+      }
+
+      return {
+        ...l,
+        [field]: editValue,
+      };
+    });
+
+    setLeads(updatedLeads);
+
+    localStorage.setItem('filtered_leads', JSON.stringify(updatedLeads));
+
+    toast.success(`${field} updated in DB ✅`);
+    setEditingCell({ id: null, field: null });
+    setEditValue('');
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to update in DB');
+  }
+};
+
+const addFollowUp = async (leadId) => {
+  const token = localStorage.getItem('token');
+  const fup = newFollowUp[leadId];
+  if (!fup?.date || !fup?.notes) {
+    toast.warning('Please provide both date and notes');
+    return;
+  }
+  try {
+    await axios.post(`${BASE_URL}/api/leads/followup`, {
+      leadId,
+      followUp: fup,
+    }, { headers: { Authorization: `Bearer ${token}` } });
+
+    toast.success('Follow-up added ✅');
+    // Refresh leads
+    fetchLeads();
+    setNewFollowUp(prev => ({ ...prev, [leadId]: { date: '', notes: '' } }));
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to add follow-up');
+  }
+};
+
+const addNote = async (leadId) => {
+  const token = localStorage.getItem('token');
+  const note = newNote[leadId];
+  if (!note?.date || !note?.text) {
+    toast.warning('Please provide both date and note text');
+    return;
+  }
+  try {
+    await axios.post(`${BASE_URL}/api/leads/${leadId}/notes`, {
+      leadId,
+      text: note.text,
+      date: note.date
+    }, { headers: { Authorization: `Bearer ${token}` } });
+
+    toast.success('Note added ✅');
+    fetchLeads();
+    setNewNote(prev => ({ ...prev, [leadId]: { date: '', text: '' } }));
+  } catch (err) {
+    console.error(err);
+    toast.error('Failed to add note');
+  }
+};
+
 
   const getDotClassForFollowUp = (calendarDate) => {
     const today = new Date();
@@ -216,7 +377,7 @@ const FilterLeadsPage = () => {
         {loading ? (
           <div className="text-center text-gray-600 text-sm">Loading...</div>
         ) : leads.length > 0 ? (
-          <div className="max-w-6xl mx-auto bg-white p-6 rounded-xl shadow overflow-auto">
+          <div className="w-full bg-white p-6 rounded-xl shadow overflow-x-auto">
             <h2 className="text-lg font-semibold mb-4">🧾 Filtered Leads: {leads.length}</h2>
             <table className="w-full border text-sm">
               <thead className="bg-gray-100 text-gray-700">
@@ -230,6 +391,7 @@ const FilterLeadsPage = () => {
                   <th className="border px-3 py-2 text-left">Connection</th>
                   <th className="border px-3 py-2 text-left">Status</th>
                   <th className="border px-3 py-2 text-left">Follow-Ups</th>
+                  <th className='border px-3 py-2 text-left'>Notes</th>
                   <th className='border px-3 py-2 text-left'>Lifecycle Status</th>
                   <th className="border px-3 py-2 text-left">View Full Lead</th>
                 </tr>
@@ -238,29 +400,405 @@ const FilterLeadsPage = () => {
                 {leads.map((lead , idx) => (
                   <tr key={lead._id}>
                     <td className='border px-3 py-2'>{idx + 1}</td>
-                    <td className="border px-3 py-2">{lead.leadDetails?.clientName || 'N/A'}</td>
+                    <td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'clientName' ? (
+    <div className="flex gap-2">
+      <input
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+      />
+      <button
+        onClick={() => saveEdit(lead._id, 'clientName')}
+        className="text-green-600 text-xs"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'clientName' });
+        setEditValue(lead.leadDetails?.clientName || '');
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.leadDetails?.clientName || 'N/A'}
+    </span>
+  )}
+</td>
+
                     <td className="border px-3 py-2">{lead.createdBy?.name || 'N/A'}</td>
                     <td className="border px-3 py-2">
-                      {lead.leadDetails?.contacts?.map((c) => c.number).join(', ') || 'N/A'}
-                    </td>
-                    <td className="border px-3 py-2">{lead.leadDetails?.location || 'N/A'}</td>
-                    <td className="border px-3 py-2">{lead.leadDetails?.companyName || 'N/A'}</td>
-                    <td className="border px-3 py-2">{lead.connectionStatus || 'N/A'}</td>
-                    <td className="border px-3 py-2">{lead.status || 'N/A'}</td>
-                    <td className='border px-3 py-2 whitespace-pre-wrap'>
-                      {lead.followUps.length > 0 ? (
-                        <ul className="list-disc pl-4 space-y-1 break-words`">
-                          {lead.followUps.map((fup,idx) => (
-                            <li key={idx} className='text-xs text-gray-700'>
-                              <div><b>{new Date(fup.date).toLocaleDateString()}</b>:{fup.notes}</div>
-                            </li>
-                          ))}
-                        </ul>
-                      ):(
-                        <span className='text-gray-400 italic text-sm'>No follow ups</span>
-                      )}
-                    </td>
-                    <td className='border px-3 py-2'>{lead.lifecycleStatus || 'N/A'}</td>
+  {editingCell.id === lead._id && editingCell.field === 'contacts' ? (
+    <div className="flex flex-col gap-2">
+      <input
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+        placeholder="Comma separated numbers"
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={() => saveEdit(lead._id, 'contacts')}
+          className="text-green-600 text-xs"
+        >
+          Save
+        </button>
+        <button
+          onClick={() => setEditingCell({ id: null, field: null })}
+          className="text-red-500 text-xs"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'contacts' });
+        setEditValue(
+          lead.leadDetails?.contacts?.map((c) => c.number).join(', ') || ''
+        );
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.leadDetails?.contacts?.map((c) => c.number).join(', ') || 'N/A'}
+    </span>
+  )}
+</td>
+
+                    <td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'location' ? (
+    <div className="flex gap-2">
+      <input
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+      />
+      <button
+        onClick={() => saveEdit(lead._id, 'location')}
+        className="text-green-600 text-xs"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'location' });
+        setEditValue(lead.leadDetails?.location || '');
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.leadDetails?.location || 'N/A'}
+    </span>
+  )}
+</td>
+
+                    <td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'companyName' ? (
+    <div className="flex gap-2">
+      <input
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+      />
+      <button
+        onClick={() => saveEdit(lead._id, 'companyName')}
+        className="text-green-600 text-xs"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'companyName' });
+        setEditValue(lead.leadDetails?.companyName || '');
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.leadDetails?.companyName || 'N/A'}
+    </span>
+  )}
+</td>
+
+                    <td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'connectionStatus' ? (
+    <div className="flex gap-2">
+      <select
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+      >
+        <option value="">-- Select --</option>
+        <option value="Connected">Connected</option>
+        <option value="Not Connected">Not Connected</option>
+      </select>
+      <button
+        onClick={() => saveEdit(lead._id, 'connectionStatus')}
+        className="text-green-600 text-xs"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'connectionStatus' });
+        setEditValue(lead.connectionStatus || '');
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.connectionStatus || 'N/A'}
+    </span>
+  )}
+</td>
+
+                    <td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'status' ? (
+    <div className="flex gap-2">
+      <select
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+      >
+        <option value="">-- Select --</option>
+        <option value="Hot">Hot</option>
+        <option value="Warm">Warm</option>
+        <option value="Cold">Cold</option>
+      </select>
+      <button
+        onClick={() => saveEdit(lead._id, 'status')}
+        className="text-green-600 text-xs"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'status' });
+        setEditValue(lead.status || '');
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.status || 'N/A'}
+    </span>
+  )}
+</td>
+
+                <td className="border px-3 py-2 whitespace-pre-wrap">
+  {lead.followUps.length > 0 ? (
+    <ul className="list-disc pl-4 space-y-1 break-words">
+      {lead.followUps.map((fup, idx) => (
+        <li key={idx} className="text-xs text-gray-700">
+          <b>{new Date(fup.date).toLocaleDateString()}</b>: {fup.notes}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <span className="text-gray-400 italic text-sm">No follow ups</span>
+  )}
+
+  {/* Toggle button */}
+  <button
+    onClick={() =>
+      setNewFollowUp((prev) => ({
+        ...prev,
+        [lead._id]: {
+          ...prev[lead._id],
+          open: !prev[lead._id]?.open,
+          date: prev[lead._id]?.date || '',
+          notes: prev[lead._id]?.notes || '',
+        },
+      }))
+    }
+    className="mt-2 text-blue-600 text-xs underline"
+  >
+    {newFollowUp[lead._id]?.open ? '➖ Cancel' : '➕ Add Follow-Up'}
+  </button>
+
+  {/* Collapsible form */}
+  {newFollowUp[lead._id]?.open && (
+    <div className="mt-2 space-y-1">
+      <input
+        type="date"
+        value={newFollowUp[lead._id]?.date || ''}
+        onChange={(e) =>
+          setNewFollowUp((prev) => ({
+            ...prev,
+            [lead._id]: { ...prev[lead._id], date: e.target.value },
+          }))
+        }
+        className="border px-2 py-1 rounded text-xs w-full"
+      />
+      <textarea
+        rows="2"
+        placeholder="Add follow-up..."
+        value={newFollowUp[lead._id]?.notes || ''}
+        onChange={(e) =>
+          setNewFollowUp((prev) => ({
+            ...prev,
+            [lead._id]: { ...prev[lead._id], notes: e.target.value },
+          }))
+        }
+        className="border px-2 py-1 rounded text-xs w-full"
+      />
+      <button
+        onClick={() => addFollowUp(lead._id)}
+        className="bg-green-500 text-white text-xs px-2 py-1 rounded"
+      >
+        Save Follow-Up
+      </button>
+    </div>
+  )}
+</td>
+
+
+ <td className="border px-3 py-2 whitespace-pre-wrap">
+  {lead.notes && lead.notes.length > 0 ? (
+    <ul className="list-disc pl-4 space-y-1 break-words">
+      {lead.notes.map((note, idx) => (
+        <li key={idx} className="text-xs text-gray-700">
+          <b>{new Date(note.date).toLocaleDateString()}</b>: {note.text}
+          {note.addedBy?.name && (
+            <span className="ml-1 text-gray-500 italic text-xs">
+              ({note.addedBy.name})
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <span className="text-gray-400 italic text-sm">No notes</span>
+  )}
+
+  {/* Toggle button */}
+  <button
+    onClick={() =>
+      setNewNote((prev) => ({
+        ...prev,
+        [lead._id]: {
+          ...prev[lead._id],
+          open: !prev[lead._id]?.open,
+          date: prev[lead._id]?.date || '',
+          text: prev[lead._id]?.text || '',
+        },
+      }))
+    }
+    className="mt-2 text-blue-600 text-xs underline"
+  >
+    {newNote[lead._id]?.open ? '➖ Cancel' : '➕ Add Note'}
+  </button>
+
+  {/* Collapsible form */}
+  {newNote[lead._id]?.open && (
+    <div className="mt-2 space-y-1">
+      <input
+        type="date"
+        value={newNote[lead._id]?.date || ''}
+        onChange={(e) =>
+          setNewNote((prev) => ({
+            ...prev,
+            [lead._id]: { ...prev[lead._id], date: e.target.value },
+          }))
+        }
+        className="border px-2 py-1 rounded text-xs w-full"
+      />
+      <textarea
+        rows="2"
+        placeholder="Add note..."
+        value={newNote[lead._id]?.text || ''}
+        onChange={(e) =>
+          setNewNote((prev) => ({
+            ...prev,
+            [lead._id]: { ...prev[lead._id], text: e.target.value },
+          }))
+        }
+        className="border px-2 py-1 rounded text-xs w-full"
+      />
+      <button
+        onClick={() => addNote(lead._id)}
+        className="bg-indigo-500 text-white text-xs px-2 py-1 rounded"
+      >
+        Save Note
+      </button>
+    </div>
+  )}
+</td>
+
+                   <td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'lifecycleStatus' ? (
+    <div className="flex gap-2">
+      <select
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+      >
+        <option value="">-- Select --</option>
+        <option value="active">Active</option>
+        <option value="dead">Dead</option>
+      </select>
+      <button
+        onClick={() => saveEdit(lead._id, 'lifecycleStatus')}
+        className="text-green-600 text-xs"
+      >
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'lifecycleStatus' });
+        setEditValue(lead.lifecycleStatus || '');
+      }}
+      className={`cursor-pointer hover:underline ${
+        lead.lifecycleStatus === 'dead' ? 'text-red-600' : 'text-green-600'
+      }`}
+    >
+      {lead.lifecycleStatus || 'N/A'}
+    </span>
+  )}
+</td>
+
                     <td className="border px-3 py-2">
                       <Link
                         href={{
