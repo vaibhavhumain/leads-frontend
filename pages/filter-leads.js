@@ -116,6 +116,10 @@ const saveEdit = async (leadId, field) => {
         endpoint = `${BASE_URL}/api/leads/${leadId}/lifecycle`;
         payload = { lifecycleStatus: editValue };
         break;
+      case 'busType':
+        endpoint = `${BASE_URL}/api/leads/${leadId}/bus-type`;
+        payload = { busType: editValue };
+        break;  
 
       default:
         toast.error('Unsupported field');
@@ -152,6 +156,17 @@ const saveEdit = async (leadId, field) => {
           },
         };
       }
+
+      if (field === 'busType') {
+  return {
+    ...l,
+    leadDetails: {
+      ...l.leadDetails,
+      busType: editValue,
+    },
+  };
+}
+
 
       return {
         ...l,
@@ -389,9 +404,10 @@ const addNote = async (leadId) => {
                   <th className="border px-3 py-2 text-left">Location</th>
                   <th className="border px-3 py-2 text-left">Company</th>
                   <th className="border px-3 py-2 text-left">Connection</th>
+                  <th className='border px-3 py-2 text-left'>Meeting Description</th>
                   <th className="border px-3 py-2 text-left">Status</th>
                   <th className="border px-3 py-2 text-left">Follow-Ups</th>
-                  <th className='border px-3 py-2 text-left'>Notes</th>
+                  <th className='border px-3 py-2 text-left'>Bus Type</th>
                   <th className='border px-3 py-2 text-left'>Lifecycle Status</th>
                   <th className="border px-3 py-2 text-left">View Full Lead</th>
                 </tr>
@@ -580,6 +596,79 @@ const addNote = async (leadId) => {
   )}
 </td>
 
+<td className="border px-3 py-2 whitespace-pre-wrap">
+  {lead.notes && lead.notes.length > 0 ? (
+    <ul className="list-disc pl-4 space-y-1 break-words">
+      {lead.notes.map((note, idx) => (
+        <li key={idx} className="text-xs text-gray-700">
+          <b>{new Date(note.date).toLocaleDateString()}</b>: {note.text}
+          {note.addedBy?.name && (
+            <span className="ml-1 text-gray-500 italic text-xs">
+              ({note.addedBy.name})
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <span className="text-gray-400 italic text-sm">No Description</span>
+  )}
+
+  {/* Toggle button */}
+  <button
+    onClick={() =>
+      setNewNote((prev) => ({
+        ...prev,
+        [lead._id]: {
+          ...prev[lead._id],
+          open: !prev[lead._id]?.open,
+          date: prev[lead._id]?.date || '',
+          text: prev[lead._id]?.text || '',
+        },
+      }))
+    }
+    className="mt-2 text-blue-600 text-xs underline"
+  >
+    {newNote[lead._id]?.open ? '➖ Cancel' : '➕ Add Description'}
+  </button>
+
+  {/* Collapsible form */}
+  {newNote[lead._id]?.open && (
+    <div className="mt-2 space-y-1">
+      <input
+        type="date"
+        value={newNote[lead._id]?.date || ''}
+        onChange={(e) =>
+          setNewNote((prev) => ({
+            ...prev,
+            [lead._id]: { ...prev[lead._id], date: e.target.value },
+          }))
+        }
+        className="border px-2 py-1 rounded text-xs w-full"
+      />
+      <textarea
+        rows="2"
+        placeholder="Add Description..."
+        value={newNote[lead._id]?.text || ''}
+        onChange={(e) =>
+          setNewNote((prev) => ({
+            ...prev,
+            [lead._id]: { ...prev[lead._id], text: e.target.value },
+          }))
+        }
+        className="border px-2 py-1 rounded text-xs w-full"
+      />
+      <button
+        onClick={() => addNote(lead._id)}
+        className="bg-indigo-500 text-white text-xs px-2 py-1 rounded"
+      >
+        Save Meeting Description
+      </button>
+    </div>
+  )}
+</td>
+
+
                     <td className="border px-3 py-2">
   {editingCell.id === lead._id && editingCell.field === 'status' ? (
     <div className="flex gap-2">
@@ -686,80 +775,43 @@ const addNote = async (leadId) => {
   )}
 </td>
 
-
- <td className="border px-3 py-2 whitespace-pre-wrap">
-  {lead.notes && lead.notes.length > 0 ? (
-    <ul className="list-disc pl-4 space-y-1 break-words">
-      {lead.notes.map((note, idx) => (
-        <li key={idx} className="text-xs text-gray-700">
-          <b>{new Date(note.date).toLocaleDateString()}</b>: {note.text}
-          {note.addedBy?.name && (
-            <span className="ml-1 text-gray-500 italic text-xs">
-              ({note.addedBy.name})
-            </span>
-          )}
-        </li>
-      ))}
-    </ul>
-  ) : (
-    <span className="text-gray-400 italic text-sm">No notes</span>
-  )}
-
-  {/* Toggle button */}
-  <button
-    onClick={() =>
-      setNewNote((prev) => ({
-        ...prev,
-        [lead._id]: {
-          ...prev[lead._id],
-          open: !prev[lead._id]?.open,
-          date: prev[lead._id]?.date || '',
-          text: prev[lead._id]?.text || '',
-        },
-      }))
-    }
-    className="mt-2 text-blue-600 text-xs underline"
-  >
-    {newNote[lead._id]?.open ? '➖ Cancel' : '➕ Add Note'}
-  </button>
-
-  {/* Collapsible form */}
-  {newNote[lead._id]?.open && (
-    <div className="mt-2 space-y-1">
+<td className="border px-3 py-2">
+  {editingCell.id === lead._id && editingCell.field === 'busType' ? (
+    <div className="flex gap-2">
       <input
-        type="date"
-        value={newNote[lead._id]?.date || ''}
-        onChange={(e) =>
-          setNewNote((prev) => ({
-            ...prev,
-            [lead._id]: { ...prev[lead._id], date: e.target.value },
-          }))
-        }
-        className="border px-2 py-1 rounded text-xs w-full"
-      />
-      <textarea
-        rows="2"
-        placeholder="Add note..."
-        value={newNote[lead._id]?.text || ''}
-        onChange={(e) =>
-          setNewNote((prev) => ({
-            ...prev,
-            [lead._id]: { ...prev[lead._id], text: e.target.value },
-          }))
-        }
-        className="border px-2 py-1 rounded text-xs w-full"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        className="border px-2 py-1 rounded text-sm"
+        placeholder="Enter Bus Type"
       />
       <button
-        onClick={() => addNote(lead._id)}
-        className="bg-indigo-500 text-white text-xs px-2 py-1 rounded"
+        onClick={() => saveEdit(lead._id, 'busType')}
+        className="text-green-600 text-xs"
       >
-        Save Note
+        Save
+      </button>
+      <button
+        onClick={() => setEditingCell({ id: null, field: null })}
+        className="text-red-500 text-xs"
+      >
+        Cancel
       </button>
     </div>
+  ) : (
+    <span
+      onClick={() => {
+        setEditingCell({ id: lead._id, field: 'busType' });
+        setEditValue(lead.leadDetails?.busType || '');
+      }}
+      className="cursor-pointer hover:underline text-blue-600"
+    >
+      {lead.leadDetails?.busType || 'N/A'}
+    </span>
   )}
 </td>
 
-                   <td className="border px-3 py-2">
+
+<td className="border px-3 py-2">
   {editingCell.id === lead._id && editingCell.field === 'lifecycleStatus' ? (
     <div className="flex gap-2">
       <select

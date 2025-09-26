@@ -4,7 +4,7 @@ import BASE_URL from "../../utils/api";
 
 export default function AnyWeekReportDownloader({ userId, userName }) {
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().slice(0, 10) // default today
+    new Date().toISOString().slice(0, 10) 
   );
 
   const downloadWeeklyReport = async () => {
@@ -12,7 +12,6 @@ export default function AnyWeekReportDownloader({ userId, userName }) {
       const token = localStorage.getItem("token");
       const chosen = new Date(selectedDate);
 
-      // calculate week range (Mon–Sun) based on selected date
       const day = chosen.getDay();
       const diffToMonday = chosen.getDate() - day + (day === 0 ? -6 : 1);
       const monday = new Date(chosen.setDate(diffToMonday));

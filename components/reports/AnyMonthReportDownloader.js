@@ -4,7 +4,7 @@ import BASE_URL from "../../utils/api";
 
 export default function AnyMonthReportDownloader({ userId, userName }) {
   const [selectedMonth, setSelectedMonth] = useState(
-    new Date().toISOString().slice(0, 7) // YYYY-MM
+    new Date().toISOString().slice(0, 7) 
   );
 
   const downloadMonthlyReport = async () => {

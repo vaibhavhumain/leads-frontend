@@ -1198,9 +1198,9 @@ if (!lead) {
     <Navbar />
     <div className="relative min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12 px-4 flex items-start justify-center font-sans">
       {/* Background accents */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-pink-200 rounded-full filter blur-3xl opacity-10" />
-      <div className="absolute top-1/2 right-0 w-72 h-72 bg-purple-200 rounded-full filter blur-3xl opacity-10" />
-      <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-indigo-100 rounded-full filter blur-2xl opacity-10" />
+      <div className=" absolute top-0 left-0 w-full h-72 bg-pink-200 rounded-full filter blur-3xl opacity-10" />
+      <div className="absolute top-1/2 right-0 w-full h-72 bg-purple-200 rounded-full filter blur-3xl opacity-10" />
+      <div className="absolute bottom-0 left-1/3 w-full h-80 bg-indigo-100 rounded-full filter blur-2xl opacity-10" />
 
       <Link href="/dashboard"></Link>
 
